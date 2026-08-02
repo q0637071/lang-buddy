@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LangBuddy 语伴 - AI 1对1语言学习</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- 顶部导航 -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand" data-nav="landing">
+      <span class="brand-mark">L</span>
+      <span class="brand-name">LangBuddy 语伴</span>
+    </div>
+
+    <nav class="main-nav" id="mainNav" hidden>
+      <button class="nav-item" data-nav="dashboard">首页</button>
+      <button class="nav-item" data-nav="tutor">AI对话</button>
+      <button class="nav-item" data-nav="vocab">背单词</button>
+      <button class="nav-item" data-nav="grammar">语法</button>
+      <button class="nav-item" data-nav="mistakes">错题本</button>
+      <button class="nav-item" data-nav="profile">我的</button>
+    </nav>
+
+    <div class="auth-area" id="authArea">
+      <button class="btn btn-ghost" id="btnShowLogin">登录</button>
+      <button class="btn btn-primary" id="btnShowRegister">免费注册</button>
+    </div>
+  </div>
+</header>
+
+<main id="app">
+
+  <!-- 落地页 -->
+  <section class="view" id="view-landing">
+    <section class="hero">
+      <div class="hero-inner">
+        <h1>跟 AI 私教<br>1对1 练出真实的外语能力</h1>
+        <p class="hero-sub">打字对话 · 语音练习 · 背单词 · 语法精讲，一站式外语学习平台</p>
+        <div class="hero-cta">
+          <button class="btn btn-primary btn-lg" id="btnHeroRegister">免费开始学习</button>
+          <button class="btn btn-outline btn-lg" id="btnHeroLogin">已有账号，登录</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="features">
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h3>AI 1对1 对话</h3>
+        <p>随时随地和 AI 私教打字对话，模拟真实场景，及时纠正你的语法和用词错误。</p>
+        <span class="badge-member">会员专享</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎙️</div>
+        <h3>语音练习</h3>
+        <p>支持语音输入和 AI 语音朗读，练习听力和口语发音，像真人对话一样自然。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📚</div>
+        <h3>科学背单词</h3>
+        <p>内置分级词库，基于间隔重复算法安排复习，让记忆更持久。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📖</div>
+        <h3>语法精讲</h3>
+        <p>10大核心语法专题讲解+练习，配合 AI 批改，写句子不再心虚。</p>
+      </div>
+    </section>
+
+    <section class="pricing">
+      <h2>开通会员，解锁 AI 1对1 全部功能</h2>
+      <div class="price-card">
+        <div class="price-tag">演示版 · 免费开通</div>
+        <ul class="price-list">
+          <li>✔ AI 1对1 打字/语音对话</li>
+          <li>✔ AI 语法批改</li>
+          <li>✔ 完整背单词与语法课程</li>
+          <li>✔ 学习进度记录</li>
+        </ul>
+        <button class="btn btn-primary btn-lg" id="btnPricingRegister">注册并开通会员</button>
+      </div>
+    </section>
+  </section>
+
+  <!-- 首页 Dashboard -->
+  <section class="view" id="view-dashboard" hidden>
+    <div class="container">
+      <h2 class="page-title">欢迎回来，<span id="dashNickname"></span> 👋</h2>
+      <div class="dash-grid">
+        <div class="dash-card">
+          <div class="dash-card-label">会员状态</div>
+          <div class="dash-card-value" id="dashMemberStatus">-</div>
+          <button class="btn btn-primary btn-sm" id="btnDashUpgrade" hidden>立即开通会员</button>
+        </div>
+        <div class="dash-card">
+          <div class="dash-card-label">目标语言</div>
+          <div class="dash-card-value" id="dashLang">-</div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-card-label">当前水平</div>
+          <div class="dash-card-value" id="dashLevel">-</div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-card-label">待复习单词</div>
+          <div class="dash-card-value" id="dashDueWords">-</div>
+        </div>
+      </div>
+      <div class="dash-actions">
+        <button class="btn btn-primary" data-nav="tutor">开始 AI 对话 →</button>
+        <button class="btn btn-outline" data-nav="vocab">去背单词 →</button>
+        <button class="btn btn-outline" data-nav="grammar">学语法 →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI 对话 -->
+  <section class="view" id="view-tutor" hidden>
+    <div class="container container-narrow">
+      <h2 class="page-title">AI 1对1 对话练习</h2>
+      <div id="tutorPaywall" class="paywall" hidden>
+        <p>此功能为会员专享，开通后即可与 AI 私教无限次对话练习。</p>
+        <button class="btn btn-primary" id="btnTutorUpgrade">立即开通会员</button>
+      </div>
+      <div id="tutorPanel" hidden>
+        <div class="lang-pair-row">
+          <label>我用 <select id="chatInputLang"></select> 输入</label>
+          <span class="lang-pair-arrow">→</span>
+          <label>AI 用 <select id="chatReplyLang"></select> 回答</label>
+        </div>
+        <div class="tutor-toolbar">
+          <label class="auto-speak-toggle">
+            <input type="checkbox" id="autoSpeakToggle" checked>
+            🔊 自动朗读 AI 回复
+          </label>
+          <button type="button" class="btn btn-outline btn-sm" id="btnVoiceCall">🎧 开启语音对话模式</button>
+        </div>
+        <div class="chat-window" id="chatWindow"></div>
+
+        <div class="call-status-bar" id="callStatusBar" hidden>
+          <div class="call-status-indicator" id="callStatusIndicator">🎙️ 正在聆听...</div>
+          <button type="button" class="btn btn-danger btn-sm" id="btnEndVoiceCall">结束语音对话</button>
+        </div>
+
+        <form class="chat-input-row" id="chatForm">
+          <button type="button" class="mic-btn" id="micBtn" title="语音输入">🎙️</button>
+          <input type="text" id="chatInput" placeholder="用目标语言打字，或点击麦克风说话..." maxlength="500" autocomplete="off">
+          <button type="submit" class="btn btn-primary" id="chatSendBtn">发送</button>
+        </form>
+        <p class="hint" id="voiceHint"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 背单词 -->
+  <section class="view" id="view-vocab" hidden>
+    <div class="container container-narrow">
+      <h2 class="page-title">背单词</h2>
+      <div class="vocab-stats" id="vocabStats"></div>
+      <div class="vocab-level-filter" id="vocabLevelFilter">
+        <button class="chip active" data-level="">全部</button>
+        <button class="chip" data-level="beginner">初级</button>
+        <button class="chip" data-level="intermediate">中级</button>
+        <button class="chip" data-level="advanced">高级</button>
+      </div>
+
+      <div id="flashcardArea">
+        <div class="flashcard" id="flashcard">
+          <div class="flashcard-progress" id="flashcardProgress"></div>
+          <div class="flashcard-word" id="flashcardWord">-</div>
+          <div class="flashcard-pos" id="flashcardPos"></div>
+          <button class="btn btn-icon" id="btnSpeakWord" title="发音">🔊</button>
+          <div class="flashcard-reveal" id="flashcardReveal" hidden>
+            <div class="flashcard-meaning" id="flashcardMeaning"></div>
+            <div class="flashcard-example" id="flashcardExampleEn"></div>
+            <div class="flashcard-example-zh" id="flashcardExampleZh"></div>
+          </div>
+          <button class="btn btn-outline" id="btnRevealCard">显示释义</button>
+        </div>
+        <div class="flashcard-actions" id="flashcardActions" hidden>
+          <button class="btn btn-danger" id="btnForgot">😵 不认识</button>
+          <button class="btn btn-success" id="btnKnew">✅ 认识</button>
+        </div>
+      </div>
+      <div id="vocabEmpty" class="empty-state" hidden>
+        <p>🎉 今天的复习任务已完成！</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 语法 -->
+  <section class="view" id="view-grammar" hidden>
+    <div class="container container-narrow">
+      <h2 class="page-title">语法学习</h2>
+      <div id="grammarList" class="grammar-list"></div>
+
+      <div id="grammarDetail" class="grammar-detail" hidden>
+        <button class="btn btn-ghost btn-sm" id="btnBackToList">← 返回列表</button>
+        <h3 id="grammarTitle"></h3>
+        <p class="grammar-summary" id="grammarSummaryText"></p>
+        <div class="grammar-block">
+          <div class="grammar-block-label">结构</div>
+          <div id="grammarStructure" class="grammar-structure"></div>
+        </div>
+        <div class="grammar-block">
+          <div class="grammar-block-label">讲解</div>
+          <p id="grammarExplanation"></p>
+        </div>
+        <div class="grammar-block">
+          <div class="grammar-block-label">例句</div>
+          <ul id="grammarExamples" class="grammar-examples"></ul>
+        </div>
+        <div class="grammar-block">
+          <div class="grammar-block-label">练习</div>
+          <div id="grammarPractice"></div>
+        </div>
+
+        <div class="grammar-block">
+          <div class="grammar-block-label">AI 语法批改</div>
+          <div id="grammarCheckerPaywall" class="paywall" hidden>
+            <p>AI 语法批改为会员专享功能。</p>
+            <button class="btn btn-primary" id="btnGrammarUpgrade">立即开通会员</button>
+          </div>
+          <div id="grammarCheckerPanel" hidden>
+            <textarea id="grammarCheckInput" placeholder="输入一句你写的句子，AI 会帮你检查语法..." maxlength="300"></textarea>
+            <button class="btn btn-primary btn-sm" id="btnGrammarCheck">提交检查</button>
+            <div id="grammarCheckResult" class="grammar-check-result"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 错题本 -->
+  <section class="view" id="view-mistakes" hidden>
+    <div class="container container-narrow">
+      <h2 class="page-title">AI 错题本</h2>
+
+      <div id="mistakesPaywall" class="paywall" hidden>
+        <p>错题本为会员专享功能，开通后可拍照/截图上传错题，AI自动识别解析、归类打标签并举一反三。</p>
+        <button class="btn btn-primary" id="btnMistakesUpgrade">立即开通会员</button>
+      </div>
+
+      <div id="mistakesPanel" hidden>
+        <div class="mistake-upload-card">
+          <input type="file" id="mistakeFileInput" accept="image/*" capture="environment" hidden>
+          <div class="mistake-upload-drop" id="mistakeUploadDrop">
+            <div id="mistakeUploadEmpty">
+              <div class="mistake-upload-icon">📷</div>
+              <p>点击拍照 / 选择图片，或直接 <strong>Ctrl+V</strong> 粘贴截图</p>
+              <button type="button" class="btn btn-outline btn-sm" id="btnPickImage">选择图片</button>
+            </div>
+            <div id="mistakeUploadPreviewWrap" hidden>
+              <img id="mistakeUploadPreview" class="mistake-upload-preview" alt="错题预览">
+            </div>
+          </div>
+          <div class="mistake-upload-actions" id="mistakeUploadActions" hidden>
+            <input type="text" id="mistakeExamType" placeholder="考试类型（可选，如 CET-4）" maxlength="20">
+            <button type="button" class="btn btn-primary btn-sm" id="btnAnalyzeMistake">🔍 AI 识别解析</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="btnCancelUpload">取消</button>
+          </div>
+          <p class="mistake-upload-status" id="mistakeUploadStatus"></p>
+        </div>
+
+        <div id="mistakeResultCard" class="mistake-detail-card" hidden></div>
+
+        <div class="mistake-list-header">
+          <h3>我的错题（<span id="mistakeCount">0</span>）</h3>
+        </div>
+        <div class="mistake-filter-chips" id="mistakeFilterChips"></div>
+        <div id="mistakeList" class="mistake-list"></div>
+        <div id="mistakeListEmpty" class="empty-state" hidden><p>还没有错题记录，上传第一道错题开始吧！</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 我的 / 会员 -->
+  <section class="view" id="view-profile" hidden>
+    <div class="container container-narrow">
+      <h2 class="page-title">我的</h2>
+      <div class="profile-card">
+        <div class="profile-row">
+          <label>昵称</label>
+          <input type="text" id="profileNickname" maxlength="30">
+        </div>
+        <div class="profile-row">
+          <label>目标语言</label>
+          <select id="profileLang"></select>
+        </div>
+        <div class="profile-row">
+          <label>当前水平</label>
+          <select id="profileLevel">
+            <option value="beginner">初级</option>
+            <option value="intermediate">中级</option>
+            <option value="advanced">高级</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" id="btnSaveProfile">保存设置</button>
+        <div class="profile-member-box" id="profileMemberBox"></div>
+        <button class="btn btn-ghost" id="btnLogout">退出登录</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- 登录/注册弹窗 -->
+<div class="modal-overlay" id="authModalOverlay" hidden>
+  <div class="modal">
+    <button class="modal-close" id="modalClose">×</button>
+    <div class="modal-tabs">
+      <button class="modal-tab active" id="tabLogin" data-mode="login">登录</button>
+      <button class="modal-tab" id="tabRegister" data-mode="register">注册</button>
+    </div>
+    <form id="authForm">
+      <div class="form-row" id="rowNickname" hidden>
+        <label>昵称（可选）</label>
+        <input type="text" id="inputNickname" maxlength="30" placeholder="怎么称呼你">
+      </div>
+      <div class="form-row">
+        <label>用户名</label>
+        <input type="text" id="inputUsername" maxlength="30" required placeholder="3-30位字符">
+      </div>
+      <div class="form-row">
+        <label>密码</label>
+        <input type="password" id="inputPassword" required placeholder="至少6位">
+      </div>
+      <p class="form-error" id="authError"></p>
+      <button type="submit" class="btn btn-primary btn-block" id="authSubmitBtn">登录</button>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,172 @@
+[
+  {
+    "id": "be-verbs",
+    "title": "be动词：am / is / are",
+    "summary": "英语中最基础的动词，用于描述状态、身份、特征",
+    "structure": "主语 + am/is/are + 表语（名词/形容词/介词短语）",
+    "explanation": "be动词根据主语变化：I用am；he/she/it及单数名词用is；you/we/they及复数名词用are。否定句在be动词后加not，疑问句将be动词提到句首。",
+    "examples": [
+      { "en": "I am a student.", "zh": "我是一名学生。" },
+      { "en": "She is very friendly.", "zh": "她非常友好。" },
+      { "en": "They are at home now.", "zh": "他们现在在家。" }
+    ],
+    "practice": [
+      { "question": "He ___ my brother.", "options": ["am", "is", "are"], "answerIndex": 1, "explanation": "主语he为第三人称单数，用is。" },
+      { "question": "We ___ ready for the trip.", "options": ["am", "is", "are"], "answerIndex": 2, "explanation": "主语we为复数，用are。" },
+      { "question": "I ___ not tired at all.", "options": ["am", "is", "are"], "answerIndex": 0, "explanation": "主语I固定搭配am。" }
+    ]
+  },
+  {
+    "id": "simple-present",
+    "title": "一般现在时",
+    "summary": "表示经常性、习惯性动作或客观事实",
+    "structure": "主语 + 动词原形（第三人称单数加-s/-es） + ...",
+    "explanation": "一般现在时常与always、usually、often、every day等时间状语连用。当主语是he/she/it时，动词要加-s或-es；否定句用don't/doesn't+动词原形；疑问句用Do/Does提问。",
+    "examples": [
+      { "en": "She works in a hospital.", "zh": "她在医院工作。" },
+      { "en": "I don't like coffee.", "zh": "我不喜欢咖啡。" },
+      { "en": "Does he play basketball?", "zh": "他打篮球吗？" }
+    ],
+    "practice": [
+      { "question": "My mother ___ (cook) dinner every evening.", "options": ["cook", "cooks", "cooking"], "answerIndex": 1, "explanation": "主语为第三人称单数，动词加-s。" },
+      { "question": "They ___ (not like) horror movies.", "options": ["don't like", "doesn't like", "not like"], "answerIndex": 0, "explanation": "主语they为复数，否定用don't+动词原形。" },
+      { "question": "___ you speak French?", "options": ["Do", "Does", "Are"], "answerIndex": 0, "explanation": "主语you，一般现在时疑问句用Do。" }
+    ]
+  },
+  {
+    "id": "simple-past",
+    "title": "一般过去时",
+    "summary": "表示过去发生的动作或状态",
+    "structure": "主语 + 动词过去式（规则动词加-ed，不规则动词需记忆） + ...",
+    "explanation": "常与yesterday、last week、in 2020等表示过去的时间状语连用。否定句用didn't+动词原形；疑问句用Did提问，句中动词还原为原形。",
+    "examples": [
+      { "en": "I visited my grandmother last weekend.", "zh": "我上周末去看望了我的祖母。" },
+      { "en": "She didn't finish her homework.", "zh": "她没有完成她的作业。" },
+      { "en": "Did you watch the game last night?", "zh": "你昨晚看比赛了吗？" }
+    ],
+    "practice": [
+      { "question": "He ___ (go) to Paris last summer.", "options": ["go", "went", "goes"], "answerIndex": 1, "explanation": "go的过去式是不规则变化went。" },
+      { "question": "We ___ (not see) the movie yet.", "options": ["didn't see", "doesn't see", "not saw"], "answerIndex": 0, "explanation": "一般过去时否定用didn't+动词原形。" },
+      { "question": "___ she call you yesterday?", "options": ["Do", "Does", "Did"], "answerIndex": 2, "explanation": "过去时疑问句用Did提问。" }
+    ]
+  },
+  {
+    "id": "present-continuous",
+    "title": "现在进行时",
+    "summary": "表示此刻正在发生的动作",
+    "structure": "主语 + am/is/are + 动词-ing",
+    "explanation": "常与now、right now、at the moment连用，表示说话时正在进行的动作，也可表示近期计划好的安排。",
+    "examples": [
+      { "en": "I am studying English right now.", "zh": "我现在正在学习英语。" },
+      { "en": "They are having lunch at the moment.", "zh": "他们此刻正在吃午饭。" },
+      { "en": "Is it raining outside?", "zh": "外面正在下雨吗？" }
+    ],
+    "practice": [
+      { "question": "Look! The baby ___ (sleep).", "options": ["sleeps", "is sleeping", "slept"], "answerIndex": 1, "explanation": "look提示此刻正在发生，用现在进行时。" },
+      { "question": "She ___ (not work) today.", "options": ["isn't working", "doesn't work", "wasn't working"], "answerIndex": 0, "explanation": "现在进行时否定：be动词+not+动词-ing。" },
+      { "question": "What ___ you ___ (do) now?", "options": ["are / doing", "do / doing", "are / do"], "answerIndex": 0, "explanation": "现在进行时疑问句：be动词+主语+动词-ing。" }
+    ]
+  },
+  {
+    "id": "present-perfect",
+    "title": "现在完成时",
+    "summary": "表示过去发生的动作对现在造成的影响或结果",
+    "structure": "主语 + have/has + 过去分词",
+    "explanation": "常与already、just、yet、ever、never、since、for连用。强调过去动作与现在的联系，而不强调具体发生的时间点。",
+    "examples": [
+      { "en": "I have already finished my homework.", "zh": "我已经完成了作业。" },
+      { "en": "She has never been to Japan.", "zh": "她从未去过日本。" },
+      { "en": "Have you eaten breakfast yet?", "zh": "你吃早饭了吗？" }
+    ],
+    "practice": [
+      { "question": "He ___ (live) here for ten years.", "options": ["lives", "lived", "has lived"], "answerIndex": 2, "explanation": "for ten years提示持续到现在，用现在完成时。" },
+      { "question": "I ___ (not see) that movie yet.", "options": ["haven't seen", "didn't see", "don't see"], "answerIndex": 0, "explanation": "yet常与现在完成时连用，否定用haven't+过去分词。" },
+      { "question": "___ you ever ___ (try) sushi?", "options": ["Did / try", "Have / tried", "Do / try"], "answerIndex": 1, "explanation": "ever常与现在完成时连用，疑问句：Have+主语+过去分词。" }
+    ]
+  },
+  {
+    "id": "modal-verbs",
+    "title": "情态动词：can / could / must / should",
+    "summary": "表达能力、许可、义务、建议等",
+    "structure": "主语 + 情态动词 + 动词原形",
+    "explanation": "can表示能力/许可；could是can的过去式或更委婉的说法；must表示必须/强烈推测；should表示建议。情态动词后必须接动词原形，否定句直接加not。",
+    "examples": [
+      { "en": "I can swim very well.", "zh": "我很会游泳。" },
+      { "en": "You must finish this report today.", "zh": "你今天必须完成这份报告。" },
+      { "en": "You should drink more water.", "zh": "你应该多喝水。" }
+    ],
+    "practice": [
+      { "question": "You ___ smoke in the hospital.", "options": ["must not", "not must", "don't must"], "answerIndex": 0, "explanation": "情态动词否定直接加not：must not（禁止）。" },
+      { "question": "___ I borrow your pen, please?", "options": ["Must", "Could", "Should"], "answerIndex": 1, "explanation": "Could用于礼貌地请求许可。" },
+      { "question": "She ___ speak three languages.", "options": ["can", "cans", "canning"], "answerIndex": 0, "explanation": "情态动词没有单三形式，且后接动词原形。" }
+    ]
+  },
+  {
+    "id": "comparatives",
+    "title": "比较级与最高级",
+    "summary": "比较两个或多个事物的性质、程度",
+    "structure": "比较级：形容词+er / more+形容词 + than；最高级：the+形容词+est / the most+形容词",
+    "explanation": "单音节和部分双音节词加-er/-est；三音节及以上词用more/most；不规则变化需记忆，如good-better-best, bad-worse-worst。",
+    "examples": [
+      { "en": "This book is more interesting than that one.", "zh": "这本书比那本书更有趣。" },
+      { "en": "She is the tallest girl in her class.", "zh": "她是她班上最高的女孩。" },
+      { "en": "Health is more important than money.", "zh": "健康比金钱更重要。" }
+    ],
+    "practice": [
+      { "question": "Today is ___ (hot) than yesterday.", "options": ["hot", "hotter", "hottest"], "answerIndex": 1, "explanation": "两者比较用比较级，hot为单音节，重复辅音字母加er。" },
+      { "question": "This is ___ (good) restaurant in town.", "options": ["the goodest", "the better", "the best"], "answerIndex": 2, "explanation": "good的最高级是不规则变化best。" },
+      { "question": "He is ___ (careful) than his brother.", "options": ["more careful", "carefuler", "most careful"], "answerIndex": 0, "explanation": "careful是多音节词，比较级用more+形容词。" }
+    ]
+  },
+  {
+    "id": "prepositions",
+    "title": "常见介词：in / on / at",
+    "summary": "介词用于表示时间、地点等关系",
+    "structure": "in（较大的时间/空间范围）、on（具体某天/表面）、at（具体时刻/地点）",
+    "explanation": "时间上：in用于年、月、季节（in 2024, in July）；on用于具体日期、星期（on Monday）；at用于具体时刻（at 8 o'clock）。地点上：in表示在内部，on表示在表面，at表示在某一点。",
+    "examples": [
+      { "en": "I was born in 2000.", "zh": "我出生于2000年。" },
+      { "en": "The meeting is on Friday.", "zh": "会议在周五举行。" },
+      { "en": "Let's meet at the entrance at 9 am.", "zh": "我们上午9点在入口处见面吧。" }
+    ],
+    "practice": [
+      { "question": "She was born ___ July.", "options": ["in", "on", "at"], "answerIndex": 0, "explanation": "月份前用in。" },
+      { "question": "The book is ___ the table.", "options": ["in", "on", "at"], "answerIndex": 1, "explanation": "书在桌子表面，用on。" },
+      { "question": "I'll see you ___ noon.", "options": ["in", "on", "at"], "answerIndex": 2, "explanation": "具体时刻用at。" }
+    ]
+  },
+  {
+    "id": "clauses",
+    "title": "从句基础：定语从句与时间状语从句",
+    "summary": "用一个句子修饰名词或表示时间关系",
+    "structure": "定语从句：先行词 + who/which/that + 从句；时间状语从句：when/while/before/after + 从句",
+    "explanation": "定语从句中，who/whom指人，which指物，that指人或物均可，在从句中作主语或宾语。时间状语从句连接两个有时间关系的分句，主句和从句时态需保持逻辑一致。",
+    "examples": [
+      { "en": "The man who lives next door is a doctor.", "zh": "住在隔壁的那个人是位医生。" },
+      { "en": "This is the book that I borrowed yesterday.", "zh": "这就是我昨天借的那本书。" },
+      { "en": "I will call you when I arrive.", "zh": "我到了就给你打电话。" }
+    ],
+    "practice": [
+      { "question": "The woman ___ is standing there is my teacher.", "options": ["who", "which", "when"], "answerIndex": 0, "explanation": "先行词woman指人，用who。" },
+      { "question": "This is the movie ___ we watched last night.", "options": ["who", "that", "when"], "answerIndex": 1, "explanation": "先行词movie指物，可用that。" },
+      { "question": "___ I was walking home, it started to rain.", "options": ["While", "Who", "That"], "answerIndex": 0, "explanation": "表示动作同时发生，用While引导时间状语从句。" }
+    ]
+  },
+  {
+    "id": "passive-voice",
+    "title": "被动语态",
+    "summary": "强调动作的承受者而非执行者",
+    "structure": "主语（动作承受者） + be动词 + 过去分词 + (by 动作执行者)",
+    "explanation": "当不知道或不需要强调谁执行动作时，常用被动语态。be动词随时态和主语变化，过去分词保持不变。",
+    "examples": [
+      { "en": "The window was broken by the storm.", "zh": "窗户被暴风雨打破了。" },
+      { "en": "English is spoken in many countries.", "zh": "英语在许多国家被使用。" },
+      { "en": "This report will be finished tomorrow.", "zh": "这份报告将于明天完成。" }
+    ],
+    "practice": [
+      { "question": "The letter ___ (send) yesterday.", "options": ["was sent", "sent", "is sent"], "answerIndex": 0, "explanation": "过去发生的被动动作：was/were + 过去分词。" },
+      { "question": "This cake ___ (make) by my mother every year.", "options": ["is made", "makes", "made"], "answerIndex": 0, "explanation": "一般现在时被动语态：is/are + 过去分词。" },
+      { "question": "The bridge ___ (build) next year.", "options": ["will be built", "will build", "built"], "answerIndex": 0, "explanation": "将来时被动语态：will be + 过去分词。" }
+    ]
+  }
+]

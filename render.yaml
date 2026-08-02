@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: langbuddy
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: SF_API_KEY
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
