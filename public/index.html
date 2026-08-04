@@ -240,17 +240,22 @@
       <h2 class="page-title">AI 错题本</h2>
 
       <div id="mistakesPaywall" class="paywall" hidden>
-        <p>错题本为会员专享功能，开通后可拍照/截图上传错题，AI自动识别解析、归类打标签并举一反三。</p>
+        <p>错题本为会员专享功能，开通后可拍照/相册选图/截图上传错题，也可以直接打字输入，AI自动识别解析、归类打标签并举一反三。</p>
         <button class="btn btn-primary" id="btnMistakesUpgrade">立即开通会员</button>
       </div>
 
       <div id="mistakesPanel" hidden>
-        <div class="mistake-upload-card">
-          <input type="file" id="mistakeFileInput" accept="image/*" capture="environment" hidden>
+        <div class="mistake-input-tabs">
+          <button type="button" class="mistake-input-tab active" id="tabImageMode" data-mode="image">📷 拍照 / 上传图片</button>
+          <button type="button" class="mistake-input-tab" id="tabTextMode" data-mode="text">⌨️ 打字输入</button>
+        </div>
+
+        <div class="mistake-upload-card" id="mistakeImageMode">
+          <input type="file" id="mistakeFileInput" accept="image/*" hidden>
           <div class="mistake-upload-drop" id="mistakeUploadDrop">
             <div id="mistakeUploadEmpty">
               <div class="mistake-upload-icon">📷</div>
-              <p>点击拍照 / 选择图片，或直接 <strong>Ctrl+V</strong> 粘贴截图</p>
+              <p>点击拍照或从相册选择错题图片<br>电脑端可直接 <strong>Ctrl+V</strong> 粘贴截图</p>
               <button type="button" class="btn btn-outline btn-sm" id="btnPickImage">选择图片</button>
             </div>
             <div id="mistakeUploadPreviewWrap" hidden>
@@ -263,6 +268,16 @@
             <button type="button" class="btn btn-ghost btn-sm" id="btnCancelUpload">取消</button>
           </div>
           <p class="mistake-upload-status" id="mistakeUploadStatus"></p>
+        </div>
+
+        <div class="mistake-upload-card" id="mistakeTextMode" hidden>
+          <textarea id="mistakeTextInput" class="mistake-text-input" placeholder="把错题打字输入进来，比如：题目内容 + 选项 + 你选的答案是什么，AI 会帮你整理分析..." maxlength="2000"></textarea>
+          <div class="mistake-upload-actions">
+            <input type="text" id="mistakeTextExamType" placeholder="考试类型（可选，如 CET-4）" maxlength="20">
+            <button type="button" class="btn btn-primary btn-sm" id="btnAnalyzeTextMistake">🔍 AI 解析</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="btnClearTextInput">清空</button>
+          </div>
+          <p class="mistake-upload-status" id="mistakeTextStatus"></p>
         </div>
 
         <div id="mistakeResultCard" class="mistake-detail-card" hidden></div>

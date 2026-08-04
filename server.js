@@ -476,13 +476,112 @@ app.post('/api/mistakes/upload', requireMember, rateLimit(6), mistakeUpload.sing
     user.mistakes.unshift(mistake);
     saveDB(db);
 
-    res.json({ mistake: { ...mistake, imageUrl: `/api/mistakes/image/${mistake.imageFile}` } });
+    res.json({ mistake: { ...mistake, imageUrl: mistakeImageUrl(mistake) } });
   } catch (e) {
     cleanupFile();
     console.error('错题解析失败:', e.message);
     res.status(500).json({ error: 'AI 解析失败：' + e.message });
   }
 });
+
+// 打字手动输入错题（不需要图片，直接用文本模型分析，速度更快、不受视觉模型的额度限制）
+app.post('/api/mistakes/submit-text', requireMember, rateLimit(15), async (req, res) => {
+  const { questionText, examType } = req.body || {};
+  if (!questionText || !String(questionText).trim()) return res.status(400).json({ error: '请输入错题内容' });
+  if (String(questionText).length > 2000) return res.status(400).json({ error: '内容过长（最多2000字符）' });
+
+  const trimmed = String(questionText).trim();
+  const prompt = `你是一位资深的中国考试（如英语四六级 CET-4/CET-6、考研、中高考等）错题分析老师。学生手动输入了以下错题内容（可能包含题目、选项、TA自己选的答案等）：
+
+"""
+${trimmed}
+"""
+${examType ? `\n学生提示的考试类型：${String(examType).slice(0, 20)}` : ''}
+
+请严格按照下面的 JSON 格式输出分析结果，只输出 JSON，不要输出任何其他文字：
+
+{
+  "subject": "题目所属学科，如 英语/数学/语文 等",
+  "examType": "推测的考试类型",
+  "category": "题型分类，如 阅读理解/完形填空/翻译/写作/听力/语法填空/词汇辨析/应用题 等",
+  "tags": ["2-4个具体考点标签"],
+  "questionText": "整理后的题目原文（如果学生输入本身已经是完整题目，直接保留；如果比较口语化或不完整，帮TA整理清楚）",
+  "userAnswer": "学生的作答，如果文本中提到了就提取，没提到就填 null",
+  "correctAnswer": "正确答案",
+  "explanation": "详细解析：为什么这样选、错在哪里，涉及的知识点和解题思路，200字以内",
+  "similarQuestions": [
+    { "question": "举一反三的同类型新题目1", "answer": "答案", "explanation": "简短解析" },
+    { "question": "举一反三的同类型新题目2", "answer": "答案", "explanation": "简短解析" }
+  ]
+}`;
+
+  try {
+    const response = await fetch(SF_BASE_URL, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${SF_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: SF_MODEL,
+        max_tokens: 1500,
+        temperature: 0.4,
+        response_format: { type: 'json_object' },
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err?.error?.message || `API错误 ${response.status}`);
+    }
+    const data = await response.json();
+    const raw = data.choices?.[0]?.message?.content || '';
+    let parsed = null;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (match) { try { parsed = JSON.parse(match[0]); } catch {} }
+    }
+    if (!parsed || typeof parsed !== 'object') {
+      throw new Error('AI 未能返回有效的解析结果，请重试或补充更完整的题目信息');
+    }
+
+    const db = loadDB();
+    const user = db.users[req.session.userId];
+    if (!user.mistakes) user.mistakes = [];
+
+    const mistake = {
+      id: crypto.randomBytes(8).toString('hex'),
+      imageFile: null,
+      subject: String(parsed.subject || '未知').slice(0, 30),
+      examType: String(parsed.examType || examType || '').slice(0, 30),
+      category: String(parsed.category || '未分类').slice(0, 30),
+      tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 6).map(t => String(t).slice(0, 20)) : [],
+      questionText: String(parsed.questionText || trimmed).slice(0, 2000),
+      userAnswer: parsed.userAnswer ? String(parsed.userAnswer).slice(0, 200) : null,
+      correctAnswer: String(parsed.correctAnswer || '').slice(0, 500),
+      explanation: String(parsed.explanation || '').slice(0, 1000),
+      similarQuestions: Array.isArray(parsed.similarQuestions)
+        ? parsed.similarQuestions.slice(0, 3).map(sq => ({
+            question: String(sq?.question || '').slice(0, 500),
+            answer: String(sq?.answer || '').slice(0, 300),
+            explanation: String(sq?.explanation || '').slice(0, 500),
+          }))
+        : [],
+      mastered: false,
+      createdAt: Date.now(),
+    };
+    user.mistakes.unshift(mistake);
+    saveDB(db);
+
+    res.json({ mistake: { ...mistake, imageUrl: mistakeImageUrl(mistake) } });
+  } catch (e) {
+    console.error('文字错题解析失败:', e.message);
+    res.status(500).json({ error: 'AI 解析失败：' + e.message });
+  }
+});
+
+function mistakeImageUrl(m) {
+  return m.imageFile ? `/api/mistakes/image/${m.imageFile}` : null;
+}
 
 app.get('/api/mistakes/list', requireAuth, (req, res) => {
   const db = loadDB();
@@ -496,7 +595,7 @@ app.get('/api/mistakes/list', requireAuth, (req, res) => {
   if (tag) filtered = filtered.filter(m => m.tags.includes(tag));
 
   res.json({
-    mistakes: filtered.map(m => ({ ...m, imageUrl: `/api/mistakes/image/${m.imageFile}` })),
+    mistakes: filtered.map(m => ({ ...m, imageUrl: mistakeImageUrl(m) })),
     stats: {
       total: mistakes.length,
       mastered: mistakes.filter(m => m.mastered).length,
@@ -527,7 +626,7 @@ app.patch('/api/mistakes/:id', requireAuth, (req, res) => {
   if (!mistake) return res.status(404).json({ error: '未找到该错题' });
   if (typeof req.body?.mastered === 'boolean') mistake.mastered = req.body.mastered;
   saveDB(db);
-  res.json({ mistake: { ...mistake, imageUrl: `/api/mistakes/image/${mistake.imageFile}` } });
+  res.json({ mistake: { ...mistake, imageUrl: mistakeImageUrl(mistake) } });
 });
 
 app.delete('/api/mistakes/:id', requireAuth, (req, res) => {
@@ -538,7 +637,7 @@ app.delete('/api/mistakes/:id', requireAuth, (req, res) => {
   if (idx === -1) return res.status(404).json({ error: '未找到该错题' });
   const [removed] = list.splice(idx, 1);
   saveDB(db);
-  fs.unlink(path.join(UPLOADS_DIR, removed.imageFile), () => {});
+  if (removed.imageFile) fs.unlink(path.join(UPLOADS_DIR, removed.imageFile), () => {});
   res.json({ ok: true });
 });
 

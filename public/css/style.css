@@ -175,7 +175,11 @@ p { line-height: 1.6; color: var(--text-muted); }
 .grammar-check-result.show { display: block; }
 
 /* 错题本 */
+.mistake-input-tabs { display: flex; gap: 6px; margin-bottom: 14px; background: #f0f1f5; border-radius: 10px; padding: 4px; max-width: 360px; }
+.mistake-input-tab { flex: 1; background: transparent; border: none; padding: 9px 10px; border-radius: 8px; font-weight: 600; font-size: 13.5px; cursor: pointer; color: var(--text-muted); white-space: nowrap; }
+.mistake-input-tab.active { background: #fff; color: var(--primary); box-shadow: 0 1px 2px rgba(0,0,0,.06); }
 .mistake-upload-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 24px; }
+.mistake-text-input { width: 100%; min-height: 140px; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 14px; font-family: inherit; resize: vertical; margin-bottom: 4px; }
 .mistake-upload-drop { border: 2px dashed var(--border); border-radius: 12px; padding: 30px; text-align: center; cursor: pointer; transition: border-color .15s; }
 .mistake-upload-drop:hover { border-color: var(--primary); }
 .mistake-upload-icon { font-size: 34px; margin-bottom: 8px; }
@@ -187,6 +191,7 @@ p { line-height: 1.6; color: var(--text-muted); }
 .mistake-detail-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 24px; }
 .mistake-detail-header { display: flex; gap: 16px; margin-bottom: 8px; }
 .mistake-detail-img { width: 120px; height: 120px; object-fit: cover; border-radius: 10px; border: 1px solid var(--border); flex-shrink: 0; }
+.mistake-detail-img-placeholder { display: flex; align-items: center; justify-content: center; background: var(--primary-light); font-size: 36px; }
 .mistake-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
 .mistake-badge { background: var(--primary-light); color: var(--primary); font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
 .mistake-tag { background: #f0f1f5; color: var(--text-muted); font-size: 12px; padding: 3px 10px; border-radius: 20px; }
@@ -203,6 +208,7 @@ p { line-height: 1.6; color: var(--text-muted); }
 .mistake-list-item { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 14px; cursor: pointer; display: flex; gap: 12px; }
 .mistake-list-item:hover { border-color: var(--primary); }
 .mistake-list-item img { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+.mistake-list-item-thumb-placeholder { width: 60px; height: 60px; border-radius: 8px; flex-shrink: 0; background: var(--primary-light); display: flex; align-items: center; justify-content: center; font-size: 22px; }
 .mistake-list-item-body { min-width: 0; }
 .mistake-list-item-body h4 { margin: 0 0 4px; font-size: 14px; }
 .mistake-list-item-body p { margin: 0; font-size: 12.5px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

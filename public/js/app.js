@@ -669,6 +669,8 @@
     $('#mistakesPanel').hidden = needMember;
     if (needMember) return;
     resetMistakeUpload();
+    resetMistakeTextInput();
+    setMistakeInputMode('image');
     await loadMistakes();
   }
 
@@ -683,6 +685,48 @@
     $('#mistakeUploadStatus').textContent = '';
     $('#mistakeExamType').value = '';
   }
+
+  function resetMistakeTextInput() {
+    $('#mistakeTextInput').value = '';
+    $('#mistakeTextExamType').value = '';
+    $('#mistakeTextStatus').textContent = '';
+  }
+
+  function setMistakeInputMode(mode) {
+    $('#tabImageMode').classList.toggle('active', mode === 'image');
+    $('#tabTextMode').classList.toggle('active', mode === 'text');
+    $('#mistakeImageMode').hidden = mode !== 'image';
+    $('#mistakeTextMode').hidden = mode !== 'text';
+  }
+  $('#tabImageMode').addEventListener('click', () => setMistakeInputMode('image'));
+  $('#tabTextMode').addEventListener('click', () => setMistakeInputMode('text'));
+
+  $('#btnClearTextInput').addEventListener('click', resetMistakeTextInput);
+
+  $('#btnAnalyzeTextMistake').addEventListener('click', async () => {
+    const questionText = $('#mistakeTextInput').value.trim();
+    if (!questionText) { toast('请先输入错题内容'); return; }
+    const btn = $('#btnAnalyzeTextMistake');
+    btn.disabled = true;
+    $('#mistakeTextStatus').textContent = '🔍 AI 正在分析中，请稍候...';
+    try {
+      const examType = $('#mistakeTextExamType').value.trim();
+      const data = await api('/mistakes/submit-text', { method: 'POST', body: { questionText, examType } });
+      $('#mistakeTextStatus').textContent = '✅ 解析完成！';
+      resetMistakeTextInput();
+      renderMistakeDetail(data.mistake, true);
+      await loadMistakes();
+    } catch (err) {
+      if (err.needMembership) {
+        toast('需要开通会员才能使用错题本');
+        renderMistakes();
+      } else {
+        $('#mistakeTextStatus').textContent = '❌ ' + err.message;
+      }
+    } finally {
+      btn.disabled = false;
+    }
+  });
 
   $('#btnPickImage').addEventListener('click', () => $('#mistakeFileInput').click());
   $('#mistakeUploadDrop').addEventListener('click', () => {
@@ -837,7 +881,7 @@
     $('#mistakeListEmpty').hidden = list.length > 0;
     $('#mistakeList').innerHTML = list.map(m => `
       <div class="mistake-list-item" data-id="${m.id}">
-        <img src="${m.imageUrl}" alt="缩略图">
+        ${m.imageUrl ? `<img src="${m.imageUrl}" alt="缩略图">` : `<div class="mistake-list-item-thumb-placeholder">⌨️</div>`}
         <div class="mistake-list-item-body">
           <h4>${escapeHtml(m.category)}${m.mastered ? '<span class="mistake-mastered-badge">✔已掌握</span>' : ''}</h4>
           <p>${escapeHtml((m.questionText || '').slice(0, 40))}</p>
@@ -865,9 +909,13 @@
       </div>
     `).join('');
 
+    const imageHtml = m.imageUrl
+      ? `<img class="mistake-detail-img" src="${m.imageUrl}" alt="错题图片">`
+      : `<div class="mistake-detail-img mistake-detail-img-placeholder">⌨️</div>`;
+
     el.innerHTML = `
       <div class="mistake-detail-header">
-        <img class="mistake-detail-img" src="${m.imageUrl}" alt="错题图片">
+        ${imageHtml}
         <div>
           <div class="mistake-badges">
             <span class="mistake-badge">${escapeHtml(m.subject)}</span>
