@@ -339,7 +339,7 @@ function computeStats(vocab, progress) {
   vocab.forEach(w => {
     const p = progress[w.word];
     if (!p) newCount++;
-    else if (p.box >= 4) known++;
+    else if (p.box >= EBBINGHAUS_INTERVALS_MIN.length - 1) known++;
     else learning++;
   });
   return { total: vocab.length, known, learning, new: newCount };
@@ -348,7 +348,9 @@ function computeStats(vocab, progress) {
 app.get('/api/vocab/review', requireAuth, (req, res) => {
   const db = loadDB();
   const user = db.users[req.session.userId];
-  const vocab = readVocab();
+  let vocab = readVocab();
+  const { level } = req.query;
+  if (level) vocab = vocab.filter(w => w.level === level);
   const progress = user.vocabProgress || {};
   const now = Date.now();
 
@@ -367,7 +369,8 @@ app.get('/api/vocab/review', requireAuth, (req, res) => {
   res.json({ words: due.slice(0, 20), stats: computeStats(vocab, progress) });
 });
 
-const BOX_INTERVAL_DAYS = [0, 1, 2, 4, 7, 15, 30]; // box(0-6) -> 距下次复习天数
+// 艾宾浩斯遗忘曲线复习间隔：5分钟-30分钟-12小时-1天-2天-4天-7天-15天-30天
+const EBBINGHAUS_INTERVALS_MIN = [5, 30, 12 * 60, 24 * 60, 2 * 24 * 60, 4 * 24 * 60, 7 * 24 * 60, 15 * 24 * 60, 30 * 24 * 60];
 
 app.post('/api/vocab/review', requireAuth, (req, res) => {
   const { word, remembered } = req.body || {};
@@ -375,10 +378,12 @@ app.post('/api/vocab/review', requireAuth, (req, res) => {
   const db = loadDB();
   const user = db.users[req.session.userId];
   if (!user.vocabProgress) user.vocabProgress = {};
-  const prev = user.vocabProgress[word] || { box: 0, due: Date.now() };
-  const box = remembered ? Math.min(prev.box + 1, 6) : Math.max(prev.box - 1, 0);
-  const days = BOX_INTERVAL_DAYS[box] ?? 30;
-  const due = Date.now() + days * 24 * 60 * 60 * 1000;
+  // 从未复习过的新词用 -1 作为起点，这样第一次"记住"正好落在box 0（5分钟）档，而不是跳过它
+  const prev = user.vocabProgress[word] || { box: -1, due: Date.now() };
+  // 记住了：进入下一个更长的复习间隔；忘记了：按艾宾浩斯曲线的做法从头开始重新记忆
+  const box = remembered ? Math.min(prev.box + 1, EBBINGHAUS_INTERVALS_MIN.length - 1) : 0;
+  const minutes = EBBINGHAUS_INTERVALS_MIN[box];
+  const due = Date.now() + minutes * 60 * 1000;
   user.vocabProgress[word] = { box, due, lastReview: Date.now() };
   saveDB(db);
   res.json({ progress: user.vocabProgress[word] });

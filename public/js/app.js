@@ -22,6 +22,7 @@
   };
 
   const LEVEL_ZH = { beginner: '初级', intermediate: '中级', advanced: '高级' };
+  const VOCAB_LEVEL_ZH = { cet4: '四级', cet6: '六级', toefl: '托福', gre: 'GRE' };
   const LANG_BCP47 = { zh: 'zh-CN', en: 'en-US', ja: 'ja-JP', ko: 'ko-KR', fr: 'fr-FR', de: 'de-DE', es: 'es-ES' };
 
   // ---------- 工具函数 ----------
@@ -489,10 +490,9 @@
 
   async function loadVocabQueue() {
     try {
-      const data = await api('/vocab/review');
-      let words = data.words;
-      if (state.vocabLevel) words = words.filter(w => w.level === state.vocabLevel);
-      state.vocabQueue = words;
+      const qs = state.vocabLevel ? '?level=' + encodeURIComponent(state.vocabLevel) : '';
+      const data = await api('/vocab/review' + qs);
+      state.vocabQueue = data.words;
       state.vocabIndex = 0;
       state.vocabStats = data.stats;
       renderVocabStats();
@@ -531,7 +531,7 @@
     const w = queue[idx];
     $('#flashcardProgress').textContent = `${idx + 1} / ${queue.length}`;
     $('#flashcardWord').textContent = w.word;
-    $('#flashcardPos').textContent = `${w.pos} · ${LEVEL_ZH[w.level] || ''}`;
+    $('#flashcardPos').textContent = `${w.pos} · ${VOCAB_LEVEL_ZH[w.level] || w.level || ''}`;
     $('#flashcardMeaning').textContent = w.meaning_zh;
     $('#flashcardExampleEn').textContent = w.example_en;
     $('#flashcardExampleZh').textContent = w.example_zh;
