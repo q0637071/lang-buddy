@@ -19,6 +19,7 @@
     mistakes: [],
     mistakeFile: null,
     mistakeFilter: { category: '' },
+    quiz: { questions: [], index: 0, score: 0, active: false },
   };
 
   const LEVEL_ZH = { beginner: '初级', intermediate: '中级', advanced: '高级' };
@@ -62,10 +63,11 @@
   }
 
   // ---------- 视图切换 ----------
-  const VIEWS = ['landing', 'dashboard', 'tutor', 'vocab', 'grammar', 'mistakes', 'profile'];
+  const VIEWS = ['landing', 'dashboard', 'tutor', 'vocab', 'grammar', 'mistakes', 'profile', 'admin'];
 
   function showView(name) {
     if (!state.user && name !== 'landing') name = 'landing';
+    if (name === 'admin' && !state.user?.isAdmin) name = 'dashboard';
     if (name !== 'tutor' && state.voiceCallActive) stopVoiceCall();
     VIEWS.forEach(v => {
       $('#view-' + v).hidden = v !== name;
@@ -79,6 +81,7 @@
     if (name === 'grammar') renderGrammarList();
     if (name === 'mistakes') renderMistakes();
     if (name === 'profile') renderProfile();
+    if (name === 'admin') renderAdmin();
   }
 
   $all('[data-nav]').forEach(el => {
@@ -109,6 +112,7 @@
     const nav = $('#mainNav');
     const authArea = $('#authArea');
     nav.hidden = false;
+    $('#navAdmin').hidden = !state.user.isAdmin;
     authArea.innerHTML = `<span style="font-size:14px;color:var(--text-muted);margin-right:4px;">👤 ${escapeHtml(state.user.nickname)}</span>`;
   }
 
@@ -198,6 +202,22 @@
       const data = await api('/vocab/review');
       $('#dashDueWords').textContent = data.words.length;
     } catch { $('#dashDueWords').textContent = '-'; }
+    renderMetrics();
+  }
+
+  async function renderMetrics() {
+    try {
+      const m = await api('/metrics');
+      $('#metricStreak').textContent = m.streakDays;
+      $('#metricVocabMastered').textContent = m.vocab.known;
+      $('#metricMistakes').textContent = m.mistakes.total;
+      $('#metricChat').textContent = m.chatCount;
+      const pct = m.vocab.total ? Math.round((m.vocab.known / m.vocab.total) * 100) : 0;
+      $('#vocabProgressFill').style.width = pct + '%';
+      $('#vocabProgressText').textContent = `${m.vocab.known} / ${m.vocab.total}（${pct}%）`;
+    } catch (err) {
+      toast(err.message);
+    }
   }
 
   $('#btnDashUpgrade').addEventListener('click', upgradeMembership);
@@ -489,6 +509,8 @@
   });
 
   async function loadVocabQueue() {
+    state.quiz.active = false;
+    setVocabMode('review');
     try {
       const qs = state.vocabLevel ? '?level=' + encodeURIComponent(state.vocabLevel) : '';
       const data = await api('/vocab/review' + qs);
@@ -558,6 +580,86 @@
   }
   $('#btnKnew').addEventListener('click', () => submitVocabReview(true));
   $('#btnForgot').addEventListener('click', () => submitVocabReview(false));
+
+  // ---------- 单词测试（根据当前学习状态出题） ----------
+  function setVocabMode(mode) {
+    // mode: 'review' | 'quiz' | 'quiz-result'
+    $('#flashcardArea').hidden = mode !== 'review';
+    $('#vocabEmpty').hidden = true;
+    $('#quizArea').hidden = mode !== 'quiz';
+    $('#quizResult').hidden = mode !== 'quiz-result';
+  }
+
+  $('#btnStartQuiz').addEventListener('click', async () => {
+    try {
+      const qs = state.vocabLevel ? '?level=' + encodeURIComponent(state.vocabLevel) : '';
+      const data = await api('/vocab/quiz' + qs);
+      if (!data.questions.length) { toast('暂时没有足够的单词生成测试'); return; }
+      state.quiz = { questions: data.questions, index: 0, score: 0, active: true };
+      setVocabMode('quiz');
+      renderQuizQuestion();
+    } catch (err) {
+      toast(err.message);
+    }
+  });
+
+  function renderQuizQuestion() {
+    const { questions, index } = state.quiz;
+    const q = questions[index];
+    $('#quizProgress').textContent = `第 ${index + 1} / ${questions.length} 题`;
+    $('#quizWord').textContent = q.word;
+    $('#quizPos').textContent = q.pos || '';
+    $('#quizOptions').innerHTML = q.options.map((opt, i) => `
+      <button type="button" class="quiz-option" data-idx="${i}">${String.fromCharCode(65 + i)}. ${escapeHtml(opt)}</button>
+    `).join('');
+    if (state.autoSpeak) speakVocabWord(q.word);
+
+    Array.from($('#quizOptions').querySelectorAll('.quiz-option')).forEach(btn => {
+      btn.addEventListener('click', () => answerQuizQuestion(Number(btn.dataset.idx)));
+    });
+  }
+
+  async function answerQuizQuestion(selectedIdx) {
+    const { questions, index } = state.quiz;
+    const q = questions[index];
+    const correct = selectedIdx === q.correctIndex;
+    if (correct) state.quiz.score++;
+
+    const buttons = $all('#quizOptions .quiz-option');
+    buttons.forEach(b => { b.disabled = true; });
+    buttons[selectedIdx].classList.add(correct ? 'correct' : 'wrong');
+    if (!correct) buttons[q.correctIndex].classList.add('correct');
+
+    api('/vocab/review', { method: 'POST', body: { word: q.word, remembered: correct } }).catch(() => {});
+
+    setTimeout(() => {
+      if (index + 1 < questions.length) {
+        state.quiz.index++;
+        renderQuizQuestion();
+      } else {
+        showQuizResult();
+      }
+    }, 1100);
+  }
+
+  function showQuizResult() {
+    const { score, questions } = state.quiz;
+    setVocabMode('quiz-result');
+    $('#quizResultScore').textContent = `${score} / ${questions.length}`;
+    const pct = Math.round((score / questions.length) * 100);
+    let comment = '再接再厉，多复习几遍就会了！';
+    if (pct === 100) comment = '满分！这些词你已经掌握得很牢固了 🎉';
+    else if (pct >= 70) comment = '不错，大部分都答对了！';
+    $('#quizResultText').textContent = comment;
+  }
+
+  $('#btnQuizRetry').addEventListener('click', () => $('#btnStartQuiz').click());
+  $('#btnQuizExit').addEventListener('click', () => {
+    state.quiz.active = false;
+    setVocabMode('review');
+    loadVocabQueue();
+    renderMetrics();
+  });
 
   // ---------- 语法 ----------
   async function renderGrammarList() {
@@ -977,6 +1079,38 @@
       if ($('#mistakeResultCard').dataset.id === id) $('#mistakeResultCard').hidden = true;
       toast('已删除');
       await loadMistakes();
+    } catch (err) {
+      toast(err.message);
+    }
+  }
+
+  // ---------- 管理后台 ----------
+  async function renderAdmin() {
+    if (!state.user?.isAdmin) return;
+    try {
+      const [overview, usersData] = await Promise.all([
+        api('/admin/overview'),
+        api('/admin/users'),
+      ]);
+      $('#adminTotalUsers').textContent = overview.totalUsers;
+      $('#adminTotalMembers').textContent = overview.totalMembers;
+      $('#adminTotalChats').textContent = overview.totalChats;
+      $('#adminTotalMistakes').textContent = overview.totalMistakes;
+
+      $('#adminUsersBody').innerHTML = usersData.users.map(u => `
+        <tr>
+          <td>${escapeHtml(u.username)}</td>
+          <td>${escapeHtml(u.nickname)}</td>
+          <td>${u.isMember ? '<span class="admin-badge-yes">✔ 会员</span>' : '<span class="admin-badge-no">-</span>'}</td>
+          <td>${escapeHtml(langName(u.targetLang))}</td>
+          <td>${u.vocabMastered}</td>
+          <td>${u.vocabLearning}</td>
+          <td>${u.mistakesTotal}</td>
+          <td>${u.chatCount}</td>
+          <td>${u.streakDays}</td>
+          <td>${new Date(u.createdAt).toLocaleDateString('zh-CN')}</td>
+        </tr>
+      `).join('');
     } catch (err) {
       toast(err.message);
     }

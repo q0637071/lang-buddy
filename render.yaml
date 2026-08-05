@@ -10,3 +10,5 @@ services:
         sync: false
       - key: SESSION_SECRET
         generateValue: true
+      - key: ADMIN_USERNAME
+        value: admin

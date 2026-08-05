@@ -23,6 +23,7 @@
       <button class="nav-item" data-nav="grammar">语法</button>
       <button class="nav-item" data-nav="mistakes">错题本</button>
       <button class="nav-item" data-nav="profile">我的</button>
+      <button class="nav-item" data-nav="admin" id="navAdmin" hidden>管理后台</button>
     </nav>
 
     <div class="auth-area" id="authArea">
@@ -114,6 +115,37 @@
         <button class="btn btn-outline" data-nav="vocab">去背单词 →</button>
         <button class="btn btn-outline" data-nav="grammar">学语法 →</button>
       </div>
+
+      <h3 class="section-title">学习数据</h3>
+      <div class="metrics-grid" id="metricsGrid">
+        <div class="metric-card">
+          <div class="metric-icon">🔥</div>
+          <div class="metric-value" id="metricStreak">-</div>
+          <div class="metric-label">连续学习天数</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon">✅</div>
+          <div class="metric-value" id="metricVocabMastered">-</div>
+          <div class="metric-label">已掌握单词</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon">📝</div>
+          <div class="metric-value" id="metricMistakes">-</div>
+          <div class="metric-label">错题收录</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon">💬</div>
+          <div class="metric-value" id="metricChat">-</div>
+          <div class="metric-label">AI对话次数</div>
+        </div>
+      </div>
+      <div class="vocab-progress-card">
+        <div class="vocab-progress-header">
+          <span>单词总体掌握进度</span>
+          <span id="vocabProgressText">-</span>
+        </div>
+        <div class="vocab-progress-bar"><div class="vocab-progress-fill" id="vocabProgressFill"></div></div>
+      </div>
     </div>
   </section>
 
@@ -167,6 +199,7 @@
         <button class="chip" data-level="toefl">托福</button>
         <button class="chip" data-level="gre">GRE</button>
       </div>
+      <button type="button" class="btn btn-outline btn-sm" id="btnStartQuiz">📝 根据学习情况来次测试</button>
 
       <div id="flashcardArea">
         <div class="flashcard" id="flashcard">
@@ -188,6 +221,23 @@
       </div>
       <div id="vocabEmpty" class="empty-state" hidden>
         <p>🎉 今天的复习任务已完成！</p>
+      </div>
+
+      <div id="quizArea" hidden>
+        <div class="quiz-card">
+          <div class="quiz-progress" id="quizProgress"></div>
+          <div class="quiz-word" id="quizWord">-</div>
+          <div class="quiz-pos" id="quizPos"></div>
+          <div class="quiz-options" id="quizOptions"></div>
+        </div>
+      </div>
+      <div id="quizResult" class="quiz-result-card" hidden>
+        <div class="quiz-result-score" id="quizResultScore"></div>
+        <p id="quizResultText"></p>
+        <div class="quiz-result-actions">
+          <button type="button" class="btn btn-primary" id="btnQuizRetry">再测一次</button>
+          <button type="button" class="btn btn-ghost" id="btnQuizExit">返回背单词</button>
+        </div>
       </div>
     </div>
   </section>
@@ -317,6 +367,30 @@
         <button class="btn btn-primary" id="btnSaveProfile">保存设置</button>
         <div class="profile-member-box" id="profileMemberBox"></div>
         <button class="btn btn-ghost" id="btnLogout">退出登录</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 管理后台 -->
+  <section class="view" id="view-admin" hidden>
+    <div class="container">
+      <h2 class="page-title">管理后台</h2>
+      <div class="metrics-grid" id="adminOverview">
+        <div class="metric-card"><div class="metric-icon">👥</div><div class="metric-value" id="adminTotalUsers">-</div><div class="metric-label">注册用户</div></div>
+        <div class="metric-card"><div class="metric-icon">💎</div><div class="metric-value" id="adminTotalMembers">-</div><div class="metric-label">会员数</div></div>
+        <div class="metric-card"><div class="metric-icon">💬</div><div class="metric-value" id="adminTotalChats">-</div><div class="metric-label">累计AI对话</div></div>
+        <div class="metric-card"><div class="metric-icon">📝</div><div class="metric-value" id="adminTotalMistakes">-</div><div class="metric-label">累计错题</div></div>
+      </div>
+      <h3 class="section-title">用户列表</h3>
+      <div class="admin-table-wrap">
+        <table class="admin-table" id="adminUsersTable">
+          <thead>
+            <tr>
+              <th>用户名</th><th>昵称</th><th>会员</th><th>目标语言</th><th>已掌握词</th><th>学习中</th><th>错题数</th><th>AI对话</th><th>连续天数</th><th>注册时间</th>
+            </tr>
+          </thead>
+          <tbody id="adminUsersBody"></tbody>
+        </table>
       </div>
     </div>
   </section>

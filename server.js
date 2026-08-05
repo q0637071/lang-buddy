@@ -126,6 +126,16 @@ function requireMember(req, res, next) {
   next();
 }
 
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || '';
+
+function requireAdmin(req, res, next) {
+  if (!req.session.userId) return res.status(401).json({ error: '请先登录' });
+  if (!ADMIN_USERNAME || req.session.userId !== ADMIN_USERNAME) {
+    return res.status(403).json({ error: '无权限访问' });
+  }
+  next();
+}
+
 function publicUser(user) {
   return {
     username: user.username,
@@ -135,6 +145,7 @@ function publicUser(user) {
     level: user.level,
     targetLang: user.targetLang,
     createdAt: user.createdAt,
+    isAdmin: !!ADMIN_USERNAME && user.username === ADMIN_USERNAME,
   };
 }
 
@@ -168,6 +179,8 @@ app.post('/api/register', rateLimit(10), async (req, res) => {
     createdAt: Date.now(),
     vocabProgress: {},
     mistakes: [],
+    activityLog: {},
+    chatCount: 0,
   };
   saveDB(db);
   req.session.userId = username;
@@ -275,6 +288,9 @@ ${sameLang
     }
     const data = await response.json();
     const reply = data.choices?.[0]?.message?.content || '';
+    user.chatCount = (user.chatCount || 0) + 1;
+    recordActivity(user);
+    saveDB(db);
     res.json({ reply });
   } catch (e) {
     console.error('对话失败:', e.message);
@@ -314,6 +330,8 @@ app.post('/api/grammar/check', requireMember, rateLimit(15), async (req, res) =>
     }
     const data = await response.json();
     const result = data.choices?.[0]?.message?.content || '';
+    recordActivity(user);
+    saveDB(db);
     res.json({ result });
   } catch (e) {
     console.error('语法检查失败:', e.message);
@@ -343,6 +361,28 @@ function computeStats(vocab, progress) {
     else learning++;
   });
   return { total: vocab.length, known, learning, new: newCount };
+}
+
+// ---- 学习活动记录（用于连续学习天数等指标） ----
+function dateKey(d) { return d.toISOString().slice(0, 10); }
+
+function recordActivity(user) {
+  if (!user.activityLog) user.activityLog = {};
+  user.activityLog[dateKey(new Date())] = true;
+}
+
+function computeStreak(activityLog) {
+  const dates = new Set(Object.keys(activityLog || {}));
+  if (!dates.size) return 0;
+  let streak = 0;
+  const cursor = new Date();
+  // 今天还没学习也没关系，连续天数从昨天往前数依然有效（今天还没"断"）
+  if (!dates.has(dateKey(cursor))) cursor.setDate(cursor.getDate() - 1);
+  while (dates.has(dateKey(cursor))) {
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
 }
 
 app.get('/api/vocab/review', requireAuth, (req, res) => {
@@ -385,8 +425,78 @@ app.post('/api/vocab/review', requireAuth, (req, res) => {
   const minutes = EBBINGHAUS_INTERVALS_MIN[box];
   const due = Date.now() + minutes * 60 * 1000;
   user.vocabProgress[word] = { box, due, lastReview: Date.now() };
+  recordActivity(user);
   saveDB(db);
   res.json({ progress: user.vocabProgress[word] });
+});
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// 根据用户当前的学习状态出选择题：优先考"学习中"（见过但还没掌握）的词，
+// 不够就用已到期复习的词兜底，都没有就从整个词库随机抽，保证测试随时可用
+app.get('/api/vocab/quiz', requireAuth, (req, res) => {
+  const db = loadDB();
+  const user = db.users[req.session.userId];
+  let vocab = readVocab();
+  const { level } = req.query;
+  if (level) vocab = vocab.filter(w => w.level === level);
+  if (vocab.length < 4) return res.status(400).json({ error: '该级别词汇量不足，无法生成测试' });
+
+  const progress = user.vocabProgress || {};
+  const now = Date.now();
+  const learning = vocab.filter(w => {
+    const p = progress[w.word];
+    return p && p.box < EBBINGHAUS_INTERVALS_MIN.length - 1;
+  });
+  const due = vocab.filter(w => {
+    const p = progress[w.word];
+    return p && p.due <= now;
+  });
+
+  let pool = learning.length >= 5 ? learning : due.length >= 5 ? due : vocab;
+  pool = shuffle(pool).slice(0, 10);
+
+  const questions = pool.map(w => {
+    const distractors = shuffle(vocab.filter(x => x.word !== w.word && x.meaning_zh !== w.meaning_zh)).slice(0, 3);
+    const options = shuffle([w.meaning_zh, ...distractors.map(d => d.meaning_zh)]);
+    return {
+      word: w.word,
+      pos: w.pos,
+      options,
+      correctIndex: options.indexOf(w.meaning_zh),
+    };
+  });
+
+  res.json({ questions });
+});
+
+// ==================== 学习数据面板 ====================
+
+app.get('/api/metrics', requireAuth, (req, res) => {
+  const db = loadDB();
+  const user = db.users[req.session.userId];
+  const vocab = readVocab();
+  const progress = user.vocabProgress || {};
+  const mistakes = user.mistakes || [];
+
+  res.json({
+    vocab: computeStats(vocab, progress),
+    mistakes: {
+      total: mistakes.length,
+      mastered: mistakes.filter(m => m.mastered).length,
+    },
+    chatCount: user.chatCount || 0,
+    streakDays: computeStreak(user.activityLog),
+    activeDays: Object.keys(user.activityLog || {}).length,
+    isMember: user.isMember,
+  });
 });
 
 // ==================== 语法课程 ====================
@@ -530,6 +640,7 @@ app.post('/api/mistakes/upload', requireMember, rateLimit(6), mistakeUpload.sing
       createdAt: Date.now(),
     };
     user.mistakes.unshift(mistake);
+    recordActivity(user);
     saveDB(db);
 
     res.json({ mistake: { ...mistake, imageUrl: mistakeImageUrl(mistake) } });
@@ -626,6 +737,7 @@ ${examType ? `\n学生提示的考试类型：${String(examType).slice(0, 20)}` 
       createdAt: Date.now(),
     };
     user.mistakes.unshift(mistake);
+    recordActivity(user);
     saveDB(db);
 
     res.json({ mistake: { ...mistake, imageUrl: mistakeImageUrl(mistake) } });
@@ -695,6 +807,55 @@ app.delete('/api/mistakes/:id', requireAuth, (req, res) => {
   saveDB(db);
   if (removed.imageFile) fs.unlink(path.join(UPLOADS_DIR, removed.imageFile), () => {});
   res.json({ ok: true });
+});
+
+// ==================== 管理员后台 ====================
+
+app.get('/api/admin/overview', requireAdmin, (req, res) => {
+  const db = loadDB();
+  const users = Object.values(db.users || {});
+  const vocab = readVocab();
+
+  let totalMistakes = 0, totalChats = 0, totalVocabMastered = 0, totalMembers = 0;
+  users.forEach(u => {
+    totalMistakes += (u.mistakes || []).length;
+    totalChats += u.chatCount || 0;
+    if (u.isMember) totalMembers++;
+    const stats = computeStats(vocab, u.vocabProgress || {});
+    totalVocabMastered += stats.known;
+  });
+
+  res.json({
+    totalUsers: users.length,
+    totalMembers,
+    totalMistakes,
+    totalChats,
+    totalVocabMastered,
+    vocabBankSize: vocab.length,
+  });
+});
+
+app.get('/api/admin/users', requireAdmin, (req, res) => {
+  const db = loadDB();
+  const vocab = readVocab();
+  const users = Object.values(db.users || {}).map(u => {
+    const vocabStats = computeStats(vocab, u.vocabProgress || {});
+    return {
+      username: u.username,
+      nickname: u.nickname,
+      isMember: u.isMember,
+      memberSince: u.memberSince,
+      createdAt: u.createdAt,
+      level: u.level,
+      targetLang: u.targetLang,
+      vocabMastered: vocabStats.known,
+      vocabLearning: vocabStats.learning,
+      mistakesTotal: (u.mistakes || []).length,
+      chatCount: u.chatCount || 0,
+      streakDays: computeStreak(u.activityLog),
+    };
+  }).sort((a, b) => b.createdAt - a.createdAt);
+  res.json({ users });
 });
 
 // multer / 上传相关错误统一转成 JSON 响应
