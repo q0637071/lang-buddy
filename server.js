@@ -3,7 +3,6 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
-const session = require('express-session');
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
 
@@ -39,12 +38,64 @@ function saveDB(db) {
 
 app.set('trust proxy', 1);
 app.use(express.json());
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'langbuddy-dev-secret',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { maxAge: 7 * 24 * 60 * 60 * 1000, sameSite: 'lax', secure: 'auto' },
-}));
+
+// ---- 无状态登录态：signed cookie，不依赖服务器内存 ----
+// Render 等免费托管平台空闲一段时间会重启进程，内存里的 session 会丢失导致必须重新登录，
+// 这里改成把身份信息签名后存进 cookie，服务器重启也不会丢失登录状态。
+const SESSION_SECRET = process.env.SESSION_SECRET || 'langbuddy-dev-secret';
+const AUTH_COOKIE = 'auth';
+const AUTH_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+
+function signValue(value) {
+  return crypto.createHmac('sha256', SESSION_SECRET).update(value).digest('hex');
+}
+
+function parseCookies(header) {
+  const out = {};
+  if (!header) return out;
+  header.split(';').forEach(pair => {
+    const idx = pair.indexOf('=');
+    if (idx === -1) return;
+    const k = pair.slice(0, idx).trim();
+    const v = pair.slice(idx + 1).trim();
+    if (k) { try { out[k] = decodeURIComponent(v); } catch { out[k] = v; } }
+  });
+  return out;
+}
+
+function cookieSession(req, res, next) {
+  const cookies = parseCookies(req.headers.cookie);
+  const token = cookies[AUTH_COOKIE];
+  let userId;
+  if (token) {
+    const sepIdx = token.lastIndexOf('.');
+    if (sepIdx > 0) {
+      const name = token.slice(0, sepIdx);
+      const sig = token.slice(sepIdx + 1);
+      if (sig === signValue(name)) userId = name;
+    }
+  }
+  req.session = {
+    get userId() { return userId; },
+    set userId(v) {
+      userId = v;
+      res.cookie(AUTH_COOKIE, `${v}.${signValue(v)}`, {
+        httpOnly: true,
+        maxAge: AUTH_MAX_AGE,
+        sameSite: 'lax',
+        secure: req.secure,
+      });
+    },
+    destroy(cb) {
+      userId = undefined;
+      res.clearCookie(AUTH_COOKIE);
+      cb();
+    },
+  };
+  next();
+}
+
+app.use(cookieSession);
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ---- 简易速率限制 ----
