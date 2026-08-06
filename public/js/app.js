@@ -631,13 +631,17 @@
       let open = false;
       avatarMouthTimer = setInterval(() => {
         open = !open;
-        mouth.setAttribute('ry', open ? '16' : '5');
+        mouth.setAttribute('height', open ? '20' : '8');
+        mouth.setAttribute('y', open ? '124' : '132');
+        mouth.setAttribute('rx', open ? '10' : '4');
       }, 150);
     } else {
       avatar.classList.remove('talking');
       avatar.classList.add('idle');
       status.textContent = '待机中';
-      mouth.setAttribute('ry', '6');
+      mouth.setAttribute('height', '8');
+      mouth.setAttribute('y', '132');
+      mouth.setAttribute('rx', '4');
     }
   }
 
