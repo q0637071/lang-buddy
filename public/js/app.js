@@ -631,17 +631,17 @@
       let open = false;
       avatarMouthTimer = setInterval(() => {
         open = !open;
-        mouth.setAttribute('height', open ? '20' : '8');
-        mouth.setAttribute('y', open ? '124' : '132');
-        mouth.setAttribute('rx', open ? '10' : '4');
+        mouth.setAttribute('height', open ? '22' : '7');
+        mouth.setAttribute('y', open ? '138' : '146');
+        mouth.setAttribute('rx', open ? '10' : '3.5');
       }, 150);
     } else {
       avatar.classList.remove('talking');
       avatar.classList.add('idle');
       status.textContent = '待机中';
-      mouth.setAttribute('height', '8');
-      mouth.setAttribute('y', '132');
-      mouth.setAttribute('rx', '4');
+      mouth.setAttribute('height', '7');
+      mouth.setAttribute('y', '146');
+      mouth.setAttribute('rx', '3.5');
     }
   }
 
