@@ -159,10 +159,52 @@
         <button class="btn btn-primary" id="btnTutorUpgrade">立即开通会员</button>
       </div>
       <div id="tutorPanel" hidden>
+        <div class="ai-avatar-wrap">
+          <svg class="ai-avatar idle" id="aiAvatar" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="avatarStroke" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#8b5cf6"/>
+                <stop offset="100%" stop-color="#5b5bf0"/>
+              </linearGradient>
+              <radialGradient id="avatarFace" cx="35%" cy="28%" r="85%">
+                <stop offset="0%" stop-color="#f7f6ff"/>
+                <stop offset="100%" stop-color="#e3e1ff"/>
+              </radialGradient>
+            </defs>
+            <g class="avatar-head">
+              <!-- 天线 -->
+              <line x1="76" y1="38" x2="66" y2="16" stroke="url(#avatarStroke)" stroke-width="4" stroke-linecap="round"/>
+              <circle class="avatar-antenna-tip" cx="66" cy="12" r="6" fill="url(#avatarStroke)"/>
+              <line x1="124" y1="38" x2="134" y2="16" stroke="url(#avatarStroke)" stroke-width="4" stroke-linecap="round"/>
+              <circle class="avatar-antenna-tip" cx="134" cy="12" r="6" fill="url(#avatarStroke)"/>
+
+              <!-- 头部 -->
+              <circle cx="100" cy="108" r="76" fill="url(#avatarFace)" stroke="url(#avatarStroke)" stroke-width="4.5"/>
+
+              <!-- 腮红 -->
+              <ellipse cx="54" cy="122" rx="13" ry="7" fill="#ff9ec4" opacity=".45"/>
+              <ellipse cx="146" cy="122" rx="13" ry="7" fill="#ff9ec4" opacity=".45"/>
+
+              <!-- 眼睛 -->
+              <circle class="avatar-eye avatar-eye-l" cx="72" cy="96" r="11" fill="#33306b"/>
+              <circle class="avatar-eye-glint" cx="75.5" cy="92" r="3.4" fill="#fff"/>
+              <circle class="avatar-eye avatar-eye-r" cx="128" cy="96" r="11" fill="#33306b"/>
+              <circle class="avatar-eye-glint" cx="131.5" cy="92" r="3.4" fill="#fff"/>
+
+              <!-- 嘴巴 -->
+              <ellipse id="avatarMouth" cx="100" cy="138" rx="19" ry="6" fill="#33306b"/>
+            </g>
+          </svg>
+          <div class="ai-avatar-status" id="avatarStatus">待机中</div>
+        </div>
         <div class="lang-pair-row">
           <label>我用 <select id="chatInputLang"></select> 输入</label>
           <span class="lang-pair-arrow">→</span>
           <label>AI 用 <select id="chatReplyLang"></select> 回答</label>
+        </div>
+        <div class="lang-pair-row">
+          <label>AI 声音 <select id="voiceSelect"></select></label>
+          <button type="button" class="btn btn-icon btn-icon-sm" id="btnPreviewVoice" title="试听">🔊</button>
         </div>
         <div class="tutor-toolbar">
           <label class="auto-speak-toggle">

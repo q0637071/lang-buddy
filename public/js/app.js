@@ -344,13 +344,64 @@
     inputSel.value = state.chatInputLang;
     replySel.value = state.chatReplyLang;
     inputSel.onchange = () => { state.chatInputLang = inputSel.value; };
-    replySel.onchange = () => { state.chatReplyLang = replySel.value; };
+    replySel.onchange = () => { state.chatReplyLang = replySel.value; populateVoiceSelect(); };
 
     if (state.chatHistory.length === 0) {
       const langN = langName(state.chatReplyLang);
       appendMsg('ai', `你好！我是你的${langN}私教 👋 我们可以用打字或语音练习对话，随时开始吧！`);
     }
     setupSpeech();
+    populateVoiceSelect();
+  }
+
+  // ---------- AI 朗读音色选择 ----------
+  let availableVoices = [];
+
+  function loadVoiceList() {
+    if (!window.speechSynthesis) return;
+    availableVoices = window.speechSynthesis.getVoices();
+    if (!$('#view-tutor').hidden) populateVoiceSelect();
+  }
+  if (window.speechSynthesis) {
+    loadVoiceList();
+    window.speechSynthesis.onvoiceschanged = loadVoiceList;
+  }
+
+  function voicePrefKey(lang) { return 'lb_voice_' + lang; }
+
+  function populateVoiceSelect() {
+    const select = $('#voiceSelect');
+    if (!select) return;
+    const lang = replyLangBcp47();
+    const langPrefix = lang.split('-')[0];
+    const matching = availableVoices.filter(v => v.lang.toLowerCase().startsWith(langPrefix));
+    const list = matching.length ? matching : availableVoices;
+
+    if (!list.length) {
+      select.innerHTML = '<option value="">（当前设备没有可用的语音包）</option>';
+      select.disabled = true;
+      return;
+    }
+    select.disabled = false;
+    const saved = localStorage.getItem(voicePrefKey(lang));
+    select.innerHTML = list.map(v => `<option value="${escapeHtml(v.name)}">${escapeHtml(v.name.replace(/^Microsoft /, ''))}</option>`).join('');
+    if (saved && list.some(v => v.name === saved)) select.value = saved;
+  }
+
+  $('#voiceSelect').addEventListener('change', () => {
+    const lang = replyLangBcp47();
+    localStorage.setItem(voicePrefKey(lang), $('#voiceSelect').value);
+  });
+
+  $('#btnPreviewVoice').addEventListener('click', () => {
+    const sample = { zh: '你好，我是你的语言私教。', en: 'Hello, I am your language tutor.', ja: 'こんにちは、私はあなたの語学の先生です。', ko: '안녕하세요, 저는 당신의 언어 선생님입니다.', fr: 'Bonjour, je suis votre professeur de langue.', de: 'Hallo, ich bin dein Sprachlehrer.', es: 'Hola, soy tu profesor de idiomas.' };
+    speakText(sample[state.chatReplyLang] || sample.en);
+  });
+
+  function getPreferredVoice(lang) {
+    const name = localStorage.getItem(voicePrefKey(lang));
+    if (!name) return null;
+    return availableVoices.find(v => v.name === name) || null;
   }
 
   $('#btnTutorUpgrade').addEventListener('click', upgradeMembership);
@@ -473,6 +524,15 @@
     const el = $('#callStatusIndicator');
     el.textContent = text;
     el.className = 'call-status-indicator ' + kind;
+
+    const avatar = $('#aiAvatar');
+    const status = $('#avatarStatus');
+    if (avatar && kind !== 'speaking') {
+      avatar.classList.remove('talking');
+      avatar.classList.toggle('listening', kind === 'listening');
+      avatar.classList.toggle('idle', kind !== 'listening');
+      if (status) status.textContent = kind === 'listening' ? '正在听你说...' : kind === 'thinking' ? '思考中...' : '待机中';
+    }
   }
 
   function listenTurn() {
@@ -546,11 +606,39 @@
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = lang || replyLangBcp47();
-    if (onEnd) {
-      utter.onend = onEnd;
-      utter.onerror = onEnd;
-    }
+    const preferredVoice = getPreferredVoice(utter.lang);
+    if (preferredVoice) utter.voice = preferredVoice;
+    utter.onstart = () => setAvatarTalking(true);
+    const finish = () => { setAvatarTalking(false); if (onEnd) onEnd(); };
+    utter.onend = finish;
+    utter.onerror = finish;
     window.speechSynthesis.speak(utter);
+  }
+
+  // ---------- AI 头像：嘴型随语音张合，配合轻微摆动的"说话姿势" ----------
+  let avatarMouthTimer = null;
+
+  function setAvatarTalking(talking) {
+    const avatar = $('#aiAvatar');
+    if (!avatar) return; // 头像只在 AI 对话页存在，其他页面朗读（背单词等）不触发
+    const mouth = $('#avatarMouth');
+    const status = $('#avatarStatus');
+    clearInterval(avatarMouthTimer);
+    if (talking) {
+      avatar.classList.add('talking');
+      avatar.classList.remove('idle');
+      status.textContent = '正在说话...';
+      let open = false;
+      avatarMouthTimer = setInterval(() => {
+        open = !open;
+        mouth.setAttribute('ry', open ? '16' : '5');
+      }, 150);
+    } else {
+      avatar.classList.remove('talking');
+      avatar.classList.add('idle');
+      status.textContent = '待机中';
+      mouth.setAttribute('ry', '6');
+    }
   }
 
   // 词库目前仅收录英语单词，发音固定用英语，不随用户的目标语言切换
