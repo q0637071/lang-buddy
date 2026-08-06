@@ -19,6 +19,7 @@ const DATA_DIR = path.join(__dirname, 'data');
 const DB_PATH = path.join(DATA_DIR, 'db.json');
 const VOCAB_PATH = path.join(DATA_DIR, 'vocab.json');
 const GRAMMAR_PATH = path.join(DATA_DIR, 'grammar.json');
+const COLLOQUIAL_PATH = path.join(DATA_DIR, 'colloquial.json');
 const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -704,6 +705,18 @@ app.get('/api/grammar/:id', requireAuth, (req, res) => {
   const lesson = grammar.find(g => g.id === req.params.id);
   if (!lesson) return res.status(404).json({ error: '未找到该语法课程' });
   res.json({ lesson });
+});
+
+// ==================== 美式口语 ====================
+
+function readColloquial() {
+  return JSON.parse(fs.readFileSync(COLLOQUIAL_PATH, 'utf-8'));
+}
+
+app.get('/api/colloquial/list', requireAuth, (req, res) => {
+  const phrases = readColloquial();
+  const categories = [...new Set(phrases.map(p => p.category))];
+  res.json({ phrases, categories });
 });
 
 // ==================== AI 错题本 ====================

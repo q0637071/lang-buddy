@@ -63,7 +63,7 @@
   }
 
   // ---------- 视图切换 ----------
-  const VIEWS = ['landing', 'dashboard', 'tutor', 'vocab', 'grammar', 'mistakes', 'essay', 'profile', 'admin'];
+  const VIEWS = ['landing', 'dashboard', 'tutor', 'vocab', 'grammar', 'colloquial', 'mistakes', 'essay', 'profile', 'admin'];
 
   function showView(name) {
     if (!state.user && name !== 'landing') name = 'landing';
@@ -79,6 +79,7 @@
     if (name === 'tutor') renderTutor();
     if (name === 'vocab') loadVocabQueue();
     if (name === 'grammar') renderGrammarList();
+    if (name === 'colloquial') renderColloquial();
     if (name === 'mistakes') renderMistakes();
     if (name === 'essay') renderEssay();
     if (name === 'profile') renderProfile();
@@ -920,6 +921,64 @@
       btn.disabled = false;
     }
   });
+
+  // ---------- 美式口语 ----------
+  async function renderColloquial() {
+    try {
+      const data = await api('/colloquial/list');
+      state.colloquialPhrases = data.phrases;
+      state.colloquialCategory = state.colloquialCategory || '全部';
+      const cats = ['全部', ...data.categories];
+      $('#colloquialFilterChips').innerHTML = cats.map(c => `
+        <button class="chip ${c === state.colloquialCategory ? 'active' : ''}" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>
+      `).join('');
+      $all('#colloquialFilterChips .chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.colloquialCategory = btn.dataset.cat;
+          renderColloquialList();
+          $all('#colloquialFilterChips .chip').forEach(b => b.classList.toggle('active', b === btn));
+        });
+      });
+      renderColloquialList();
+    } catch (err) {
+      toast(err.message);
+    }
+  }
+
+  function renderColloquialList() {
+    const list = state.colloquialCategory === '全部'
+      ? state.colloquialPhrases
+      : state.colloquialPhrases.filter(p => p.category === state.colloquialCategory);
+    $('#colloquialList').innerHTML = list.map(p => `
+      <div class="colloquial-card" data-id="${p.id}">
+        <div class="colloquial-card-head">
+          <div class="colloquial-head-text">
+            <span class="colloquial-phrase">${escapeHtml(p.phrase)}</span>
+            <span class="colloquial-meaning">${escapeHtml(p.meaning)}</span>
+            <div><span class="colloquial-category">${escapeHtml(p.category)}</span></div>
+          </div>
+          <button class="btn btn-icon btn-icon-sm colloquial-speak" data-phrase="${escapeHtml(p.phrase)}" title="发音">🔊</button>
+        </div>
+        <div class="colloquial-card-body">
+          <div class="colloquial-example">${escapeHtml(p.example)}</div>
+          <div class="colloquial-example-zh">${escapeHtml(p.exampleZh)}</div>
+          <div class="colloquial-note">💡 ${escapeHtml(p.note)}</div>
+        </div>
+      </div>
+    `).join('');
+
+    $all('.colloquial-card').forEach(card => {
+      card.addEventListener('click', () => {
+        card.querySelector('.colloquial-card-body').classList.toggle('show');
+      });
+    });
+    $all('.colloquial-speak').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        speakText(btn.dataset.phrase, 'en-US');
+      });
+    });
+  }
 
   // ---------- AI 错题本 ----------
   async function renderMistakes() {
