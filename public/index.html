@@ -163,26 +163,21 @@
           <svg class="ai-avatar idle" id="aiAvatar" viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="avatarStroke" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#a78bfa"/>
-                <stop offset="100%" stop-color="#5b52f0"/>
+                <stop offset="0%" stop-color="#ff9ec4"/>
+                <stop offset="100%" stop-color="#ff6fa8"/>
               </linearGradient>
-              <radialGradient id="avatarFace" cx="35%" cy="20%" r="90%">
-                <stop offset="0%" stop-color="#fff2e0"/>
-                <stop offset="55%" stop-color="#f8d9b3"/>
-                <stop offset="100%" stop-color="#e9bd8c"/>
+              <radialGradient id="avatarFace" cx="32%" cy="20%" r="95%">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="60%" stop-color="#fbf7fa"/>
+                <stop offset="100%" stop-color="#f3e3ec"/>
               </radialGradient>
-              <linearGradient id="avatarHair" x1="10%" y1="0%" x2="90%" y2="100%">
-                <stop offset="0%" stop-color="#4a3c34"/>
-                <stop offset="45%" stop-color="#2a211c"/>
-                <stop offset="100%" stop-color="#120d0b"/>
-              </linearGradient>
               <linearGradient id="avatarShoulder" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#8b5cf6"/>
-                <stop offset="100%" stop-color="#5b52f0"/>
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="100%" stop-color="#ffd6e6"/>
               </linearGradient>
               <radialGradient id="avatarGlow" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stop-color="#8b5cf6" stop-opacity=".3"/>
-                <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"/>
+                <stop offset="0%" stop-color="#ff9ec4" stop-opacity=".32"/>
+                <stop offset="100%" stop-color="#ff9ec4" stop-opacity="0"/>
               </radialGradient>
             </defs>
 
@@ -193,112 +188,53 @@
             <text class="avatar-sparkle avatar-sparkle-1" x="18" y="56" font-size="13">✨</text>
             <text class="avatar-sparkle avatar-sparkle-2" x="168" y="46" font-size="10">✨</text>
 
-            <!-- 肩膀 / 衣领（固定不随头部摆动） -->
-            <path d="M14 220 C18 172 46 152 78 148 L122 148 C154 152 182 172 186 220 Z" fill="url(#avatarShoulder)"/>
+            <!-- 身体（固定不随头部摆动） -->
+            <path d="M20 220 C22 178 48 158 78 154 L122 154 C152 158 178 178 180 220 Z" fill="url(#avatarShoulder)" stroke="url(#avatarStroke)" stroke-width="2.5"/>
+            <path d="M84 156 Q100 172 116 156" fill="none" stroke="url(#avatarStroke)" stroke-width="2.5" opacity=".7"/>
+            <circle cx="100" cy="196" r="7" fill="#fff" stroke="url(#avatarStroke)" stroke-width="2"/>
+            <circle cx="100" cy="196" r="2.6" fill="url(#avatarStroke)"/>
 
             <!-- 脖子 -->
-            <rect x="86" y="144" width="28" height="30" rx="12" fill="url(#avatarFace)"/>
-
-            <!-- 立领（金线滚边） -->
-            <path d="M76 150 Q100 145 124 150 L120 173 Q100 178 80 173 Z" fill="#241a42"/>
-            <path d="M76 150 Q100 145 124 150" fill="none" stroke="#e8c15a" stroke-width="2" stroke-linecap="round" opacity=".85"/>
-            <path d="M80 173 Q100 178 120 173" fill="none" stroke="#e8c15a" stroke-width="1.4" stroke-linecap="round" opacity=".6"/>
-            <circle cx="88" cy="161" r="1.6" fill="#e8c15a" opacity=".75"/>
-            <circle cx="112" cy="161" r="1.6" fill="#e8c15a" opacity=".75"/>
+            <rect x="88" y="140" width="24" height="20" rx="8" fill="#f3e3ec"/>
 
             <g class="avatar-head">
-              <!-- 长发（垂至肩后，随头部轻微摆动） -->
-              <path d="M36 92 Q24 132 30 170 Q33 202 47 217 Q56 209 50 186 Q45 150 51 110 Z" fill="url(#avatarHair)"/>
-              <path d="M164 92 Q176 132 170 170 Q167 202 153 217 Q144 209 150 186 Q155 150 149 110 Z" fill="url(#avatarHair)"/>
-              <path d="M40 130 Q36 160 42 188" fill="none" stroke="#5c4a3f" stroke-width="1.3" stroke-linecap="round" opacity=".45"/>
-              <path d="M160 130 Q164 160 158 188" fill="none" stroke="#5c4a3f" stroke-width="1.3" stroke-linecap="round" opacity=".45"/>
-              <path d="M33 105 Q28 140 33 175" fill="none" stroke="#8a725f" stroke-width="1.1" stroke-linecap="round" opacity=".35"/>
-              <path d="M167 105 Q172 140 167 175" fill="none" stroke="#8a725f" stroke-width="1.1" stroke-linecap="round" opacity=".35"/>
+              <!-- 天线 -->
+              <path d="M100 38 L100 20" stroke="url(#avatarStroke)" stroke-width="4" stroke-linecap="round"/>
+              <circle cx="100" cy="16" r="6" fill="#ff9ec4"/>
+              <circle cx="100" cy="16" r="6" fill="#ff9ec4" class="avatar-glow"/>
 
-              <!-- 头发后层（增加发顶蓬松感） -->
-              <path d="M32 108 Q23 38 100 25 Q177 38 168 108 Q170 83 151 75 Q143 52 100 48 Q57 52 49 75 Q30 83 32 108 Z" fill="url(#avatarHair)"/>
-              <ellipse cx="90" cy="44" rx="36" ry="14" fill="#ffffff" opacity=".12"/>
+              <!-- 耳部圆润听筒 -->
+              <ellipse cx="36" cy="104" rx="15" ry="20" fill="url(#avatarStroke)"/>
+              <ellipse cx="164" cy="104" rx="15" ry="20" fill="url(#avatarStroke)"/>
+              <ellipse cx="36" cy="104" rx="7" ry="12" fill="#fff" opacity=".85"/>
+              <ellipse cx="164" cy="104" rx="7" ry="12" fill="#fff" opacity=".85"/>
 
-              <!-- 耳朵 -->
-              <ellipse cx="42" cy="112" rx="8" ry="14" fill="url(#avatarFace)"/>
-              <ellipse cx="158" cy="112" rx="8" ry="14" fill="url(#avatarFace)"/>
-              <!-- 耳饰（金饰 + 珠坠） -->
-              <g class="avatar-earbud">
-                <circle cx="42" cy="117" r="2.6" fill="#e8c15a"/>
-                <path d="M42 119.5 L42 127" stroke="#e8c15a" stroke-width="1.2"/>
-                <circle cx="42" cy="129.5" r="2.8" fill="#7fb3e0"/>
-              </g>
-              <g class="avatar-earbud">
-                <circle cx="158" cy="117" r="2.6" fill="#e8c15a"/>
-                <path d="M158 119.5 L158 127" stroke="#e8c15a" stroke-width="1.2"/>
-                <circle cx="158" cy="129.5" r="2.8" fill="#7fb3e0"/>
-              </g>
-
-              <!-- 脸型（精致小V脸） -->
-              <path d="M100 40 C144 40 156 74 152 106 C150 138 128 165 100 165 C72 165 50 138 48 106 C44 74 56 40 100 40 Z" fill="url(#avatarFace)" stroke="url(#avatarStroke)" stroke-width="2.5"/>
-              <ellipse cx="78" cy="64" rx="18" ry="9" fill="#ffffff" opacity=".3"/>
-
-              <!-- 脸颊两侧发丝 -->
-              <path d="M54 96 Q47 116 53 136" fill="none" stroke="url(#avatarHair)" stroke-width="4.5" stroke-linecap="round"/>
-              <path d="M146 96 Q153 116 147 136" fill="none" stroke="url(#avatarHair)" stroke-width="4.5" stroke-linecap="round"/>
-
-              <!-- 刘海（偏分造型，带光泽和发丝细节） -->
-              <path d="M34 96 Q25 44 100 36 Q175 44 166 96 Q161 58 127 50 Q140 72 129 86 Q124 55 94 53 Q73 55 71 83 Q60 70 67 51 Q39 57 34 96 Z" fill="url(#avatarHair)"/>
-              <path d="M94 53 Q118 56 127 76 Q110 60 91 60 Z" fill="#5c4a3f" opacity=".5"/>
-              <path d="M48 62 Q68 42 96 40" fill="none" stroke="#6b5647" stroke-width="1.6" stroke-linecap="round" opacity=".55"/>
-              <path d="M106 40 Q134 42 152 64" fill="none" stroke="#6b5647" stroke-width="1.6" stroke-linecap="round" opacity=".55"/>
-              <path d="M58 82 Q64 60 80 52" fill="none" stroke="#7a6552" stroke-width="1.3" stroke-linecap="round" opacity=".4"/>
-              <path d="M142 82 Q136 60 120 52" fill="none" stroke="#7a6552" stroke-width="1.3" stroke-linecap="round" opacity=".4"/>
-
-              <!-- 眉毛（纤细上扬） -->
-              <path d="M62 87 Q73 79 86 86" fill="none" stroke="#2a211c" stroke-width="2.3" stroke-linecap="round"/>
-              <path d="M114 86 Q127 79 138 87" fill="none" stroke="#2a211c" stroke-width="2.3" stroke-linecap="round"/>
-
-              <!-- 眼影 -->
-              <ellipse cx="76" cy="97" rx="15" ry="7" fill="#d9a5c9" opacity=".18"/>
-              <ellipse cx="124" cy="97" rx="15" ry="7" fill="#d9a5c9" opacity=".18"/>
-
-              <!-- 眼睛（大眼双眼皮 + 睫毛，更有神） -->
-              <path d="M63 95.5 Q76 88 90 95" fill="none" stroke="#c9926f" stroke-width="1" opacity=".55"/>
-              <g class="avatar-eye avatar-eye-l">
-                <path d="M62 100 Q68.5 92.5 77 93.5 Q85.5 92.5 90 98.5 Q81 107 74 107 Q66.5 107 62 100 Z" fill="#fff"/>
-                <circle cx="77" cy="100.5" r="6.4" fill="#4a86c9"/>
-                <circle cx="77" cy="100.5" r="3.1" fill="#16273a"/>
-                <circle cx="79.3" cy="97.5" r="2.1" fill="#fff"/>
-                <circle cx="75" cy="103" r="1" fill="#fff" opacity=".8"/>
-                <path d="M62 98 L56 94" stroke="#1c140d" stroke-width="1.4" stroke-linecap="round"/>
-                <path d="M62.5 101 L56.5 101.5" stroke="#1c140d" stroke-width="1.4" stroke-linecap="round"/>
-                <path d="M64 104 L59 106.5" stroke="#1c140d" stroke-width="1.2" stroke-linecap="round"/>
-              </g>
-              <g class="avatar-eye avatar-eye-r">
-                <path d="M138 100 Q131.5 92.5 123 93.5 Q114.5 92.5 110 98.5 Q119 107 126 107 Q133.5 107 138 100 Z" fill="#fff"/>
-                <circle cx="123" cy="100.5" r="6.4" fill="#4a86c9"/>
-                <circle cx="123" cy="100.5" r="3.1" fill="#16273a"/>
-                <circle cx="125.3" cy="97.5" r="2.1" fill="#fff"/>
-                <circle cx="121" cy="103" r="1" fill="#fff" opacity=".8"/>
-                <path d="M138 98 L144 94" stroke="#1c140d" stroke-width="1.4" stroke-linecap="round"/>
-                <path d="M137.5 101 L143.5 101.5" stroke="#1c140d" stroke-width="1.4" stroke-linecap="round"/>
-                <path d="M136 104 L141 106.5" stroke="#1c140d" stroke-width="1.2" stroke-linecap="round"/>
-              </g>
-
-              <!-- 鼻子 -->
-              <path d="M98 109 Q95.5 121 100 125 Q103.5 125 102.5 121.5" fill="none" stroke="#e0a679" stroke-width="1.8" stroke-linecap="round"/>
+              <!-- 头部（圆角方形外壳） -->
+              <rect x="42" y="38" width="116" height="112" rx="42" fill="url(#avatarFace)" stroke="url(#avatarStroke)" stroke-width="3"/>
+              <ellipse cx="76" cy="62" rx="26" ry="12" fill="#ffffff" opacity=".6"/>
 
               <!-- 腮红 -->
-              <ellipse cx="59" cy="126" rx="12" ry="6.5" fill="#ff8fb8" opacity=".4"/>
-              <ellipse cx="141" cy="126" rx="12" ry="6.5" fill="#ff8fb8" opacity=".4"/>
+              <ellipse cx="55" cy="118" rx="10" ry="6" fill="#ff9ec4" opacity=".4"/>
+              <ellipse cx="145" cy="118" rx="10" ry="6" fill="#ff9ec4" opacity=".4"/>
 
-              <!-- 嘴巴 -->
-              <path d="M87 144 Q100 141.5 113 144" fill="none" stroke="#b8586a" stroke-width="1" opacity=".5"/>
-              <rect id="avatarMouth" x="83" y="145" width="34" height="7.5" rx="3.8" fill="#d9707e"/>
-              <ellipse cx="92" cy="146" rx="3" ry="1.3" fill="#fff" opacity=".4"/>
+              <!-- 屏幕面板 -->
+              <rect x="62" y="66" width="76" height="58" rx="26" fill="#232842"/>
+              <ellipse cx="82" cy="78" rx="18" ry="8" fill="#3a3f66" opacity=".5"/>
 
-              <!-- 蓝色蝴蝶结 -->
-              <g transform="translate(100,26)">
-                <path d="M0 0 L-22 -12 Q-28 0 -22 12 L0 0 Z" fill="#3a5fb0"/>
-                <path d="M0 0 L22 -12 Q28 0 22 12 L0 0 Z" fill="#4a72c9"/>
-                <circle cx="0" cy="0" r="4.5" fill="#2a4a8f"/>
+              <!-- 眼睛（发光） -->
+              <g class="avatar-eye avatar-eye-l">
+                <circle cx="84" cy="94" r="10" fill="#5eead4"/>
+                <circle cx="84" cy="94" r="5" fill="#c8fff2"/>
+                <circle cx="81" cy="91" r="2.2" fill="#fff"/>
               </g>
+              <g class="avatar-eye avatar-eye-r">
+                <circle cx="116" cy="94" r="10" fill="#5eead4"/>
+                <circle cx="116" cy="94" r="5" fill="#c8fff2"/>
+                <circle cx="113" cy="91" r="2.2" fill="#fff"/>
+              </g>
+
+              <!-- 嘴巴（LED 光带） -->
+              <rect id="avatarMouth" x="88" y="108" width="24" height="5" rx="2.5" fill="#5eead4"/>
             </g>
           </svg>
           <div class="ai-avatar-status" id="avatarStatus">待机中</div>

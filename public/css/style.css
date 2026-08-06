@@ -144,7 +144,7 @@ p { line-height: 1.6; color: var(--text-muted); }
 .lang-pair-arrow { color: var(--primary); font-weight: 700; }
 .ai-avatar-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 18px; }
 .ai-avatar { width: 128px; height: 141px; filter: drop-shadow(0 6px 14px rgba(91,91,240,.18)); }
-.ai-avatar .avatar-head { transform-origin: 100px 172px; }
+.ai-avatar .avatar-head { transform-origin: 100px 150px; }
 .ai-avatar .avatar-eye, .ai-avatar .avatar-eye-glint { animation: avatarBlink 4.5s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
 .ai-avatar .avatar-eye-r, .ai-avatar .avatar-eye-r + .avatar-eye-glint { animation-delay: .05s; }
 .ai-avatar .avatar-glow { animation: avatarGlowPulse 3.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
