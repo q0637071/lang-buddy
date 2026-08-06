@@ -283,6 +283,11 @@ p { line-height: 1.6; color: var(--text-muted); }
 .form-row label { font-size: 13px; font-weight: 600; }
 .form-row input { padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 14px; }
 .form-error { color: var(--danger); font-size: 13px; min-height: 18px; margin: 0 0 10px; }
+.form-hint { color: var(--text-muted); font-size: 12.5px; margin: -6px 0 10px; }
+.phone-code-row { display: flex; gap: 8px; }
+.phone-code-row input { flex: 1; }
+.phone-code-row .btn { flex-shrink: 0; }
+.wechat-login-row { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
 
 /* Toast */
 .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1f2430; color: #fff; padding: 12px 22px; border-radius: 10px; font-size: 14px; z-index: 200; }

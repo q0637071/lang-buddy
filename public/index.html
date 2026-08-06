@@ -448,6 +448,7 @@
     <div class="modal-tabs">
       <button class="modal-tab active" id="tabLogin" data-mode="login">登录</button>
       <button class="modal-tab" id="tabRegister" data-mode="register">注册</button>
+      <button class="modal-tab" id="tabPhone" data-mode="phone">手机验证码</button>
     </div>
     <form id="authForm">
       <div class="form-row" id="rowNickname" hidden>
@@ -465,6 +466,27 @@
       <p class="form-error" id="authError"></p>
       <button type="submit" class="btn btn-primary btn-block" id="authSubmitBtn">登录</button>
     </form>
+
+    <form id="phoneForm" hidden>
+      <div class="form-row">
+        <label>手机号</label>
+        <input type="tel" id="inputPhone" maxlength="11" required placeholder="请输入11位手机号">
+      </div>
+      <div class="form-row">
+        <label>验证码</label>
+        <div class="phone-code-row">
+          <input type="text" id="inputPhoneCode" maxlength="6" required placeholder="6位验证码">
+          <button type="button" class="btn btn-outline btn-sm" id="btnSendCode">获取验证码</button>
+        </div>
+      </div>
+      <p class="form-hint" id="phoneCodeHint"></p>
+      <p class="form-error" id="phoneError"></p>
+      <button type="submit" class="btn btn-primary btn-block" id="phoneSubmitBtn">登录 / 注册</button>
+    </form>
+
+    <div class="wechat-login-row">
+      <button type="button" class="btn btn-outline btn-block" id="btnWechatLogin">🟢 微信授权登录</button>
+    </div>
   </div>
 </div>
 

@@ -146,6 +146,7 @@ function publicUser(user) {
     targetLang: user.targetLang,
     createdAt: user.createdAt,
     isAdmin: !!ADMIN_USERNAME && user.username === ADMIN_USERNAME,
+    phone: user.phone || null,
   };
 }
 
@@ -191,11 +192,114 @@ app.post('/api/login', rateLimit(20), async (req, res) => {
   const { username, password } = req.body || {};
   const db = loadDB();
   const user = db.users[username];
-  if (!user) return res.status(400).json({ error: '用户名或密码错误' });
+  // 手机号验证码注册的账号没有密码，不能走这条登录路径
+  if (!user || !user.passwordHash) return res.status(400).json({ error: '用户名或密码错误' });
   const ok = await bcrypt.compare(password || '', user.passwordHash);
   if (!ok) return res.status(400).json({ error: '用户名或密码错误' });
   req.session.userId = username;
   res.json({ user: publicUser(user) });
+});
+
+// ==================== 手机号验证码登录 ====================
+// 短信发送需要接入第三方短信服务商（阿里云/腾讯云等），目前未配置真实服务商时，
+// 验证码只会打印到服务器日志、并在接口响应里附带 devCode 字段方便本地联调测试。
+// 接入真实服务商后，只需要把 sendSms() 里的实现换成对应 SDK 调用即可，其余逻辑不用改。
+
+const SMS_PROVIDER = process.env.SMS_PROVIDER || '';
+const phoneCodeStore = new Map(); // phone -> { code, expiresAt, lastSentAt }
+
+function isValidPhone(phone) {
+  return typeof phone === 'string' && /^1[3-9]\d{9}$/.test(phone);
+}
+
+async function sendSms(phone, code) {
+  if (SMS_PROVIDER === 'aliyun') {
+    // TODO: 接入阿里云短信服务，需要环境变量 ALIYUN_ACCESS_KEY_ID / ALIYUN_ACCESS_KEY_SECRET /
+    // ALIYUN_SMS_SIGN_NAME / ALIYUN_SMS_TEMPLATE_CODE，调用 @alicloud/dysmsapi20170525 SDK 发送
+    throw new Error('阿里云短信服务尚未配置完成，请联系管理员');
+  }
+  if (SMS_PROVIDER === 'tencent') {
+    // TODO: 接入腾讯云短信服务，需要环境变量 TENCENT_SECRET_ID / TENCENT_SECRET_KEY /
+    // TENCENT_SMS_SIGN_NAME / TENCENT_SMS_TEMPLATE_ID，调用 tencentcloud-sdk-nodejs 发送
+    throw new Error('腾讯云短信服务尚未配置完成，请联系管理员');
+  }
+  console.log(`[SMS 测试模式，未配置真实短信服务商] 验证码 ${code} -> ${phone}`);
+}
+
+app.post('/api/auth/phone/send-code', rateLimit(10), async (req, res) => {
+  const { phone } = req.body || {};
+  if (!isValidPhone(phone)) return res.status(400).json({ error: '请输入正确的11位手机号' });
+
+  const existing = phoneCodeStore.get(phone);
+  if (existing && Date.now() - existing.lastSentAt < 60 * 1000) {
+    return res.status(429).json({ error: '发送太频繁，请60秒后再试' });
+  }
+
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  phoneCodeStore.set(phone, { code, expiresAt: Date.now() + 5 * 60 * 1000, lastSentAt: Date.now() });
+
+  try {
+    await sendSms(phone, code);
+    const payload = { ok: true };
+    if (!SMS_PROVIDER) payload.devCode = code; // 仅测试模式下返回，接入真实服务商后不会再出现
+    res.json(payload);
+  } catch (e) {
+    console.error('短信发送失败:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/auth/phone/verify', rateLimit(15), async (req, res) => {
+  const { phone, code } = req.body || {};
+  if (!isValidPhone(phone)) return res.status(400).json({ error: '手机号格式不正确' });
+  if (!code || !String(code).trim()) return res.status(400).json({ error: '请输入验证码' });
+
+  const record = phoneCodeStore.get(phone);
+  if (!record || record.code !== String(code).trim()) return res.status(400).json({ error: '验证码错误' });
+  if (Date.now() > record.expiresAt) {
+    phoneCodeStore.delete(phone);
+    return res.status(400).json({ error: '验证码已过期，请重新获取' });
+  }
+  phoneCodeStore.delete(phone); // 验证码一次性使用
+
+  const db = loadDB();
+  if (!db.users[phone]) {
+    db.users[phone] = {
+      username: phone,
+      nickname: '用户' + phone.slice(-4),
+      passwordHash: null,
+      phone,
+      isMember: false,
+      memberSince: null,
+      level: 'beginner',
+      targetLang: 'en',
+      createdAt: Date.now(),
+      vocabProgress: {},
+      mistakes: [],
+      activityLog: {},
+      chatCount: 0,
+    };
+    saveDB(db);
+  }
+  req.session.userId = phone;
+  res.json({ user: publicUser(db.users[phone]) });
+});
+
+// ==================== 微信授权登录（占位，尚未接入） ====================
+// 网站场景的微信登录必须在微信开放平台（open.weixin.qq.com）注册"网站应用"，
+// 且该平台要求开发者主体是企业并完成认证，个人开发者无法申请这个能力。
+// 需要 WECHAT_APP_ID / WECHAT_APP_SECRET 环境变量，并实现：
+//   1. GET /api/auth/wechat/login-url  生成跳转到微信授权页的 URL（带 state 防CSRF）
+//   2. GET /api/auth/wechat/callback   微信跳回后用 code 换 access_token + openid，
+//      再用 openid 作为用户唯一标识查找/创建账号并登录
+const WECHAT_APP_ID = process.env.WECHAT_APP_ID || '';
+
+app.get('/api/auth/wechat/login-url', (req, res) => {
+  if (!WECHAT_APP_ID) {
+    return res.status(501).json({ error: '微信登录尚未配置，需要企业主体在微信开放平台申请网站应用后接入' });
+  }
+  // TODO: WECHAT_APP_ID 配置好之后，在这里拼接真实的微信授权跳转链接并返回
+  res.status(501).json({ error: '微信登录尚未实现' });
 });
 
 app.post('/api/logout', (req, res) => {

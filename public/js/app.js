@@ -142,11 +142,17 @@
   function closeAuthModal() {
     $('#authModalOverlay').hidden = true;
     $('#authForm').reset();
+    $('#phoneForm').reset();
+    $('#phoneCodeHint').textContent = '';
+    $('#phoneError').textContent = '';
   }
   function setAuthMode(mode) {
     state.authMode = mode;
     $('#tabLogin').classList.toggle('active', mode === 'login');
     $('#tabRegister').classList.toggle('active', mode === 'register');
+    $('#tabPhone').classList.toggle('active', mode === 'phone');
+    $('#authForm').hidden = mode === 'phone';
+    $('#phoneForm').hidden = mode !== 'phone';
     $('#rowNickname').hidden = mode !== 'register';
     $('#authSubmitBtn').textContent = mode === 'login' ? '登录' : '注册并进入';
     $('#authError').textContent = '';
@@ -156,6 +162,7 @@
   $('#authModalOverlay').addEventListener('click', (e) => { if (e.target.id === 'authModalOverlay') closeAuthModal(); });
   $('#tabLogin').addEventListener('click', () => setAuthMode('login'));
   $('#tabRegister').addEventListener('click', () => setAuthMode('register'));
+  $('#tabPhone').addEventListener('click', () => setAuthMode('phone'));
 
   $('#btnHeroLogin').addEventListener('click', () => openAuthModal('login'));
   $('#btnHeroRegister').addEventListener('click', () => openAuthModal('register'));
@@ -181,11 +188,76 @@
         data = await api('/register', { method: 'POST', body: { username, password, nickname } });
       }
       state.user = data.user;
-      closeAuthModal();
-      updateTopbar();
-      await loadLanguages();
-      showView('dashboard');
-      toast(state.authMode === 'login' ? '欢迎回来！' : '注册成功，欢迎加入 LangBuddy！');
+      await completeLogin(data.user, state.authMode === 'login' ? '欢迎回来！' : '注册成功，欢迎加入 LangBuddy！');
+    } catch (err) {
+      errEl.textContent = err.message;
+    }
+  });
+
+  async function completeLogin(user, message) {
+    state.user = user;
+    closeAuthModal();
+    updateTopbar();
+    await loadLanguages();
+    showView('dashboard');
+    toast(message);
+  }
+
+  // ---------- 手机验证码登录 ----------
+  let phoneCountdownTimer = null;
+
+  function startPhoneCountdown() {
+    const btn = $('#btnSendCode');
+    let seconds = 60;
+    btn.disabled = true;
+    btn.textContent = `${seconds}秒后重发`;
+    clearInterval(phoneCountdownTimer);
+    phoneCountdownTimer = setInterval(() => {
+      seconds--;
+      if (seconds <= 0) {
+        clearInterval(phoneCountdownTimer);
+        btn.disabled = false;
+        btn.textContent = '获取验证码';
+      } else {
+        btn.textContent = `${seconds}秒后重发`;
+      }
+    }, 1000);
+  }
+
+  $('#btnSendCode').addEventListener('click', async () => {
+    const phone = $('#inputPhone').value.trim();
+    const errEl = $('#phoneError');
+    const hintEl = $('#phoneCodeHint');
+    errEl.textContent = '';
+    if (!/^1[3-9]\d{9}$/.test(phone)) { errEl.textContent = '请输入正确的11位手机号'; return; }
+    try {
+      const data = await api('/auth/phone/send-code', { method: 'POST', body: { phone } });
+      startPhoneCountdown();
+      hintEl.textContent = data.devCode
+        ? `测试模式（未接入真实短信服务）：验证码是 ${data.devCode}`
+        : '验证码已发送，请查收短信';
+    } catch (err) {
+      errEl.textContent = err.message;
+    }
+  });
+
+  $('#btnWechatLogin').addEventListener('click', async () => {
+    try {
+      await api('/auth/wechat/login-url');
+    } catch (err) {
+      toast(err.message);
+    }
+  });
+
+  $('#phoneForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const phone = $('#inputPhone').value.trim();
+    const code = $('#inputPhoneCode').value.trim();
+    const errEl = $('#phoneError');
+    errEl.textContent = '';
+    try {
+      const data = await api('/auth/phone/verify', { method: 'POST', body: { phone, code } });
+      await completeLogin(data.user, '登录成功！');
     } catch (err) {
       errEl.textContent = err.message;
     }
