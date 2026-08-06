@@ -287,7 +287,6 @@ p { line-height: 1.6; color: var(--text-muted); }
 .phone-code-row { display: flex; gap: 8px; }
 .phone-code-row input { flex: 1; }
 .phone-code-row .btn { flex-shrink: 0; }
-.wechat-login-row { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
 
 /* Toast */
 .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1f2430; color: #fff; padding: 12px 22px; border-radius: 10px; font-size: 14px; z-index: 200; }

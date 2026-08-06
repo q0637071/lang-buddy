@@ -241,14 +241,6 @@
     }
   });
 
-  $('#btnWechatLogin').addEventListener('click', async () => {
-    try {
-      await api('/auth/wechat/login-url');
-    } catch (err) {
-      toast(err.message);
-    }
-  });
-
   $('#phoneForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const phone = $('#inputPhone').value.trim();
