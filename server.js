@@ -339,6 +339,91 @@ app.post('/api/grammar/check', requireMember, rateLimit(15), async (req, res) =>
   }
 });
 
+// ==================== AI 作文批改 ====================
+
+app.post('/api/essay/check', requireMember, rateLimit(8), async (req, res) => {
+  const { essayText, examType } = req.body || {};
+  if (!essayText || !String(essayText).trim()) return res.status(400).json({ error: '请输入作文内容' });
+  if (essayText.length > 3000) return res.status(400).json({ error: '作文过长（最多3000字符）' });
+
+  const db = loadDB();
+  const user = db.users[req.session.userId];
+  const langName = LANG_NAME[user.targetLang] || '英语';
+  const trimmed = String(essayText).trim();
+
+  const prompt = `你是一位经验丰富的${langName}写作老师，正在批改一位中国学生写的${langName}作文。${examType ? `学生说明这是${String(examType).slice(0, 20)}的作文。` : ''}
+
+学生的作文原文：
+"""
+${trimmed}
+"""
+
+请逐句逐词仔细批改这篇作文，找出所有语法、用词、拼写、时态、句式、标点等方面的问题，并严格按照下面的 JSON 格式输出，只输出 JSON，不要输出任何其他文字：
+
+{
+  "estimatedLevel": "对这篇作文整体水平的一句话评估，如'CET4及格水平，语言基本准确但表达较简单'",
+  "overallComment": "总体点评，2-4句话，包括结构、内容逻辑、语言使用等方面的优缺点",
+  "correctedEssay": "整篇修改后的完整作文全文（保持段落结构，只修正错误，不要过度改写学生的原意和风格）",
+  "corrections": [
+    { "original": "原文中有问题的一句话或短语（逐字逐句摘录原文，不要改写）", "corrected": "修改后的正确版本", "explanation": "用一两句话说明为什么错、涉及什么语法或用词问题" }
+  ]
+}
+
+corrections 数组要覆盖原文中每一处修改，按原文顺序排列；如果某句话有多处错误，可以拆成多条记录。如果整篇作文没有任何错误，corrections 输出空数组，并在 overallComment 中说明写得很好。`;
+
+  try {
+    const response = await fetch(SF_BASE_URL, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${SF_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: SF_MODEL,
+        max_tokens: 3500,
+        temperature: 0.4,
+        response_format: { type: 'json_object' },
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      const msg = err?.error?.message || `API错误 ${response.status}`;
+      if (/validate JSON/i.test(msg)) throw new Error('作文内容较复杂，AI 批改未能完成，请重试一次或缩短作文长度');
+      throw new Error(msg);
+    }
+    const data = await response.json();
+    const raw = data.choices?.[0]?.message?.content || '';
+    let parsed = null;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (match) { try { parsed = JSON.parse(match[0]); } catch {} }
+    }
+    if (!parsed || typeof parsed !== 'object') {
+      throw new Error('AI 未能返回有效的批改结果，请重试');
+    }
+
+    const result = {
+      estimatedLevel: String(parsed.estimatedLevel || '').slice(0, 200),
+      overallComment: String(parsed.overallComment || '').slice(0, 1000),
+      correctedEssay: String(parsed.correctedEssay || '').slice(0, 4000),
+      corrections: Array.isArray(parsed.corrections)
+        ? parsed.corrections.slice(0, 60).map(c => ({
+            original: String(c?.original || '').slice(0, 500),
+            corrected: String(c?.corrected || '').slice(0, 500),
+            explanation: String(c?.explanation || '').slice(0, 500),
+          }))
+        : [],
+    };
+
+    recordActivity(user);
+    saveDB(db);
+    res.json(result);
+  } catch (e) {
+    console.error('作文批改失败:', e.message);
+    res.status(500).json({ error: 'AI 批改失败：' + e.message });
+  }
+});
+
 // ==================== 词汇 / 背单词 ====================
 
 function readVocab() {

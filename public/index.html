@@ -22,6 +22,7 @@
       <button class="nav-item" data-nav="vocab">背单词</button>
       <button class="nav-item" data-nav="grammar">语法</button>
       <button class="nav-item" data-nav="mistakes">错题本</button>
+      <button class="nav-item" data-nav="essay">AI作文助手</button>
       <button class="nav-item" data-nav="profile">我的</button>
       <button class="nav-item" data-nav="admin" id="navAdmin" hidden>管理后台</button>
     </nav>
@@ -339,6 +340,49 @@
         <div class="mistake-filter-chips" id="mistakeFilterChips"></div>
         <div id="mistakeList" class="mistake-list"></div>
         <div id="mistakeListEmpty" class="empty-state" hidden><p>还没有错题记录，上传第一道错题开始吧！</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 作文批改 -->
+  <section class="view" id="view-essay" hidden>
+    <div class="container container-narrow">
+      <h2 class="page-title">AI 作文助手</h2>
+
+      <div id="essayPaywall" class="paywall" hidden>
+        <p>作文批改为会员专享功能，开通后可以逐句逐词批改你的作文，给出修改建议和整体点评。</p>
+        <button class="btn btn-primary" id="btnEssayUpgrade">立即开通会员</button>
+      </div>
+
+      <div id="essayPanel" hidden>
+        <div class="essay-input-card">
+          <textarea id="essayInput" class="essay-textarea" placeholder="把你写的作文粘贴或输入进来，AI 会逐句逐词批改，给出修改建议和整体点评..." maxlength="3000"></textarea>
+          <div class="essay-input-actions">
+            <input type="text" id="essayExamType" placeholder="考试类型（可选，如 CET-4 / 雅思）" maxlength="20">
+            <span class="essay-char-count" id="essayCharCount">0 / 3000</span>
+            <button type="button" class="btn btn-primary btn-sm" id="btnCheckEssay">✍️ AI 批改</button>
+          </div>
+          <p class="mistake-upload-status" id="essayStatus"></p>
+        </div>
+
+        <div id="essayResult" class="essay-result" hidden>
+          <div class="essay-result-block">
+            <div class="mistake-detail-label">整体水平评估</div>
+            <p id="essayLevel"></p>
+          </div>
+          <div class="essay-result-block">
+            <div class="mistake-detail-label">总体点评</div>
+            <p id="essayComment"></p>
+          </div>
+          <div class="essay-result-block">
+            <div class="mistake-detail-label">修改后全文</div>
+            <div class="essay-corrected-box" id="essayCorrected"></div>
+          </div>
+          <div class="essay-result-block">
+            <div class="mistake-detail-label">逐句逐词修改（<span id="essayCorrectionCount">0</span> 处）</div>
+            <div id="essayCorrections"></div>
+          </div>
+        </div>
       </div>
     </div>
   </section>

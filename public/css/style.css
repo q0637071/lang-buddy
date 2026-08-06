@@ -206,6 +206,22 @@ p { line-height: 1.6; color: var(--text-muted); }
 .mistake-input-tab.active { background: #fff; color: var(--primary); box-shadow: 0 1px 2px rgba(0,0,0,.06); }
 .mistake-upload-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 24px; }
 .mistake-text-input { width: 100%; min-height: 140px; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 14px; font-family: inherit; resize: vertical; margin-bottom: 4px; }
+
+/* 作文批改 */
+.essay-input-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 24px; }
+.essay-textarea { width: 100%; min-height: 220px; border: 1px solid var(--border); border-radius: 10px; padding: 14px; font-size: 14px; font-family: inherit; line-height: 1.6; resize: vertical; margin-bottom: 10px; }
+.essay-input-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.essay-input-actions input[type="text"] { flex: 1; min-width: 160px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13.5px; }
+.essay-char-count { font-size: 12.5px; color: var(--text-muted); white-space: nowrap; }
+.essay-result { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 26px; }
+.essay-result-block { margin-bottom: 22px; }
+.essay-result-block:last-child { margin-bottom: 0; }
+.essay-result-block p { color: var(--text); white-space: pre-wrap; }
+.essay-corrected-box { background: var(--primary-light); border-radius: 10px; padding: 16px; font-size: 14.5px; line-height: 1.8; white-space: pre-wrap; color: var(--text); }
+.correction-item { border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+.correction-original { color: var(--danger); text-decoration: line-through; font-size: 13.5px; margin-bottom: 4px; }
+.correction-corrected { color: var(--success); font-weight: 600; font-size: 14.5px; margin-bottom: 6px; }
+.correction-explanation { color: var(--text-muted); font-size: 13px; }
 .mistake-upload-drop { border: 2px dashed var(--border); border-radius: 12px; padding: 30px; text-align: center; cursor: pointer; transition: border-color .15s; }
 .mistake-upload-drop:hover { border-color: var(--primary); }
 .mistake-upload-icon { font-size: 34px; margin-bottom: 8px; }

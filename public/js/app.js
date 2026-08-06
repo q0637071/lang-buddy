@@ -63,7 +63,7 @@
   }
 
   // ---------- 视图切换 ----------
-  const VIEWS = ['landing', 'dashboard', 'tutor', 'vocab', 'grammar', 'mistakes', 'profile', 'admin'];
+  const VIEWS = ['landing', 'dashboard', 'tutor', 'vocab', 'grammar', 'mistakes', 'essay', 'profile', 'admin'];
 
   function showView(name) {
     if (!state.user && name !== 'landing') name = 'landing';
@@ -80,6 +80,7 @@
     if (name === 'vocab') loadVocabQueue();
     if (name === 'grammar') renderGrammarList();
     if (name === 'mistakes') renderMistakes();
+    if (name === 'essay') renderEssay();
     if (name === 'profile') renderProfile();
     if (name === 'admin') renderAdmin();
   }
@@ -1082,6 +1083,71 @@
     } catch (err) {
       toast(err.message);
     }
+  }
+
+  // ---------- 作文批改 ----------
+  function renderEssay() {
+    const needMember = !state.user.isMember;
+    $('#essayPaywall').hidden = !needMember;
+    $('#essayPanel').hidden = needMember;
+    if (needMember) return;
+    $('#essayResult').hidden = true;
+    $('#essayStatus').textContent = '';
+    updateEssayCharCount();
+  }
+
+  $('#btnEssayUpgrade').addEventListener('click', upgradeMembership);
+
+  function updateEssayCharCount() {
+    const len = $('#essayInput').value.length;
+    $('#essayCharCount').textContent = `${len} / 3000`;
+  }
+  $('#essayInput').addEventListener('input', updateEssayCharCount);
+
+  $('#btnCheckEssay').addEventListener('click', async () => {
+    const essayText = $('#essayInput').value.trim();
+    if (!essayText) { toast('请先输入作文内容'); return; }
+    const btn = $('#btnCheckEssay');
+    btn.disabled = true;
+    $('#essayResult').hidden = true;
+    $('#essayStatus').textContent = '✍️ AI 正在逐句批改中，作文较长可能需要十几秒到半分钟，请耐心等待...';
+    try {
+      const examType = $('#essayExamType').value.trim();
+      const data = await api('/essay/check', { method: 'POST', body: { essayText, examType } });
+      $('#essayStatus').textContent = '';
+      renderEssayResult(data);
+      renderMetrics();
+    } catch (err) {
+      if (err.needMembership) {
+        toast('需要开通会员才能使用作文批改');
+        renderEssay();
+      } else {
+        $('#essayStatus').textContent = '❌ ' + err.message;
+      }
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  function renderEssayResult(data) {
+    $('#essayLevel').textContent = data.estimatedLevel || '（未提供评估）';
+    $('#essayComment').textContent = data.overallComment || '';
+    $('#essayCorrected').textContent = data.correctedEssay || '';
+    $('#essayCorrectionCount').textContent = data.corrections.length;
+
+    if (data.corrections.length) {
+      $('#essayCorrections').innerHTML = data.corrections.map(c => `
+        <div class="correction-item">
+          <div class="correction-original">${escapeHtml(c.original)}</div>
+          <div class="correction-corrected">→ ${escapeHtml(c.corrected)}</div>
+          <div class="correction-explanation">${escapeHtml(c.explanation)}</div>
+        </div>
+      `).join('');
+    } else {
+      $('#essayCorrections').innerHTML = '<p>没有发现明显问题，写得很棒！</p>';
+    }
+    $('#essayResult').hidden = false;
+    $('#essayResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   // ---------- 管理后台 ----------
