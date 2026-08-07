@@ -698,7 +698,7 @@
     const idx = state.vocabIndex;
     $('#flashcardReveal').hidden = true;
     $('#flashcardActions').hidden = true;
-    $('#btnRevealCard').hidden = false;
+    $('#flashcardPreActions').hidden = false;
 
     if (!queue.length || idx >= queue.length) {
       $('#flashcardArea').hidden = true;
@@ -722,14 +722,14 @@
   $('#btnRevealCard').addEventListener('click', () => {
     $('#flashcardReveal').hidden = false;
     $('#flashcardActions').hidden = false;
-    $('#btnRevealCard').hidden = true;
+    $('#flashcardPreActions').hidden = true;
   });
 
-  async function submitVocabReview(remembered) {
+  async function submitVocabReview(remembered, skip) {
     const w = state.vocabQueue[state.vocabIndex];
     if (!w) return;
     try {
-      await api('/vocab/review', { method: 'POST', body: { word: w.word, remembered } });
+      await api('/vocab/review', { method: 'POST', body: { word: w.word, remembered, skip: !!skip } });
     } catch (err) {
       toast(err.message);
     }
@@ -738,6 +738,7 @@
   }
   $('#btnKnew').addEventListener('click', () => submitVocabReview(true));
   $('#btnForgot').addEventListener('click', () => submitVocabReview(false));
+  $('#btnSkipWord').addEventListener('click', () => submitVocabReview(true, true));
 
   // ---------- 单词测试（根据当前学习状态出题） ----------
   function setVocabMode(mode) {

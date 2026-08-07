@@ -603,15 +603,18 @@ app.get('/api/vocab/review', requireAuth, (req, res) => {
 const EBBINGHAUS_INTERVALS_MIN = [5, 30, 12 * 60, 24 * 60, 2 * 24 * 60, 4 * 24 * 60, 7 * 24 * 60, 15 * 24 * 60, 30 * 24 * 60];
 
 app.post('/api/vocab/review', requireAuth, (req, res) => {
-  const { word, remembered } = req.body || {};
+  const { word, remembered, skip } = req.body || {};
   if (!word) return res.status(400).json({ error: '缺少单词' });
   const db = loadDB();
   const user = db.users[req.session.userId];
   if (!user.vocabProgress) user.vocabProgress = {};
   // 从未复习过的新词用 -1 作为起点，这样第一次"记住"正好落在box 0（5分钟）档，而不是跳过它
   const prev = user.vocabProgress[word] || { box: -1, due: Date.now() };
+  // 跳过（已掌握）：直接记为最高级别，不用像正常记忆曲线一样一档档爬；
   // 记住了：进入下一个更长的复习间隔；忘记了：按艾宾浩斯曲线的做法从头开始重新记忆
-  const box = remembered ? Math.min(prev.box + 1, EBBINGHAUS_INTERVALS_MIN.length - 1) : 0;
+  const box = skip
+    ? EBBINGHAUS_INTERVALS_MIN.length - 1
+    : (remembered ? Math.min(prev.box + 1, EBBINGHAUS_INTERVALS_MIN.length - 1) : 0);
   const minutes = EBBINGHAUS_INTERVALS_MIN[box];
   const due = Date.now() + minutes * 60 * 1000;
   user.vocabProgress[word] = { box, due, lastReview: Date.now() };
