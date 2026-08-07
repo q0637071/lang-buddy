@@ -446,17 +446,58 @@ app.post('/api/grammar/check', requireMember, rateLimit(15), async (req, res) =>
 
 // ==================== AI 作文批改 ====================
 
+const ENGLISH_EXAM_RUBRIC = {
+  'CET-4': '大学英语四级作文，满分15分，按内容要点、篇章结构、语言准确性与丰富度评分',
+  'CET-6': '大学英语六级作文，满分15分，按内容要点、篇章结构、语言准确性与丰富度评分',
+  'IELTS': '雅思写作，9分制，按Task Response、Coherence and Cohesion、Lexical Resource、Grammatical Range and Accuracy四项评分',
+  'TOEFL': '托福独立写作，30分制，按内容展开、组织结构、语言使用评分',
+  '考研英语': '考研英语（一/二）作文，满分20分，按内容切题、语言准确性、篇章连贯评分',
+  '其他': '英语考试作文，按内容、结构、语言三方面综合评分',
+};
+
 app.post('/api/essay/check', requireMember, rateLimit(8), async (req, res) => {
-  const { essayText, examType } = req.body || {};
+  const { essayText, examType, mode } = req.body || {};
   if (!essayText || !String(essayText).trim()) return res.status(400).json({ error: '请输入作文内容' });
   if (essayText.length > 3000) return res.status(400).json({ error: '作文过长（最多3000字符）' });
 
   const db = loadDB();
   const user = db.users[req.session.userId];
-  const langName = LANG_NAME[user.targetLang] || '英语';
+  const isEnglishMode = mode === 'english';
+  // English 批改模式固定按英语考试标准评分，不受用户当前学习语种设置影响
+  const langName = isEnglishMode ? '英语' : (LANG_NAME[user.targetLang] || '英语');
   const trimmed = String(essayText).trim();
 
-  const prompt = `你是一位经验丰富的${langName}写作老师，正在批改一位中国学生写的${langName}作文。${examType ? `学生说明这是${String(examType).slice(0, 20)}的作文。` : ''}
+  let prompt;
+  if (isEnglishMode) {
+    const examKey = ENGLISH_EXAM_RUBRIC[examType] ? examType : '其他';
+    const rubricDesc = ENGLISH_EXAM_RUBRIC[examKey];
+    prompt = `你是一位经验丰富的英语考试作文阅卷老师，正在按照${examKey}的评分标准批改一位中国学生的英语作文。评分标准：${rubricDesc}。
+
+学生的作文原文：
+"""
+${trimmed}
+"""
+
+请像真实考试阅卷一样严格评分，并逐句逐词找出所有语法、用词、拼写、时态、句式、标点等问题，严格按照下面的 JSON 格式输出，只输出 JSON，不要输出任何其他文字：
+
+{
+  "scoreEstimate": "预估分数或分数区间，需带上满分制式，如'CET-6预估 11-12/15分'",
+  "estimatedLevel": "对这篇作文整体水平的一句话评估",
+  "rubric": {
+    "content": "内容与任务完成度评价，1-2句话",
+    "organization": "篇章结构与逻辑连贯性评价，1-2句话",
+    "language": "语言使用评价（词汇丰富度、语法准确性、句式多样性），1-2句话"
+  },
+  "overallComment": "总体点评与提分建议，2-4句话",
+  "correctedEssay": "整篇修改后的完整作文全文（保持段落结构，只修正错误，不要过度改写学生的原意和风格）",
+  "corrections": [
+    { "original": "原文中有问题的一句话或短语（逐字逐句摘录原文，不要改写）", "corrected": "修改后的正确版本", "explanation": "用一两句话说明为什么错、涉及什么语法或用词问题" }
+  ]
+}
+
+corrections 数组要覆盖原文中每一处修改，按原文顺序排列；如果某句话有多处错误，可以拆成多条记录。如果整篇作文没有任何错误，corrections 输出空数组。`;
+  } else {
+    prompt = `你是一位经验丰富的${langName}写作老师，正在批改一位中国学生写的${langName}作文。${examType ? `学生说明这是${String(examType).slice(0, 20)}的作文。` : ''}
 
 学生的作文原文：
 """
@@ -475,6 +516,7 @@ ${trimmed}
 }
 
 corrections 数组要覆盖原文中每一处修改，按原文顺序排列；如果某句话有多处错误，可以拆成多条记录。如果整篇作文没有任何错误，corrections 输出空数组，并在 overallComment 中说明写得很好。`;
+  }
 
   try {
     const response = await fetch(SF_BASE_URL, {
@@ -519,6 +561,14 @@ corrections 数组要覆盖原文中每一处修改，按原文顺序排列；�
           }))
         : [],
     };
+    if (isEnglishMode) {
+      result.scoreEstimate = String(parsed.scoreEstimate || '').slice(0, 100);
+      result.rubric = {
+        content: String(parsed.rubric?.content || '').slice(0, 300),
+        organization: String(parsed.rubric?.organization || '').slice(0, 300),
+        language: String(parsed.rubric?.language || '').slice(0, 300),
+      };
+    }
 
     recordActivity(user);
     saveDB(db);

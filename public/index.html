@@ -471,10 +471,23 @@
       </div>
 
       <div id="essayPanel" hidden>
+        <div class="mistake-input-tabs" id="essayModeTabs">
+          <button class="mistake-input-tab active" data-mode="general">通用批改</button>
+          <button class="mistake-input-tab" data-mode="english">🇺🇸 English 考试批改</button>
+        </div>
+
         <div class="essay-input-card">
           <textarea id="essayInput" class="essay-textarea" placeholder="把你写的作文粘贴或输入进来，AI 会逐句逐词批改，给出修改建议和整体点评..." maxlength="3000"></textarea>
           <div class="essay-input-actions">
             <input type="text" id="essayExamType" placeholder="考试类型（可选，如 CET-4 / 雅思）" maxlength="20">
+            <select id="essayExamTypeSelect" hidden>
+              <option value="CET-4">CET-4 四级</option>
+              <option value="CET-6">CET-6 六级</option>
+              <option value="IELTS">IELTS 雅思</option>
+              <option value="TOEFL">TOEFL 托福</option>
+              <option value="考研英语">考研英语</option>
+              <option value="其他">其他</option>
+            </select>
             <span class="essay-char-count" id="essayCharCount">0 / 3000</span>
             <button type="button" class="btn btn-primary btn-sm" id="btnCheckEssay">✍️ AI 批改</button>
           </div>
@@ -482,6 +495,16 @@
         </div>
 
         <div id="essayResult" class="essay-result" hidden>
+          <div class="essay-result-block" id="essayScoreBlock" hidden>
+            <div class="mistake-detail-label">预估分数</div>
+            <p id="essayScore" style="font-size:20px;font-weight:800;color:var(--primary);"></p>
+          </div>
+          <div class="essay-result-block" id="essayRubricBlock" hidden>
+            <div class="mistake-detail-label">评分细项</div>
+            <p>📋 内容与任务完成度：<span id="essayRubricContent"></span></p>
+            <p>🧩 结构与逻辑：<span id="essayRubricOrganization"></span></p>
+            <p>🔤 语言使用：<span id="essayRubricLanguage"></span></p>
+          </div>
           <div class="essay-result-block">
             <div class="mistake-detail-label">整体水平评估</div>
             <p id="essayLevel"></p>

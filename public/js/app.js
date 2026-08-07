@@ -1309,10 +1309,25 @@
     if (needMember) return;
     $('#essayResult').hidden = true;
     $('#essayStatus').textContent = '';
+    state.essayMode = state.essayMode || 'general';
+    setEssayMode(state.essayMode);
     updateEssayCharCount();
   }
 
   $('#btnEssayUpgrade').addEventListener('click', upgradeMembership);
+
+  function setEssayMode(mode) {
+    state.essayMode = mode;
+    $all('#essayModeTabs .mistake-input-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
+    $('#essayExamType').hidden = mode === 'english';
+    $('#essayExamTypeSelect').hidden = mode !== 'english';
+    $('#essayInput').placeholder = mode === 'english'
+      ? '粘贴你的英语考试作文，AI 会按对应考试评分标准打分并逐句批改...'
+      : '把你写的作文粘贴或输入进来，AI 会逐句逐词批改，给出修改建议和整体点评...';
+  }
+  $all('#essayModeTabs .mistake-input-tab').forEach(btn => {
+    btn.addEventListener('click', () => setEssayMode(btn.dataset.mode));
+  });
 
   function updateEssayCharCount() {
     const len = $('#essayInput').value.length;
@@ -1328,8 +1343,9 @@
     $('#essayResult').hidden = true;
     $('#essayStatus').textContent = '✍️ AI 正在逐句批改中，作文较长可能需要十几秒到半分钟，请耐心等待...';
     try {
-      const examType = $('#essayExamType').value.trim();
-      const data = await api('/essay/check', { method: 'POST', body: { essayText, examType } });
+      const mode = state.essayMode || 'general';
+      const examType = mode === 'english' ? $('#essayExamTypeSelect').value : $('#essayExamType').value.trim();
+      const data = await api('/essay/check', { method: 'POST', body: { essayText, examType, mode } });
       $('#essayStatus').textContent = '';
       renderEssayResult(data);
       renderMetrics();
@@ -1346,6 +1362,15 @@
   });
 
   function renderEssayResult(data) {
+    $('#essayScoreBlock').hidden = !data.scoreEstimate;
+    $('#essayScore').textContent = data.scoreEstimate || '';
+    const hasRubric = data.rubric && (data.rubric.content || data.rubric.organization || data.rubric.language);
+    $('#essayRubricBlock').hidden = !hasRubric;
+    if (hasRubric) {
+      $('#essayRubricContent').textContent = data.rubric.content || '';
+      $('#essayRubricOrganization').textContent = data.rubric.organization || '';
+      $('#essayRubricLanguage').textContent = data.rubric.language || '';
+    }
     $('#essayLevel').textContent = data.estimatedLevel || '（未提供评估）';
     $('#essayComment').textContent = data.overallComment || '';
     $('#essayCorrected').textContent = data.correctedEssay || '';
