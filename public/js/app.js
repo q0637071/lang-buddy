@@ -369,13 +369,29 @@
 
   function voicePrefKey(lang) { return 'lb_voice_' + lang; }
 
+  // iOS/macOS 系统自带一批"搞怪音效"语音（气泡音、金属音、风琴音等），并非正常人声，
+  // 学语言用不上，默认从候选列表里过滤掉。voice.name 在系统语言为中文时会被本地化成中文
+  // （比如"气泡"），单纯匹配英文名会失效，所以额外用 voiceURI（不受系统语言影响，始终是
+  // 英文技术标识符，如 com.apple.speech.synthesis.voice.bubbles）做兜底匹配
+  const NOVELTY_VOICE_KEYWORDS = [
+    'albert', 'badnews', 'bad-news', 'bad news', 'bahh', 'bells', 'boing', 'bubbles',
+    'cellos', 'goodnews', 'good-news', 'good news', 'jester', 'organ', 'superstar',
+    'trinoids', 'whisper', 'wobble', 'zarvox', 'deranged', 'hysterical', 'pipeorgan', 'pipe organ',
+  ];
+  function isNoveltyVoice(v) {
+    const haystack = (v.name + ' ' + (v.voiceURI || '')).toLowerCase();
+    return NOVELTY_VOICE_KEYWORDS.some(kw => haystack.includes(kw));
+  }
+
   function populateVoiceSelect() {
     const select = $('#voiceSelect');
     if (!select) return;
     const lang = replyLangBcp47();
     const langPrefix = lang.split('-')[0];
     const matching = availableVoices.filter(v => v.lang.toLowerCase().startsWith(langPrefix));
-    const list = matching.length ? matching : availableVoices;
+    let list = matching.length ? matching : availableVoices;
+    const naturalOnly = list.filter(v => !isNoveltyVoice(v));
+    if (naturalOnly.length) list = naturalOnly;
 
     if (!list.length) {
       select.innerHTML = '<option value="">（当前设备没有可用的语音包）</option>';
