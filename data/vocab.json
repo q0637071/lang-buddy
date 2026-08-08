@@ -16630,5 +16630,2525 @@
     "example_zh": "神经科学探索神经系统的结构和功能。",
     "level": "gre",
     "category": "神经科学"
+  },
+  {
+    "word": "polarization",
+    "pos": "n.",
+    "meaning_zh": "两极分化",
+    "example_en": "Social media has accelerated polarization in the society.",
+    "example_zh": "社交媒体加速了社会的两极分化。",
+    "level": "kaoyan",
+    "category": "社会现象"
+  },
+  {
+    "word": "discrimination",
+    "pos": "n.",
+    "meaning_zh": "歧视",
+    "example_en": "The company faced accusations of discrimination against minorities.",
+    "example_zh": "该公司面临针对少数群体的歧视指控。",
+    "level": "kaoyan",
+    "category": "社会问题"
+  },
+  {
+    "word": "privatization",
+    "pos": "n.",
+    "meaning_zh": "私有化",
+    "example_en": "The government's privatization policy sparked controversy.",
+    "example_zh": "政府的私有化政策引发了争议。",
+    "level": "kaoyan",
+    "category": "经济议题"
+  },
+  {
+    "word": "immigration",
+    "pos": "n.",
+    "meaning_zh": "移民",
+    "example_en": "The country's immigration policy has been under debate.",
+    "example_zh": "该国的移民政策一直处于争论之中。",
+    "level": "kaoyan",
+    "category": "社会问题"
+  },
+  {
+    "word": "refugee",
+    "pos": "n.",
+    "meaning_zh": "难民",
+    "example_en": "The international community must provide aid to refugees.",
+    "example_zh": "国际社会必须为难民提供援助。",
+    "level": "kaoyan",
+    "category": "社会问题"
+  },
+  {
+    "word": "humanitarian",
+    "pos": "adj.",
+    "meaning_zh": "人道主义的",
+    "example_en": "The humanitarian crisis in the region requires immediate attention.",
+    "example_zh": "该地区的人道主义危机需要立即关注。",
+    "level": "kaoyan",
+    "category": "社会问题"
+  },
+  {
+    "word": "socialism",
+    "pos": "n.",
+    "meaning_zh": "社会主义",
+    "example_en": "The country has adopted socialism as its political ideology.",
+    "example_zh": "该国采用社会主义作为其政治意识形态。",
+    "level": "kaoyan",
+    "category": "政治议题"
+  },
+  {
+    "word": "democratization",
+    "pos": "n.",
+    "meaning_zh": "民主化",
+    "example_en": "Democratization is a fundamental step towards social progress.",
+    "example_zh": "民主化是社会进步的基本步骤。",
+    "level": "kaoyan",
+    "category": "政治议题"
+  },
+  {
+    "word": "corruption",
+    "pos": "n.",
+    "meaning_zh": "腐败",
+    "example_en": "The government has launched an anti-corruption campaign.",
+    "example_zh": "政府开展了反腐败运动。",
+    "level": "kaoyan",
+    "category": "社会问题"
+  },
+  {
+    "word": "stereotyping",
+    "pos": "n.",
+    "meaning_zh": "刻板印象",
+    "example_en": "Stereotyping can lead to social prejudice and discrimination.",
+    "example_zh": "刻板印象可能导致社会偏见和歧视。",
+    "level": "kaoyan",
+    "category": "社会问题"
+  },
+  {
+    "word": "heterogeneity",
+    "pos": "n.",
+    "meaning_zh": "异质性",
+    "example_en": "The city's cultural heterogeneity is one of its most notable features.",
+    "example_zh": "城市的文化异质性是其最显著的特征之一。",
+    "level": "kaoyan",
+    "category": "社会现象"
+  },
+  {
+    "word": "homogenization",
+    "pos": "n.",
+    "meaning_zh": "同质化",
+    "example_en": "The process of homogenization can lead to cultural uniformity.",
+    "example_zh": "同质化的过程可能导致文化的统一。",
+    "level": "kaoyan",
+    "category": "社会现象"
+  },
+  {
+    "word": "multiculturalism",
+    "pos": "n.",
+    "meaning_zh": "多元文化主义",
+    "example_en": "Multiculturalism is celebrated as a strength in many societies.",
+    "example_zh": "多元文化主义在许多社会中被誉为优势。",
+    "level": "kaoyan",
+    "category": "社会现象"
+  },
+  {
+    "word": "protectionism",
+    "pos": "n.",
+    "meaning_zh": "保护主义",
+    "example_en": "The country's protectionism hurts its trade relationships.",
+    "example_zh": "该国的保护主义损害了其贸易关系。",
+    "level": "kaoyan",
+    "category": "经济"
+  },
+  {
+    "word": "tariff",
+    "pos": "n.",
+    "meaning_zh": "关税",
+    "example_en": "The government imposed a high tariff on imported goods.",
+    "example_zh": "政府对进口商品征收高关税。",
+    "level": "kaoyan",
+    "category": "贸易"
+  },
+  {
+    "word": "fiscal",
+    "pos": "adj.",
+    "meaning_zh": "财政的",
+    "example_en": "The government's fiscal policy is under scrutiny.",
+    "example_zh": "政府的财政政策受到了审查。",
+    "level": "kaoyan",
+    "category": "财政"
+  },
+  {
+    "word": "monopoly",
+    "pos": "n.",
+    "meaning_zh": "垄断",
+    "example_en": "The company's monopoly on the market is being challenged.",
+    "example_zh": "该公司对市场的垄断地位受到了挑战。",
+    "level": "kaoyan",
+    "category": "商务"
+  },
+  {
+    "word": "subsidy",
+    "pos": "n.",
+    "meaning_zh": "补贴",
+    "example_en": "The government provides subsidies to farmers.",
+    "example_zh": "政府为农民提供补贴。",
+    "level": "kaoyan",
+    "category": "经济"
+  },
+  {
+    "word": "trade",
+    "pos": "n.",
+    "meaning_zh": "贸易",
+    "example_en": "International trade has increased significantly.",
+    "example_zh": "国际贸易大幅增加。",
+    "level": "kaoyan",
+    "category": "贸易"
+  },
+  {
+    "word": "export",
+    "pos": "v.",
+    "meaning_zh": "出口",
+    "example_en": "The company exports goods to many countries.",
+    "example_zh": "该公司出口商品到许多国家。",
+    "level": "kaoyan",
+    "category": "贸易"
+  },
+  {
+    "word": "import",
+    "pos": "v.",
+    "meaning_zh": "进口",
+    "example_en": "The country imports a lot of oil.",
+    "example_zh": "该国进口了大量的石油。",
+    "level": "kaoyan",
+    "category": "贸易"
+  },
+  {
+    "word": "balance",
+    "pos": "n.",
+    "meaning_zh": "平衡",
+    "example_en": "The country's trade balance is improving.",
+    "example_zh": "该国的贸易平衡正在改善。",
+    "level": "kaoyan",
+    "category": "经济"
+  },
+  {
+    "word": "deficit",
+    "pos": "n.",
+    "meaning_zh": "赤字",
+    "example_en": "The country has a large trade deficit.",
+    "example_zh": "该国有很大的贸易赤字。",
+    "level": "kaoyan",
+    "category": "经济"
+  },
+  {
+    "word": "surplus",
+    "pos": "n.",
+    "meaning_zh": "盈余",
+    "example_en": "The company has a large budget surplus.",
+    "example_zh": "该公司有很大的预算盈余。",
+    "level": "kaoyan",
+    "category": "财政"
+  },
+  {
+    "word": "profit",
+    "pos": "n.",
+    "meaning_zh": "利润",
+    "example_en": "The company's profit has increased significantly.",
+    "example_zh": "该公司的利润大幅增加。",
+    "level": "kaoyan",
+    "category": "商务"
+  },
+  {
+    "word": "loss",
+    "pos": "n.",
+    "meaning_zh": "损失",
+    "example_en": "The company suffered a significant loss last year.",
+    "example_zh": "该公司去年遭受了重大损失。",
+    "level": "kaoyan",
+    "category": "商务"
+  },
+  {
+    "word": "stimulus",
+    "pos": "n.",
+    "meaning_zh": "刺激",
+    "example_en": "The government's economic stimulus package is working.",
+    "example_zh": "政府的经济刺激方案正在发挥作用。",
+    "level": "kaoyan",
+    "category": "经济"
+  },
+  {
+    "word": "unemployment",
+    "pos": "n.",
+    "meaning_zh": "失业",
+    "example_en": "The country's unemployment rate is high.",
+    "example_zh": "该国的失业率很高。",
+    "level": "kaoyan",
+    "category": "经济"
+  },
+  {
+    "word": "inflationary",
+    "pos": "adj.",
+    "meaning_zh": "通货膨胀的",
+    "example_en": "The economy is experiencing inflationary pressures.",
+    "example_zh": "经济正在经历通货膨胀的压力。",
+    "level": "kaoyan",
+    "category": "经济"
+  },
+  {
+    "word": "macroeconomic",
+    "pos": "adj.",
+    "meaning_zh": "宏观经济的",
+    "example_en": "The government's macroeconomic policies are being reviewed.",
+    "example_zh": "政府的宏观经济政策正在被审查。",
+    "level": "kaoyan",
+    "category": "经济"
+  },
+  {
+    "word": "microeconomic",
+    "pos": "adj.",
+    "meaning_zh": "微观经济的",
+    "example_en": "The company's microeconomic environment is changing.",
+    "example_zh": "该公司的微观经济环境正在改变。",
+    "level": "kaoyan",
+    "category": "经济"
+  },
+  {
+    "word": "cyberphysical",
+    "pos": "adj.",
+    "meaning_zh": "网络物理的",
+    "example_en": "Cyberphysical systems integrate physical and computational components.",
+    "example_zh": "网络物理系统集成了物理和计算组件。",
+    "level": "kaoyan",
+    "category": "技术"
+  },
+  {
+    "word": "digitalization",
+    "pos": "n.",
+    "meaning_zh": "数字化",
+    "example_en": "Digitalization transforms traditional industries rapidly.",
+    "example_zh": "数字化快速改变着传统产业。",
+    "level": "kaoyan",
+    "category": "发展"
+  },
+  {
+    "word": "ecoefficiency",
+    "pos": "n.",
+    "meaning_zh": "生态效率",
+    "example_en": "The company aims to improve ecoefficiency in production.",
+    "example_zh": "公司致力于提高生产中的生态效率。",
+    "level": "kaoyan",
+    "category": "环境"
+  },
+  {
+    "word": "geoinformatics",
+    "pos": "n.",
+    "meaning_zh": "地理信息学",
+    "example_en": "Geoinformatics applies to urban planning and management.",
+    "example_zh": "地理信息学应用于城市规划和管理。",
+    "level": "kaoyan",
+    "category": "技术"
+  },
+  {
+    "word": "humancomputer",
+    "pos": "adj.",
+    "meaning_zh": "人机的",
+    "example_en": "Humancomputer interaction is crucial in system design.",
+    "example_zh": "人机交互在系统设计中至关重要。",
+    "level": "kaoyan",
+    "category": "技术"
+  },
+  {
+    "word": "informatics",
+    "pos": "n.",
+    "meaning_zh": "信息学",
+    "example_en": "Informatics encompasses the study of information systems.",
+    "example_zh": "信息学涵盖了信息系统的研究。",
+    "level": "kaoyan",
+    "category": "技术"
+  },
+  {
+    "word": "nanoscience",
+    "pos": "n.",
+    "meaning_zh": "纳米科学",
+    "example_en": "Nanoscience has led to breakthroughs in materials science.",
+    "example_zh": "纳米科学带来了材料科学的突破。",
+    "level": "kaoyan",
+    "category": "科学"
+  },
+  {
+    "word": "technogenesis",
+    "pos": "n.",
+    "meaning_zh": "技术生成",
+    "example_en": "Technogenesis drives innovation and progress.",
+    "example_zh": "技术生成推动创新和进步。",
+    "level": "kaoyan",
+    "category": "技术"
+  },
+  {
+    "word": "telecommunication",
+    "pos": "n.",
+    "meaning_zh": "电信",
+    "example_en": "Telecommunication networks connect the world.",
+    "example_zh": "电信网络连接着世界。",
+    "level": "kaoyan",
+    "category": "技术"
+  },
+  {
+    "word": "biotechnology",
+    "pos": "n.",
+    "meaning_zh": "生物技术",
+    "example_en": "Biotechnology has revolutionized medical research.",
+    "example_zh": "生物技术革命了医学研究。",
+    "level": "kaoyan",
+    "category": "科学"
+  },
+  {
+    "word": "cloudservice",
+    "pos": "n.",
+    "meaning_zh": "云服务",
+    "example_en": "Cloud services provide scalable and flexible solutions.",
+    "example_zh": "云服务提供可扩展和灵活的解决方案。",
+    "level": "kaoyan",
+    "category": "技术"
+  },
+  {
+    "word": "datamining",
+    "pos": "n.",
+    "meaning_zh": "数据挖掘",
+    "example_en": "Datamining techniques uncover hidden patterns in data.",
+    "example_zh": "数据挖掘技术揭示数据中的隐藏模式。",
+    "level": "kaoyan",
+    "category": "技术"
+  },
+  {
+    "word": "electromagnetism",
+    "pos": "n.",
+    "meaning_zh": "电磁学",
+    "example_en": "Electromagnetism is fundamental to understanding physical phenomena.",
+    "example_zh": "电磁学是理解物理现象的基础。",
+    "level": "kaoyan",
+    "category": "科学"
+  },
+  {
+    "word": "energystorage",
+    "pos": "n.",
+    "meaning_zh": "能量存储",
+    "example_en": "Energy storage technologies are crucial for renewable energy.",
+    "example_zh": "能量存储技术对于可再生能源至关重要。",
+    "level": "kaoyan",
+    "category": "能源"
+  },
+  {
+    "word": "environmentalism",
+    "pos": "n.",
+    "meaning_zh": "环境保护主义",
+    "example_en": "Environmentalism advocates for sustainable practices.",
+    "example_zh": "环境保护主义倡导可持续实践。",
+    "level": "kaoyan",
+    "category": "环境"
+  },
+  {
+    "word": "genomics",
+    "pos": "n.",
+    "meaning_zh": "基因组学",
+    "example_en": "Genomics has transformed our understanding of genetics.",
+    "example_zh": "基因组学改变了我们对遗传学的理解。",
+    "level": "kaoyan",
+    "category": "科学"
+  },
+  {
+    "word": "informationsecurity",
+    "pos": "n.",
+    "meaning_zh": "信息安全",
+    "example_en": "Information security is critical in the digital age.",
+    "example_zh": "信息安全在数字时代至关重要。",
+    "level": "kaoyan",
+    "category": "技术"
+  },
+  {
+    "word": "mechanization",
+    "pos": "n.",
+    "meaning_zh": "机械化",
+    "example_en": "Mechanization increases efficiency in manufacturing.",
+    "example_zh": "机械化提高了制造业的效率。",
+    "level": "kaoyan",
+    "category": "技术"
+  },
+  {
+    "word": "microelectronics",
+    "pos": "n.",
+    "meaning_zh": "微电子学",
+    "example_en": "Microelectronics enables the development of smaller devices.",
+    "example_zh": "微电子学使得更小的设备得以开发。",
+    "level": "kaoyan",
+    "category": "技术"
+  },
+  {
+    "word": "networksecurity",
+    "pos": "n.",
+    "meaning_zh": "网络安全",
+    "example_en": "Network security measures protect against cyber threats.",
+    "example_zh": "网络安全措施保护免受网络威胁。",
+    "level": "kaoyan",
+    "category": "技术"
+  },
+  {
+    "word": "optoelectronics",
+    "pos": "n.",
+    "meaning_zh": "光电子学",
+    "example_en": "Optoelectronics combines optics and electronics.",
+    "example_zh": "光电子学结合了光学和电子学。",
+    "level": "kaoyan",
+    "category": "技术"
+  },
+  {
+    "word": "photovoltaics",
+    "pos": "n.",
+    "meaning_zh": "光电",
+    "example_en": "Photovoltaics convert sunlight into electricity.",
+    "example_zh": "光电将阳光转化为电能。",
+    "level": "kaoyan",
+    "category": "能源"
+  },
+  {
+    "word": "pedagogical",
+    "pos": "adj.",
+    "meaning_zh": "教学法的",
+    "example_en": "The pedagogical approach emphasizes student-centered learning.",
+    "example_zh": "这种教学法强调以学生为中心的学习。",
+    "level": "kaoyan",
+    "category": "教育理论"
+  },
+  {
+    "word": "didactic",
+    "pos": "adj.",
+    "meaning_zh": "说教的",
+    "example_en": "The didactic method can be boring for some students.",
+    "example_zh": "说教的方法可能会让一些学生感到枯燥。",
+    "level": "kaoyan",
+    "category": "教学方法"
+  },
+  {
+    "word": "educationalist",
+    "pos": "n.",
+    "meaning_zh": "教育学家",
+    "example_en": "The educationalist advocated for reform in the education system.",
+    "example_zh": "这位教育学家提倡教育制度改革。",
+    "level": "kaoyan",
+    "category": "教育人物"
+  },
+  {
+    "word": "enlightenment",
+    "pos": "n.",
+    "meaning_zh": "启蒙",
+    "example_en": "The enlightenment period saw significant advancements in education.",
+    "example_zh": "启蒙时代见证了教育的重大进步。",
+    "level": "kaoyan",
+    "category": "教育历史"
+  },
+  {
+    "word": "formalism",
+    "pos": "n.",
+    "meaning_zh": "形式主义",
+    "example_en": "The formalism in education can stifle creativity.",
+    "example_zh": "教育中的形式主义可能会扼杀创造力。",
+    "level": "kaoyan",
+    "category": "教育现象"
+  },
+  {
+    "word": "humanism",
+    "pos": "n.",
+    "meaning_zh": "人文主义",
+    "example_en": "Humanism emphasizes the value of human life and education.",
+    "example_zh": "人文主义强调人类生命和教育的价值。",
+    "level": "kaoyan",
+    "category": "教育哲学"
+  },
+  {
+    "word": "idealism",
+    "pos": "n.",
+    "meaning_zh": "理想主义",
+    "example_en": "The idealism of the educator inspired his students.",
+    "example_zh": "这位教育者的理想主义激励了他的学生。",
+    "level": "kaoyan",
+    "category": "教育理念"
+  },
+  {
+    "word": "institutionalization",
+    "pos": "n.",
+    "meaning_zh": "制度化",
+    "example_en": "The institutionalization of education has both positive and negative effects.",
+    "example_zh": "教育的制度化有正面和负面的影响。",
+    "level": "kaoyan",
+    "category": "教育制度"
+  },
+  {
+    "word": "interdisciplinary",
+    "pos": "adj.",
+    "meaning_zh": "跨学科的",
+    "example_en": "Interdisciplinary studies encourage a broader understanding of subjects.",
+    "example_zh": "跨学科研究促进了对学科的更广泛理解。",
+    "level": "kaoyan",
+    "category": "教育方法"
+  },
+  {
+    "word": "liberalism",
+    "pos": "n.",
+    "meaning_zh": "自由主义",
+    "example_en": "Liberalism in education promotes individual freedom and autonomy.",
+    "example_zh": "教育中的自由主义促进个人自由和自主。",
+    "level": "kaoyan",
+    "category": "教育思想"
+  },
+  {
+    "word": "materialism",
+    "pos": "n.",
+    "meaning_zh": "唯物主义",
+    "example_en": "Materialism can influence the way we perceive education and its goals.",
+    "example_zh": "唯物主义会影响我们对教育及其目标的看法。",
+    "level": "kaoyan",
+    "category": "哲学基础"
+  },
+  {
+    "word": "meritocracy",
+    "pos": "n.",
+    "meaning_zh": "精英主义",
+    "example_en": "The meritocracy system in education can be both fair and unfair.",
+    "example_zh": "教育中的精英主义既可能是公平的，也可能是不公平的。",
+    "level": "kaoyan",
+    "category": "教育制度"
+  },
+  {
+    "word": "naturalism",
+    "pos": "n.",
+    "meaning_zh": "自然主义",
+    "example_en": "Naturalism in education focuses on learning from nature and experience.",
+    "example_zh": "教育中的自然主义注重从自然和经验中学习。",
+    "level": "kaoyan",
+    "category": "教育方法"
+  },
+  {
+    "word": "objectivism",
+    "pos": "n.",
+    "meaning_zh": "客观主义",
+    "example_en": "Objectivism in education emphasizes the importance of objective knowledge.",
+    "example_zh": "教育中的客观主义强调客观知识的重要性。",
+    "level": "kaoyan",
+    "category": "教育哲学"
+  },
+  {
+    "word": "positivism",
+    "pos": "n.",
+    "meaning_zh": "实证主义",
+    "example_en": "Positivism in education focuses on empirical evidence and scientific methods.",
+    "example_zh": "教育中的实证主义注重经验证据和科学方法。",
+    "level": "kaoyan",
+    "category": "教育方法"
+  },
+  {
+    "word": "postmodernism",
+    "pos": "n.",
+    "meaning_zh": "后现代主义",
+    "example_en": "Postmodernism in education challenges traditional notions of knowledge and authority.",
+    "example_zh": "教育中的后现代主义挑战了传统的知识和权威观念。",
+    "level": "kaoyan",
+    "category": "教育思想"
+  },
+  {
+    "word": "progressivism",
+    "pos": "n.",
+    "meaning_zh": "进步主义",
+    "example_en": "Progressivism in education promotes social reform and individual development.",
+    "example_zh": "教育中的进步主义促进社会改革和个人发展。",
+    "level": "kaoyan",
+    "category": "教育理念"
+  },
+  {
+    "word": "reformism",
+    "pos": "n.",
+    "meaning_zh": "改革主义",
+    "example_en": "Reformism in education seeks to improve and modernize educational systems.",
+    "example_zh": "教育中的改革主义寻求改进和现代化教育体系。",
+    "level": "kaoyan",
+    "category": "教育制度"
+  },
+  {
+    "word": "relativism",
+    "pos": "n.",
+    "meaning_zh": "相对主义",
+    "example_en": "Relativism in education questions absolute truths and promotes critical thinking.",
+    "example_zh": "教育中的相对主义质疑绝对真理并促进批判性思维。",
+    "level": "kaoyan",
+    "category": "教育哲学"
+  },
+  {
+    "word": "romanticism",
+    "pos": "n.",
+    "meaning_zh": "浪漫主义",
+    "example_en": "Romanticism in education values emotion, imagination, and individuality.",
+    "example_zh": "教育中的浪漫主义重视情感、想象力和个性。",
+    "level": "kaoyan",
+    "category": "教育理念"
+  },
+  {
+    "word": "psychosis",
+    "pos": "n.",
+    "meaning_zh": "精神病",
+    "example_en": "The patient's psychosis was treated with medication.",
+    "example_zh": "该患者的精神病通过药物治疗得以控制。",
+    "level": "kaoyan",
+    "category": "心理学"
+  },
+  {
+    "word": "cognition",
+    "pos": "n.",
+    "meaning_zh": "认知",
+    "example_en": "The study of cognition helps us understand human thought processes.",
+    "example_zh": "对认知的研究帮助我们理解人类的思维过程。",
+    "level": "kaoyan",
+    "category": "认知科学"
+  },
+  {
+    "word": "self-esteem",
+    "pos": "n.",
+    "meaning_zh": "自尊",
+    "example_en": "Low self-esteem can lead to various mental health issues.",
+    "example_zh": "低自尊可能导致多种心理健康问题。",
+    "level": "kaoyan",
+    "category": "心理学"
+  },
+  {
+    "word": "stress",
+    "pos": "n.",
+    "meaning_zh": "压力",
+    "example_en": "Chronic stress can have serious effects on both physical and mental health.",
+    "example_zh": "慢性压力可能对身心健康产生严重影响。",
+    "level": "kaoyan",
+    "category": "心理学"
+  },
+  {
+    "word": "anxiety",
+    "pos": "n.",
+    "meaning_zh": "焦虑",
+    "example_en": "Anxiety disorders are among the most common mental health issues.",
+    "example_zh": "焦虑症是最常见的精神健康问题之一。",
+    "level": "kaoyan",
+    "category": "精神病学"
+  },
+  {
+    "word": "depression",
+    "pos": "n.",
+    "meaning_zh": "抑郁",
+    "example_en": "Depression is a serious mental health condition that requires professional treatment.",
+    "example_zh": "抑郁是一种需要专业治疗的严重心理健康状况。",
+    "level": "kaoyan",
+    "category": "精神病学"
+  },
+  {
+    "word": "psychiatry",
+    "pos": "n.",
+    "meaning_zh": "精神病学",
+    "example_en": "Psychiatry involves the diagnosis and treatment of mental health disorders.",
+    "example_zh": "精神病学涉及精神健康障碍的诊断和治疗。",
+    "level": "kaoyan",
+    "category": "医学"
+  },
+  {
+    "word": "neurology",
+    "pos": "n.",
+    "meaning_zh": "神经学",
+    "example_en": "Neurology is the branch of medicine dealing with the nervous system.",
+    "example_zh": "神经学是处理神经系统的医学分支。",
+    "level": "kaoyan",
+    "category": "医学"
+  },
+  {
+    "word": "mental",
+    "pos": "adj.",
+    "meaning_zh": "精神的",
+    "example_en": "Mental health is just as important as physical health.",
+    "example_zh": "精神健康与身体健康同样重要。",
+    "level": "kaoyan",
+    "category": "心理学"
+  },
+  {
+    "word": "recyclable",
+    "pos": "adj.",
+    "meaning_zh": "可回收",
+    "example_en": "The plastic bottle is recyclable.",
+    "example_zh": "塑料瓶是可回收的。",
+    "level": "kaoyan",
+    "category": "垃圾处理"
+  },
+  {
+    "word": "nonrenewable",
+    "pos": "adj.",
+    "meaning_zh": "不可再生",
+    "example_en": "Nonrenewable resources are limited.",
+    "example_zh": "不可再生资源是有限的。",
+    "level": "kaoyan",
+    "category": "能源资源"
+  },
+  {
+    "word": "desertification",
+    "pos": "n.",
+    "meaning_zh": "沙漠化",
+    "example_en": "Desertification is a serious issue.",
+    "example_zh": "沙漠化是一个严重的问题。",
+    "level": "kaoyan",
+    "category": "环境问题"
+  },
+  {
+    "word": "endangered",
+    "pos": "adj.",
+    "meaning_zh": "濒危",
+    "example_en": "The species is endangered.",
+    "example_zh": "这种物种濒临灭绝。",
+    "level": "kaoyan",
+    "category": "野生动物保护"
+  },
+  {
+    "word": "toxicity",
+    "pos": "n.",
+    "meaning_zh": "毒性",
+    "example_en": "The toxicity of the chemical is high.",
+    "example_zh": "该化学物质的毒性很高。",
+    "level": "kaoyan",
+    "category": "环境污染"
+  },
+  {
+    "word": "biodegradable",
+    "pos": "adj.",
+    "meaning_zh": "可生物降解",
+    "example_en": "The bag is biodegradable.",
+    "example_zh": "这袋是可生物降解的。",
+    "level": "kaoyan",
+    "category": "垃圾处理"
+  },
+  {
+    "word": "defoliation",
+    "pos": "n.",
+    "meaning_zh": "落叶",
+    "example_en": "Defoliation can harm trees.",
+    "example_zh": "落叶可能会伤害树木。",
+    "level": "kaoyan",
+    "category": "植物保护"
+  },
+  {
+    "word": "erosion",
+    "pos": "n.",
+    "meaning_zh": "侵蚀",
+    "example_en": "Soil erosion is a major problem.",
+    "example_zh": "土壤侵蚀是一个大问题。",
+    "level": "kaoyan",
+    "category": "环境问题"
+  },
+  {
+    "word": "hydroelectric",
+    "pos": "adj.",
+    "meaning_zh": "水力发电",
+    "example_en": "The hydroelectric power plant is efficient.",
+    "example_zh": "水力发电厂是高效的。",
+    "level": "kaoyan",
+    "category": "能源资源"
+  },
+  {
+    "word": "landfill",
+    "pos": "n.",
+    "meaning_zh": "垃圾填埋场",
+    "example_en": "The landfill is full of waste.",
+    "example_zh": "垃圾填埋场里装满了垃圾。",
+    "level": "kaoyan",
+    "category": "垃圾处理"
+  },
+  {
+    "word": "minimization",
+    "pos": "n.",
+    "meaning_zh": "最小化",
+    "example_en": "The minimization of waste is important.",
+    "example_zh": "减少浪费很重要。",
+    "level": "kaoyan",
+    "category": "环境保护"
+  },
+  {
+    "word": "nutrient",
+    "pos": "n.",
+    "meaning_zh": "营养物质",
+    "example_en": "The soil lacks essential nutrients.",
+    "example_zh": "土壤缺乏必需的营养物质。",
+    "level": "kaoyan",
+    "category": "环境保护"
+  },
+  {
+    "word": "ozone",
+    "pos": "n.",
+    "meaning_zh": "臭氧",
+    "example_en": "The ozone layer is thinning.",
+    "example_zh": "臭氧层正在变薄。",
+    "level": "kaoyan",
+    "category": "环境问题"
+  },
+  {
+    "word": "pesticide",
+    "pos": "n.",
+    "meaning_zh": "杀虫剂",
+    "example_en": "The pesticide is harmful to humans.",
+    "example_zh": "杀虫剂对人类有害。",
+    "level": "kaoyan",
+    "category": "环境污染"
+  },
+  {
+    "word": "salination",
+    "pos": "n.",
+    "meaning_zh": "盐化",
+    "example_en": "Salination of soil is a problem.",
+    "example_zh": "土壤盐化是一个问题。",
+    "level": "kaoyan",
+    "category": "环境问题"
+  },
+  {
+    "word": "terracing",
+    "pos": "n.",
+    "meaning_zh": "梯田",
+    "example_en": "Terracing can prevent soil erosion.",
+    "example_zh": "梯田可以防止土壤侵蚀。",
+    "level": "kaoyan",
+    "category": "环境保护"
+  },
+  {
+    "word": "acculturation",
+    "pos": "n.",
+    "meaning_zh": "文化同化",
+    "example_en": "Acculturation occurs in cross-cultural communication.",
+    "example_zh": "在跨文化交流中发生文化同化。",
+    "level": "kaoyan",
+    "category": "文化交流"
+  },
+  {
+    "word": "ethnocentrism",
+    "pos": "n.",
+    "meaning_zh": "族群中心主义",
+    "example_en": "Ethnocentrism hinders effective cross-cultural communication.",
+    "example_zh": "族群中心主义阻碍有效的跨文化交流。",
+    "level": "kaoyan",
+    "category": "文化障碍"
+  },
+  {
+    "word": "intercultural",
+    "pos": "adj.",
+    "meaning_zh": "跨文化的",
+    "example_en": "Intercultural communication is essential in business.",
+    "example_zh": "跨文化交流在商业中至关重要。",
+    "level": "kaoyan",
+    "category": "跨文化"
+  },
+  {
+    "word": "multicultural",
+    "pos": "adj.",
+    "meaning_zh": "多元文化的",
+    "example_en": "Multicultural societies value cross-cultural communication.",
+    "example_zh": "多元文化社会重视跨文化交流。",
+    "level": "kaoyan",
+    "category": "多元文化"
+  },
+  {
+    "word": "tolerance",
+    "pos": "n.",
+    "meaning_zh": "宽容",
+    "example_en": "Tolerance is essential for cross-cultural communication.",
+    "example_zh": "宽容是跨文化交流的必要条件。",
+    "level": "kaoyan",
+    "category": "宽容"
+  },
+  {
+    "word": "xenophilia",
+    "pos": "n.",
+    "meaning_zh": "喜外症",
+    "example_en": "Xenophilia facilitates cross-cultural exchange.",
+    "example_zh": "喜外症促进跨文化交流。",
+    "level": "kaoyan",
+    "category": "文化交流"
+  },
+  {
+    "word": "inclusivity",
+    "pos": "n.",
+    "meaning_zh": "包容性",
+    "example_en": "Inclusivity promotes cross-cultural understanding.",
+    "example_zh": "包容性促进跨文化理解。",
+    "level": "kaoyan",
+    "category": "包容性"
+  },
+  {
+    "word": "linguistic",
+    "pos": "adj.",
+    "meaning_zh": "语言的",
+    "example_en": "Linguistic barriers affect cross-cultural communication.",
+    "example_zh": "语言障碍影响跨文化交流。",
+    "level": "kaoyan",
+    "category": "语言障碍"
+  },
+  {
+    "word": "multilingual",
+    "pos": "adj.",
+    "meaning_zh": "多语种的",
+    "example_en": "Multilingual individuals facilitate cross-cultural exchange.",
+    "example_zh": "多语种人士促进跨文化交流。",
+    "level": "kaoyan",
+    "category": "多语种"
+  },
+  {
+    "word": "nonverbal",
+    "pos": "adj.",
+    "meaning_zh": "非语言的",
+    "example_en": "Nonverbal cues are important in cross-cultural communication.",
+    "example_zh": "非语言暗示在跨文化交流中很重要。",
+    "level": "kaoyan",
+    "category": "非语言暗示"
+  },
+  {
+    "word": "paralinguistic",
+    "pos": "adj.",
+    "meaning_zh": "伴随语言的",
+    "example_en": "Paralinguistic features influence cross-cultural communication.",
+    "example_zh": "伴随语言特征影响跨文化交流。",
+    "level": "kaoyan",
+    "category": "伴随语言"
+  },
+  {
+    "word": "transcultural",
+    "pos": "adj.",
+    "meaning_zh": "跨文化的",
+    "example_en": "Transcultural exchange promotes global understanding.",
+    "example_zh": "跨文化交流促进全球理解。",
+    "level": "kaoyan",
+    "category": "跨文化"
+  },
+  {
+    "word": "universalism",
+    "pos": "n.",
+    "meaning_zh": "普遍主义",
+    "example_en": "Universalism values cross-cultural unity.",
+    "example_zh": "普遍主义重视跨文化团结。",
+    "level": "kaoyan",
+    "category": "普遍主义"
+  },
+  {
+    "word": "crosscultural",
+    "pos": "adj.",
+    "meaning_zh": "跨文化的",
+    "example_en": "Crosscultural competence is essential for global business.",
+    "example_zh": "跨文化能力是全球商务的必要条件。",
+    "level": "kaoyan",
+    "category": "跨文化能力"
+  },
+  {
+    "word": "interpersonal",
+    "pos": "adj.",
+    "meaning_zh": "人际的",
+    "example_en": "Interpersonal skills are vital for cross-cultural communication.",
+    "example_zh": "人际技能是跨文化交流的关键。",
+    "level": "kaoyan",
+    "category": "人际技能"
+  },
+  {
+    "word": "sociolinguistic",
+    "pos": "adj.",
+    "meaning_zh": "社会语言学的",
+    "example_en": "Sociolinguistic factors influence cross-cultural interaction.",
+    "example_zh": "社会语言学因素影响跨文化互动。",
+    "level": "kaoyan",
+    "category": "社会语言学"
+  },
+  {
+    "word": "anthropology",
+    "pos": "n.",
+    "meaning_zh": "人类学",
+    "example_en": "Anthropology studies cross-cultural differences.",
+    "example_zh": "人类学研究跨文化差异。",
+    "level": "kaoyan",
+    "category": "人类学"
+  },
+  {
+    "word": "disinformation",
+    "pos": "n.",
+    "meaning_zh": "虚假信息",
+    "example_en": "Social media spreads disinformation quickly.",
+    "example_zh": "社交媒体迅速传播虚假信息。",
+    "level": "kaoyan",
+    "category": "媒体信息"
+  },
+  {
+    "word": "infodemic",
+    "pos": "n.",
+    "meaning_zh": "信息疫情",
+    "example_en": "The infodemic has become a significant challenge.",
+    "example_zh": "信息疫情已经成为一个重大的挑战。",
+    "level": "kaoyan",
+    "category": "信息传播"
+  },
+  {
+    "word": "fact-checking",
+    "pos": "n.",
+    "meaning_zh": "事实核查",
+    "example_en": "Fact-checking is crucial in journalism.",
+    "example_zh": "事实核查在新闻工作中至关重要。",
+    "level": "kaoyan",
+    "category": "媒体监督"
+  },
+  {
+    "word": "censorship",
+    "pos": "n.",
+    "meaning_zh": "审查",
+    "example_en": "Censorship can limit freedom of speech.",
+    "example_zh": "审查可以限制言论自由。",
+    "level": "kaoyan",
+    "category": "信息控制"
+  },
+  {
+    "word": "telecast",
+    "pos": "v.",
+    "meaning_zh": "电视播出",
+    "example_en": "The event will be telecast live.",
+    "example_zh": "该活动将现场电视播出。",
+    "level": "kaoyan",
+    "category": "媒体传播"
+  },
+  {
+    "word": "broadcaster",
+    "pos": "n.",
+    "meaning_zh": "广播员",
+    "example_en": "The broadcaster announced the news.",
+    "example_zh": "广播员宣布了新闻。",
+    "level": "kaoyan",
+    "category": "媒体从业者"
+  },
+  {
+    "word": "podcast",
+    "pos": "n.",
+    "meaning_zh": "播客",
+    "example_en": "I listen to a podcast every morning.",
+    "example_zh": "我每天早上听一个播客。",
+    "level": "kaoyan",
+    "category": "新媒体形式"
+  },
+  {
+    "word": "journalistic",
+    "pos": "adj.",
+    "meaning_zh": "新闻的",
+    "example_en": "Journalistic integrity is essential.",
+    "example_zh": "新闻诚信是必不可少的。",
+    "level": "kaoyan",
+    "category": "媒体伦理"
+  },
+  {
+    "word": "misinformation",
+    "pos": "n.",
+    "meaning_zh": "错误信息",
+    "example_en": "Misinformation can be harmful.",
+    "example_zh": "错误信息可能造成伤害。",
+    "level": "kaoyan",
+    "category": "信息问题"
+  },
+  {
+    "word": "cyberjournalism",
+    "pos": "n.",
+    "meaning_zh": "网络新闻",
+    "example_en": "Cyberjournalism is becoming more popular.",
+    "example_zh": "网络新闻变得越来越流行。",
+    "level": "kaoyan",
+    "category": "新媒体形式"
+  },
+  {
+    "word": "newscast",
+    "pos": "n.",
+    "meaning_zh": "新闻播报",
+    "example_en": "I watch the newscast every evening.",
+    "example_zh": "我每天晚上看新闻播报。",
+    "level": "kaoyan",
+    "category": "媒体传播"
+  },
+  {
+    "word": "editorial",
+    "pos": "n.",
+    "meaning_zh": "社论",
+    "example_en": "The editorial expressed a strong opinion.",
+    "example_zh": "社论表达了强烈的意见。",
+    "level": "kaoyan",
+    "category": "媒体评论"
+  },
+  {
+    "word": "publicity",
+    "pos": "n.",
+    "meaning_zh": "宣传",
+    "example_en": "The company needs more publicity.",
+    "example_zh": "公司需要更多的宣传。",
+    "level": "kaoyan",
+    "category": "信息传播"
+  },
+  {
+    "word": "broadcasting",
+    "pos": "n.",
+    "meaning_zh": "广播",
+    "example_en": "Broadcasting is an important medium.",
+    "example_zh": "广播是一个重要的媒体。",
+    "level": "kaoyan",
+    "category": "媒体形式"
+  },
+  {
+    "word": "newsflash",
+    "pos": "n.",
+    "meaning_zh": "新闻快讯",
+    "example_en": "The newsflash announced the breaking news.",
+    "example_zh": "新闻快讯宣布了突发新闻。",
+    "level": "kaoyan",
+    "category": "媒体传播"
+  },
+  {
+    "word": "reportage",
+    "pos": "n.",
+    "meaning_zh": "报道",
+    "example_en": "The reportage was detailed and accurate.",
+    "example_zh": "报道是详细而准确的。",
+    "level": "kaoyan",
+    "category": "媒体报道"
+  },
+  {
+    "word": "mediation",
+    "pos": "n.",
+    "meaning_zh": "媒体调解",
+    "example_en": "Mediation can resolve conflicts.",
+    "example_zh": "媒体调解可以解决冲突。",
+    "level": "kaoyan",
+    "category": "媒体作用"
+  },
+  {
+    "word": "press",
+    "pos": "n.",
+    "meaning_zh": "新闻界",
+    "example_en": "The press plays a crucial role in democracy.",
+    "example_zh": "新闻界在民主中扮演着至关重要的角色。",
+    "level": "kaoyan",
+    "category": "媒体行业"
+  },
+  {
+    "word": "informational",
+    "pos": "adj.",
+    "meaning_zh": "信息的",
+    "example_en": "The informational website is very useful.",
+    "example_zh": "信息网站非常有用。",
+    "level": "kaoyan",
+    "category": "信息资源"
+  },
+  {
+    "word": "communicative",
+    "pos": "adj.",
+    "meaning_zh": "交际的",
+    "example_en": "The communicative approach is effective.",
+    "example_zh": "交际方法是有效的。",
+    "level": "kaoyan",
+    "category": "信息传播"
+  },
+  {
+    "word": "multimedia",
+    "pos": "n.",
+    "meaning_zh": "多媒体",
+    "example_en": "Multimedia presentations are engaging.",
+    "example_zh": "多媒体演示非常吸引人。",
+    "level": "kaoyan",
+    "category": "新媒体形式"
+  },
+  {
+    "word": "publicist",
+    "pos": "n.",
+    "meaning_zh": "公关人员",
+    "example_en": "The publicist handled the media relations.",
+    "example_zh": "公关人员处理媒体关系。",
+    "level": "kaoyan",
+    "category": "媒体从业者"
+  },
+  {
+    "word": "jurisprudence",
+    "pos": "n.",
+    "meaning_zh": "法学",
+    "example_en": "The court's decision was based on sound jurisprudence.",
+    "example_zh": "法院的决定是基于健全的法学。",
+    "level": "kaoyan",
+    "category": "法学"
+  },
+  {
+    "word": "legislature",
+    "pos": "n.",
+    "meaning_zh": "立法机构",
+    "example_en": "The legislature has the power to enact laws.",
+    "example_zh": "立法机构有权制定法律。",
+    "level": "kaoyan",
+    "category": "政治"
+  },
+  {
+    "word": "executive",
+    "pos": "n.",
+    "meaning_zh": "行政部门",
+    "example_en": "The executive branch is headed by the president.",
+    "example_zh": "行政部门由总统领导。",
+    "level": "kaoyan",
+    "category": "行政"
+  },
+  {
+    "word": "egalitarian",
+    "pos": "adj.",
+    "meaning_zh": "平等主义的",
+    "example_en": "The egalitarian society values equality above all else.",
+    "example_zh": "平等主义社会把平等置于一切之上。",
+    "level": "kaoyan",
+    "category": "社会"
+  },
+  {
+    "word": "restitution",
+    "pos": "n.",
+    "meaning_zh": "赔偿",
+    "example_en": "The company was ordered to pay restitution to the affected customers.",
+    "example_zh": "该公司被命令向受影响的客户支付赔偿。",
+    "level": "kaoyan",
+    "category": "法律"
+  },
+  {
+    "word": "probation",
+    "pos": "n.",
+    "meaning_zh": "缓刑",
+    "example_en": "The defendant was sentenced to two years of probation.",
+    "example_zh": "被告被判处两年缓刑。",
+    "level": "kaoyan",
+    "category": "法律"
+  },
+  {
+    "word": "parole",
+    "pos": "n.",
+    "meaning_zh": "假释",
+    "example_en": "The prisoner was granted parole after serving five years.",
+    "example_zh": "囚犯在服刑五年后被假释。",
+    "level": "kaoyan",
+    "category": "法律"
+  },
+  {
+    "word": "pardon",
+    "pos": "n.",
+    "meaning_zh": "赦免",
+    "example_en": "The president granted a pardon to the convicted felon.",
+    "example_zh": "总统赦免了被定罪的重罪犯。",
+    "level": "kaoyan",
+    "category": "法律"
+  },
+  {
+    "word": "amnesty",
+    "pos": "n.",
+    "meaning_zh": "大赦",
+    "example_en": "The government declared an amnesty for all political prisoners.",
+    "example_zh": "政府宣布对所有政治犯大赦。",
+    "level": "kaoyan",
+    "category": "法律"
+  },
+  {
+    "word": "affidavit",
+    "pos": "n.",
+    "meaning_zh": "宣誓书",
+    "example_en": "The witness signed an affidavit swearing to the truth of her statement.",
+    "example_zh": "证人签署了一份宣誓书，宣誓其陈述的真实性。",
+    "level": "kaoyan",
+    "category": "法律"
+  },
+  {
+    "word": "deposition",
+    "pos": "n.",
+    "meaning_zh": "证词记录",
+    "example_en": "The lawyer took the witness's deposition before the trial.",
+    "example_zh": "律师在审判前记录了证人的证词。",
+    "level": "kaoyan",
+    "category": "法律"
+  },
+  {
+    "word": "interrogation",
+    "pos": "n.",
+    "meaning_zh": "审问",
+    "example_en": "The police conducted an interrogation of the suspect.",
+    "example_zh": "警察对嫌疑人进行了审问。",
+    "level": "kaoyan",
+    "category": "法律"
+  },
+  {
+    "word": "arraignment",
+    "pos": "n.",
+    "meaning_zh": "受审",
+    "example_en": "The defendant's arraignment was scheduled for the following week.",
+    "example_zh": "被告的受审安排在下周。",
+    "level": "kaoyan",
+    "category": "法律"
+  },
+  {
+    "word": "acquittal",
+    "pos": "n.",
+    "meaning_zh": "宣判无罪",
+    "example_en": "The jury delivered an acquittal after deliberating for hours.",
+    "example_zh": "陪审团经过数小时的讨论后宣判被告无罪。",
+    "level": "kaoyan",
+    "category": "法律"
+  },
+  {
+    "word": "empiricism",
+    "pos": "n.",
+    "meaning_zh": "经验主义",
+    "example_en": "Empiricism is a philosophical approach to research.",
+    "example_zh": "经验主义是一种哲学的研究方法。",
+    "level": "kaoyan",
+    "category": "研究哲学"
+  },
+  {
+    "word": "taxonomy",
+    "pos": "n.",
+    "meaning_zh": "分类学",
+    "example_en": "The researcher developed a taxonomy to categorize the data.",
+    "example_zh": "研究人员开发了一个分类学来分类数据。",
+    "level": "kaoyan",
+    "category": "研究方法"
+  },
+  {
+    "word": "operationalization",
+    "pos": "n.",
+    "meaning_zh": "操作化",
+    "example_en": "The researcher operationalized the concept of motivation.",
+    "example_zh": "研究人员对动机的概念进行了操作化。",
+    "level": "kaoyan",
+    "category": "研究设计"
+  },
+  {
+    "word": "reliability",
+    "pos": "n.",
+    "meaning_zh": "可靠性",
+    "example_en": "The researcher tested the reliability of the questionnaire.",
+    "example_zh": "研究人员测试了问卷的可靠性。",
+    "level": "kaoyan",
+    "category": "研究评估"
+  },
+  {
+    "word": "generalizability",
+    "pos": "n.",
+    "meaning_zh": "普遍性",
+    "example_en": "The researcher discussed the generalizability of the findings.",
+    "example_zh": "研究人员讨论了研究结果的普遍性。",
+    "level": "kaoyan",
+    "category": "研究评估"
+  },
+  {
+    "word": "triangulation",
+    "pos": "n.",
+    "meaning_zh": "三角测量",
+    "example_en": "The researcher used triangulation to increase the validity of the results.",
+    "example_zh": "研究人员使用三角测量来增加结果的效度。",
+    "level": "kaoyan",
+    "category": "研究设计"
+  },
+  {
+    "word": "member",
+    "pos": "n.",
+    "meaning_zh": "成员",
+    "example_en": "The research team consisted of several members with different expertise.",
+    "example_zh": "研究团队由具有不同专业知识的几位成员组成。",
+    "level": "kaoyan",
+    "category": "研究团队"
+  },
+  {
+    "word": "collaboration",
+    "pos": "n.",
+    "meaning_zh": "合作",
+    "example_en": "The researchers engaged in a collaboration to study the phenomenon.",
+    "example_zh": "研究人员开展合作来研究这一现象。",
+    "level": "kaoyan",
+    "category": "研究合作"
+  },
+  {
+    "word": "qualitative",
+    "pos": "adj.",
+    "meaning_zh": "定性的",
+    "example_en": "The researcher used qualitative methods to analyze the data.",
+    "example_zh": "研究人员使用定性方法来分析数据。",
+    "level": "kaoyan",
+    "category": "研究方法"
+  },
+  {
+    "word": "quantitative",
+    "pos": "adj.",
+    "meaning_zh": "定量的",
+    "example_en": "The researcher used quantitative methods to analyze the data.",
+    "example_zh": "研究人员使用定量方法来分析数据。",
+    "level": "kaoyan",
+    "category": "研究方法"
+  },
+  {
+    "word": "mixed",
+    "pos": "adj.",
+    "meaning_zh": "混合的",
+    "example_en": "The researcher used a mixed-methods approach to study the phenomenon.",
+    "example_zh": "研究人员使用混合方法来研究这一现象。",
+    "level": "kaoyan",
+    "category": "研究方法"
+  },
+  {
+    "word": "participant",
+    "pos": "n.",
+    "meaning_zh": "参与者",
+    "example_en": "The researcher recruited participants for the study.",
+    "example_zh": "研究人员为研究招募了参与者。",
+    "level": "kaoyan",
+    "category": "研究对象"
+  },
+  {
+    "word": "informed",
+    "pos": "adj.",
+    "meaning_zh": "知情的",
+    "example_en": "The researcher obtained informed consent from the participants.",
+    "example_zh": "研究人员从参与者那里获得了知情同意。",
+    "level": "kaoyan",
+    "category": "研究伦理"
+  },
+  {
+    "word": "anonymity",
+    "pos": "n.",
+    "meaning_zh": "匿名性",
+    "example_en": "The researcher ensured the anonymity of the participants.",
+    "example_zh": "研究人员确保了参与者的匿名性。",
+    "level": "kaoyan",
+    "category": "研究伦理"
+  },
+  {
+    "word": "confidentiality",
+    "pos": "n.",
+    "meaning_zh": "保密性",
+    "example_en": "The researcher maintained the confidentiality of the data.",
+    "example_zh": "研究人员维护了数据的保密性。",
+    "level": "kaoyan",
+    "category": "研究伦理"
+  },
+  {
+    "word": "peer",
+    "pos": "n.",
+    "meaning_zh": "同行",
+    "example_en": "The researcher submitted the manuscript to a peer-reviewed journal.",
+    "example_zh": "研究人员将稿件提交到一份同行评审的期刊。",
+    "level": "kaoyan",
+    "category": "学术出版"
+  },
+  {
+    "word": "elucidate",
+    "pos": "v.",
+    "meaning_zh": "阐明",
+    "example_en": "The professor elucidated the complex theory.",
+    "example_zh": "教授阐明了复杂的理论。",
+    "level": "kaoyan",
+    "category": "解释"
+  },
+  {
+    "word": "expound",
+    "pos": "v.",
+    "meaning_zh": "详细解释",
+    "example_en": "He expounded on the importance of education.",
+    "example_zh": "他详细解释了教育的重要性。",
+    "level": "kaoyan",
+    "category": "解释"
+  },
+  {
+    "word": "illuminated",
+    "pos": "v.",
+    "meaning_zh": "阐明",
+    "example_en": "The researcher illuminated the darkness with her findings.",
+    "example_zh": "研究人员用她的发现阐明了黑暗。",
+    "level": "kaoyan",
+    "category": "启发"
+  },
+  {
+    "word": "ratiocinate",
+    "pos": "v.",
+    "meaning_zh": "用理性思考",
+    "example_en": "We should ratiocinate before making a decision.",
+    "example_zh": "我们应该用理性思考后再做决定。",
+    "level": "kaoyan",
+    "category": "思考"
+  },
+  {
+    "word": "specify",
+    "pos": "v.",
+    "meaning_zh": "具体指出",
+    "example_en": "The contract specifies the terms and conditions.",
+    "example_zh": "合同具体指出了条款和条件。",
+    "level": "kaoyan",
+    "category": "规定"
+  },
+  {
+    "word": "conjecture",
+    "pos": "v.",
+    "meaning_zh": "推测",
+    "example_en": "We can conjecture the outcome based on the data.",
+    "example_zh": "我们可以根据数据推测结果。",
+    "level": "kaoyan",
+    "category": "推测"
+  },
+  {
+    "word": "corroborate",
+    "pos": "v.",
+    "meaning_zh": "证实",
+    "example_en": "The evidence corroborates the witness's statement.",
+    "example_zh": "证据证实了证人的陈述。",
+    "level": "kaoyan",
+    "category": "证实"
+  },
+  {
+    "word": "infer",
+    "pos": "v.",
+    "meaning_zh": "推断",
+    "example_en": "We can infer the meaning from the context.",
+    "example_zh": "我们可以从上下文推断出意义。",
+    "level": "kaoyan",
+    "category": "推断"
+  },
+  {
+    "word": "certify",
+    "pos": "v.",
+    "meaning_zh": "证明",
+    "example_en": "The document certifies the ownership.",
+    "example_zh": "文件证明了所有权。",
+    "level": "kaoyan",
+    "category": "证明"
+  },
+  {
+    "word": "ratify",
+    "pos": "v.",
+    "meaning_zh": "批准",
+    "example_en": "The government ratified the treaty.",
+    "example_zh": "政府批准了条约。",
+    "level": "kaoyan",
+    "category": "批准"
+  },
+  {
+    "word": "sanction",
+    "pos": "v.",
+    "meaning_zh": "批准",
+    "example_en": "The authority sanctioned the project.",
+    "example_zh": "有关部门批准了项目。",
+    "level": "kaoyan",
+    "category": "批准"
+  },
+  {
+    "word": "vouch",
+    "pos": "v.",
+    "meaning_zh": "保证",
+    "example_en": "I vouch for his integrity.",
+    "example_zh": "我保证他的诚信。",
+    "level": "kaoyan",
+    "category": "保证"
+  },
+  {
+    "word": "warrant",
+    "pos": "v.",
+    "meaning_zh": "保证",
+    "example_en": "The company warrants the product for a year.",
+    "example_zh": "公司保证产品一年内无故障。",
+    "level": "kaoyan",
+    "category": "保证"
+  },
+  {
+    "word": "presume",
+    "pos": "v.",
+    "meaning_zh": "假设",
+    "example_en": "We presume the weather will be fine.",
+    "example_zh": "我们假设天气会很好。",
+    "level": "kaoyan",
+    "category": "假设"
+  },
+  {
+    "word": "postulate",
+    "pos": "v.",
+    "meaning_zh": "假设",
+    "example_en": "The scientist postulated a new theory.",
+    "example_zh": "科学家假设了一种新理论。",
+    "level": "kaoyan",
+    "category": "假设"
+  },
+  {
+    "word": "suppose",
+    "pos": "v.",
+    "meaning_zh": "假设",
+    "example_en": "Let's suppose we have enough time.",
+    "example_zh": "让我们假设我们有足够的时间。",
+    "level": "kaoyan",
+    "category": "假设"
+  },
+  {
+    "word": "approximatively",
+    "pos": "adv.",
+    "meaning_zh": "大约",
+    "example_en": "The result is approximatively equal to the expected value.",
+    "example_zh": "结果大约等于预期值。",
+    "level": "kaoyan",
+    "category": "逻辑副词"
+  },
+  {
+    "word": "presumably",
+    "pos": "adv.",
+    "meaning_zh": "据推测",
+    "example_en": "The new policy will presumably increase the company's revenue.",
+    "example_zh": "据推测，新政策将会增加公司的收入。",
+    "level": "kaoyan",
+    "category": "逻辑副词"
+  },
+  {
+    "word": "exactly",
+    "pos": "adv.",
+    "meaning_zh": "恰好",
+    "example_en": "The measurements are exactly the same as the previous ones.",
+    "example_zh": "测量结果恰好与之前的结果相同。",
+    "level": "kaoyan",
+    "category": "精确程度"
+  },
+  {
+    "word": "necessarily",
+    "pos": "adv.",
+    "meaning_zh": "必然地",
+    "example_en": "The conclusion does not necessarily follow from the premises.",
+    "example_zh": "结论不必然地从前提中得出。",
+    "level": "kaoyan",
+    "category": "逻辑副词"
+  },
+  {
+    "word": "precisely",
+    "pos": "adv.",
+    "meaning_zh": "恰好",
+    "example_en": "The scientist measured the data precisely to ensure accuracy.",
+    "example_zh": "科学家精确地测量了数据以保证准确性。",
+    "level": "kaoyan",
+    "category": "精确程度"
+  },
+  {
+    "word": "roughly",
+    "pos": "adv.",
+    "meaning_zh": "大约",
+    "example_en": "The cost of the project is roughly estimated to be one million dollars.",
+    "example_zh": "该项目的费用大约为一百万美元。",
+    "level": "kaoyan",
+    "category": "逻辑副词"
+  },
+  {
+    "word": "logically",
+    "pos": "adv.",
+    "meaning_zh": "逻辑地",
+    "example_en": "The argument is logically sound but lacks empirical evidence.",
+    "example_zh": "论证在逻辑上是合理的，但缺乏实证证据。",
+    "level": "kaoyan",
+    "category": "逻辑副词"
+  },
+  {
+    "word": "inexactly",
+    "pos": "adv.",
+    "meaning_zh": "不精确地",
+    "example_en": "The theory describes the phenomenon inexactly due to its simplifications.",
+    "example_zh": "理论由于其简化而无法精确地描述现象。",
+    "level": "kaoyan",
+    "category": "精确程度"
+  },
+  {
+    "word": "broadly",
+    "pos": "adv.",
+    "meaning_zh": "广泛地",
+    "example_en": "The new policy will broadly impact the entire industry.",
+    "example_zh": "新政策将对整个行业产生广泛的影响。",
+    "level": "kaoyan",
+    "category": "逻辑副词"
+  },
+  {
+    "word": "coincidentally",
+    "pos": "adv.",
+    "meaning_zh": "碰巧",
+    "example_en": "The two events occurred coincidentally, without any causal relationship.",
+    "example_zh": "两个事件碰巧同时发生，没有任何因果关系。",
+    "level": "kaoyan",
+    "category": "逻辑副词"
+  },
+  {
+    "word": "essentially",
+    "pos": "adv.",
+    "meaning_zh": "本质上",
+    "example_en": "The new plan is essentially the same as the old one.",
+    "example_zh": "新计划本质上与旧计划相同。",
+    "level": "kaoyan",
+    "category": "逻辑副词"
+  },
+  {
+    "word": "specifically",
+    "pos": "adv.",
+    "meaning_zh": "具体地",
+    "example_en": "The researcher specifically designed the experiment to test the hypothesis.",
+    "example_zh": "研究人员具体地设计了实验以测试假设。",
+    "level": "kaoyan",
+    "category": "精确程度"
+  },
+  {
+    "word": "arguably",
+    "pos": "adv.",
+    "meaning_zh": "可以论证地",
+    "example_en": "The company is arguably the most successful in the industry.",
+    "example_zh": "该公司可以论证地认为是该行业中最成功的。",
+    "level": "kaoyan",
+    "category": "逻辑副词"
+  },
+  {
+    "word": "ostensibly",
+    "pos": "adv.",
+    "meaning_zh": "表面上",
+    "example_en": "The policy was ostensibly designed to help the poor, but it had the opposite effect.",
+    "example_zh": "政策表面上是为帮助穷人而设计的，但它产生了相反的效果。",
+    "level": "kaoyan",
+    "category": "逻辑副词"
+  },
+  {
+    "word": "reasonably",
+    "pos": "adv.",
+    "meaning_zh": "合理地",
+    "example_en": "The decision was made reasonably, based on the available data.",
+    "example_zh": "决定是基于可用数据合理地做出的。",
+    "level": "kaoyan",
+    "category": "逻辑副词"
+  },
+  {
+    "word": "narrowly",
+    "pos": "adv.",
+    "meaning_zh": "狭窄地",
+    "example_en": "The researcher narrowly defined the scope of the study to ensure focus.",
+    "example_zh": "研究人员狭窄地定义了研究的范围以确保集中。",
+    "level": "kaoyan",
+    "category": "精确程度"
+  },
+  {
+    "word": "tentatively",
+    "pos": "adv.",
+    "meaning_zh": "暂时地",
+    "example_en": "The plan was tentatively approved, pending further review.",
+    "example_zh": "计划暂时被批准，待进一步审查。",
+    "level": "kaoyan",
+    "category": "逻辑副词"
+  },
+  {
+    "word": "conceivably",
+    "pos": "adv.",
+    "meaning_zh": "可以想象地",
+    "example_en": "It is conceivably possible that the new technology will revolutionize the industry.",
+    "example_zh": "可以想象新技术将会革新该行业。",
+    "level": "kaoyan",
+    "category": "逻辑副词"
+  },
+  {
+    "word": "pragmatically",
+    "pos": "adv.",
+    "meaning_zh": "实用地",
+    "example_en": "The decision was made pragmatically, considering the available resources.",
+    "example_zh": "决定是基于可用资源实用地做出的。",
+    "level": "kaoyan",
+    "category": "逻辑副词"
+  },
+  {
+    "word": "explicitly",
+    "pos": "adv.",
+    "meaning_zh": "明确地",
+    "example_en": "The contract explicitly states the terms and conditions.",
+    "example_zh": "合同明确规定了条款和条件。",
+    "level": "kaoyan",
+    "category": "精确程度"
+  },
+  {
+    "word": "inarguably",
+    "pos": "adv.",
+    "meaning_zh": "无可辩驳地",
+    "example_en": "The data shows that the new method is inarguably more efficient.",
+    "example_zh": "数据表明新方法无可辩驳地更高效。",
+    "level": "kaoyan",
+    "category": "逻辑副词"
+  },
+  {
+    "word": "categorically",
+    "pos": "adv.",
+    "meaning_zh": "绝对地",
+    "example_en": "The company categorically denies any wrongdoing.",
+    "example_zh": "公司绝对否认任何不法行为。",
+    "level": "kaoyan",
+    "category": "逻辑副词"
+  },
+  {
+    "word": "purportedly",
+    "pos": "adv.",
+    "meaning_zh": "所谓地",
+    "example_en": "The purportedly new method was actually an old technique.",
+    "example_zh": "所谓的新方法其实是一种旧技术。",
+    "level": "kaoyan",
+    "category": "逻辑副词"
+  },
+  {
+    "word": "unequivocally",
+    "pos": "adv.",
+    "meaning_zh": "毫无疑问地",
+    "example_en": "The evidence shows unequivocally that the defendant is guilty.",
+    "example_zh": "证据毫无疑问地证明被告有罪。",
+    "level": "kaoyan",
+    "category": "逻辑副词"
+  },
+  {
+    "word": "irrefutably",
+    "pos": "adv.",
+    "meaning_zh": "不可驳斥地",
+    "example_en": "The data proves irrefutably that the theory is correct.",
+    "example_zh": "数据不可驳斥地证明理论是正确的。",
+    "level": "kaoyan",
+    "category": "逻辑副词"
+  },
+  {
+    "word": "migrant",
+    "pos": "n.",
+    "meaning_zh": "移民",
+    "example_en": "The migrant workers faced many challenges in the city.",
+    "example_zh": "移民工人在城市面临着许多挑战。",
+    "level": "kaoyan",
+    "category": "人口流动"
+  },
+  {
+    "word": "slum",
+    "pos": "n.",
+    "meaning_zh": "贫民窟",
+    "example_en": "The government has initiated programs to improve living conditions in slums.",
+    "example_zh": "政府已经启动了改善贫民窟居住条件的计划。",
+    "level": "kaoyan",
+    "category": "城市问题"
+  },
+  {
+    "word": "gentrification",
+    "pos": "n.",
+    "meaning_zh": "城市更新",
+    "example_en": "Gentrification has led to increased property values in the neighborhood.",
+    "example_zh": "城市更新导致了社区房产价值的增加。",
+    "level": "kaoyan",
+    "category": "城市发展"
+  },
+  {
+    "word": "population",
+    "pos": "n.",
+    "meaning_zh": "人口",
+    "example_en": "The population of the city is expected to grow significantly.",
+    "example_zh": "预计该城市的人口将显著增长。",
+    "level": "kaoyan",
+    "category": "人口增长"
+  },
+  {
+    "word": "density",
+    "pos": "n.",
+    "meaning_zh": "密度",
+    "example_en": "The high population density in the city poses challenges for transportation.",
+    "example_zh": "城市的人口密度高为交通带来了挑战。",
+    "level": "kaoyan",
+    "category": "城市规划"
+  },
+  {
+    "word": "migration",
+    "pos": "n.",
+    "meaning_zh": "迁移",
+    "example_en": "The migration of people from rural areas to cities is a significant trend.",
+    "example_zh": "人们从农村迁移到城市是一个显著的趋势。",
+    "level": "kaoyan",
+    "category": "人口迁移"
+  },
+  {
+    "word": "urban",
+    "pos": "adj.",
+    "meaning_zh": "城市的",
+    "example_en": "Urban areas are often characterized by high population densities.",
+    "example_zh": "城市地区通常具有高人口密度。",
+    "level": "kaoyan",
+    "category": "城市特征"
+  },
+  {
+    "word": "rural",
+    "pos": "adj.",
+    "meaning_zh": "农村的",
+    "example_en": "Rural areas often face challenges in accessing basic services.",
+    "example_zh": "农村地区通常面临着获取基本服务的挑战。",
+    "level": "kaoyan",
+    "category": "农村发展"
+  },
+  {
+    "word": "development",
+    "pos": "n.",
+    "meaning_zh": "发展",
+    "example_en": "Sustainable development is crucial for the future of urban areas.",
+    "example_zh": "可持续发展对于城市地区的未来至关重要。",
+    "level": "kaoyan",
+    "category": "城市发展"
+  },
+  {
+    "word": "planning",
+    "pos": "n.",
+    "meaning_zh": "规划",
+    "example_en": "Effective planning is necessary for managing urban growth.",
+    "example_zh": "有效的规划对于管理城市增长是必要的。",
+    "level": "kaoyan",
+    "category": "城市管理"
+  },
+  {
+    "word": "economy",
+    "pos": "n.",
+    "meaning_zh": "经济",
+    "example_en": "The urban economy is driven by innovation and entrepreneurship.",
+    "example_zh": "城市经济由创新和创业驱动。",
+    "level": "kaoyan",
+    "category": "经济发展"
+  },
+  {
+    "word": "growth",
+    "pos": "n.",
+    "meaning_zh": "增长",
+    "example_en": "The city's growth is expected to continue in the coming years.",
+    "example_zh": "预计该城市的增长将在未来几年继续。",
+    "level": "kaoyan",
+    "category": "城市增长"
+  },
+  {
+    "word": "livability",
+    "pos": "n.",
+    "meaning_zh": "宜居性",
+    "example_en": "The city's livability is enhanced by its green spaces and public transportation.",
+    "example_zh": "城市的宜居性得到了其绿色空间和公共交通的提高。",
+    "level": "kaoyan",
+    "category": "城市生活"
+  },
+  {
+    "word": "mentorship",
+    "pos": "n.",
+    "meaning_zh": "指导关系",
+    "example_en": "The company offers mentorship programs for new employees.",
+    "example_zh": "该公司为新员工提供指导关系项目。",
+    "level": "kaoyan",
+    "category": "职业发展"
+  },
+  {
+    "word": "internship",
+    "pos": "n.",
+    "meaning_zh": "实习",
+    "example_en": "She applied for an internship at a top investment bank.",
+    "example_zh": "她申请了一家顶级投资银行的实习岗位。",
+    "level": "kaoyan",
+    "category": "就业实践"
+  },
+  {
+    "word": "joblessness",
+    "pos": "n.",
+    "meaning_zh": "失业",
+    "example_en": "The country struggles with high rates of joblessness among young people.",
+    "example_zh": "该国苦于年轻人中的高失业率。",
+    "level": "kaoyan",
+    "category": "就业问题"
+  },
+  {
+    "word": "upskilling",
+    "pos": "n.",
+    "meaning_zh": "提升技能",
+    "example_en": "The company invests in upskilling programs for its employees.",
+    "example_zh": "该公司投资于员工的技能提升项目。",
+    "level": "kaoyan",
+    "category": "职业发展"
+  },
+  {
+    "word": "reskilling",
+    "pos": "n.",
+    "meaning_zh": "重新技能化",
+    "example_en": "After being laid off, he focused on reskilling to adapt to the new job market.",
+    "example_zh": "被裁员后，他专注于重新技能化以适应新的就业市场。",
+    "level": "kaoyan",
+    "category": "职业转型"
+  },
+  {
+    "word": "careerist",
+    "pos": "n.",
+    "meaning_zh": "事业主义者",
+    "example_en": "She is a dedicated careerist who prioritizes her professional goals.",
+    "example_zh": "她是一个专注于事业的女性，优先考虑自己的职业目标。",
+    "level": "kaoyan",
+    "category": "职业心态"
+  },
+  {
+    "word": "professionalization",
+    "pos": "n.",
+    "meaning_zh": "职业化",
+    "example_en": "The industry is undergoing professionalization to improve standards.",
+    "example_zh": "该行业正在进行职业化以提高标准。",
+    "level": "kaoyan",
+    "category": "行业发展"
+  },
+  {
+    "word": "entrepreneurship",
+    "pos": "n.",
+    "meaning_zh": "创业精神",
+    "example_en": "The university encourages entrepreneurship among its students.",
+    "example_zh": "该大学鼓励学生的创业精神。",
+    "level": "kaoyan",
+    "category": "创业创新"
+  },
+  {
+    "word": "vocational",
+    "pos": "adj.",
+    "meaning_zh": "职业技术的",
+    "example_en": "Vocational training is essential for many industries.",
+    "example_zh": "职业技术培训对于许多行业是至关重要的。",
+    "level": "kaoyan",
+    "category": "职业教育"
+  },
+  {
+    "word": "apprenticeship",
+    "pos": "n.",
+    "meaning_zh": "学徒制",
+    "example_en": "The company offers apprenticeship opportunities to young people.",
+    "example_zh": "该公司为年轻人提供学徒机会。",
+    "level": "kaoyan",
+    "category": "职业实践"
+  },
+  {
+    "word": "pension",
+    "pos": "n.",
+    "meaning_zh": "养老金",
+    "example_en": "After years of service, he received a generous pension.",
+    "example_zh": "多年服务后，他获得了一笔慷慨的养老金。",
+    "level": "kaoyan",
+    "category": "职业福利"
+  },
+  {
+    "word": "layoff",
+    "pos": "n.",
+    "meaning_zh": "裁员",
+    "example_en": "The company had to announce a layoff due to financial difficulties.",
+    "example_zh": "由于财务困难，该公司不得不宣布裁员。",
+    "level": "kaoyan",
+    "category": "就业问题"
+  },
+  {
+    "word": "freelancing",
+    "pos": "n.",
+    "meaning_zh": "自由职业",
+    "example_en": "She started freelancing to gain more flexibility in her work schedule.",
+    "example_zh": "她开始自由职业以获得更灵活的工作安排。",
+    "level": "kaoyan",
+    "category": "职业灵活"
+  },
+  {
+    "word": "telecommuting",
+    "pos": "n.",
+    "meaning_zh": "远程办公",
+    "example_en": "The company allows telecommuting to reduce commuting time.",
+    "example_zh": "该公司允许远程办公以减少通勤时间。",
+    "level": "kaoyan",
+    "category": "工作方式"
+  },
+  {
+    "word": "jobsecurity",
+    "pos": "n.",
+    "meaning_zh": "工作保障",
+    "example_en": "The union negotiates for better job security for its members.",
+    "example_zh": "工会为其成员争取更好的工作保障。",
+    "level": "kaoyan",
+    "category": "职业稳定"
+  },
+  {
+    "word": "underemployment",
+    "pos": "n.",
+    "meaning_zh": "低度就业",
+    "example_en": "Many graduates face underemployment due to lack of job opportunities.",
+    "example_zh": "许多毕业生由于缺乏工作机会而面临低度就业。",
+    "level": "kaoyan",
+    "category": "就业问题"
+  },
+  {
+    "word": "overwork",
+    "pos": "n.",
+    "meaning_zh": "过劳",
+    "example_en": "Chronic overwork can lead to serious health issues.",
+    "example_zh": "慢性过劳可能导致严重的健康问题。",
+    "level": "kaoyan",
+    "category": "职业健康"
+  },
+  {
+    "word": "worklifebalance",
+    "pos": "n.",
+    "meaning_zh": "工作与生活的平衡",
+    "example_en": "Achieving a good work-life balance is essential for well-being.",
+    "example_zh": "实现良好的工作与生活平衡对于幸福至关重要。",
+    "level": "kaoyan",
+    "category": "职业生活"
+  },
+  {
+    "word": "staffing",
+    "pos": "n.",
+    "meaning_zh": "员工配备",
+    "example_en": "The company is responsible for staffing the new project.",
+    "example_zh": "该公司负责新项目的员工配备。",
+    "level": "kaoyan",
+    "category": "人力资源"
+  },
+  {
+    "word": "talentpool",
+    "pos": "n.",
+    "meaning_zh": "人才库",
+    "example_en": "The company has a large talent pool to draw from for new positions.",
+    "example_zh": "该公司有一个大的人才库可以用于新职位。",
+    "level": "kaoyan",
+    "category": "人力资源"
+  },
+  {
+    "word": "onboarding",
+    "pos": "n.",
+    "meaning_zh": "入职",
+    "example_en": "The company has a comprehensive onboarding process for new employees.",
+    "example_zh": "该公司为新员工有一个全面入职流程。",
+    "level": "kaoyan",
+    "category": "人力资源"
+  },
+  {
+    "word": "offboarding",
+    "pos": "n.",
+    "meaning_zh": "离职",
+    "example_en": "The company needs to improve its offboarding process to retain knowledge.",
+    "example_zh": "该公司需要改进其离职流程以保留知识。",
+    "level": "kaoyan",
+    "category": "人力资源"
+  },
+  {
+    "word": "succession",
+    "pos": "n.",
+    "meaning_zh": "继任",
+    "example_en": "The company has a clear succession plan in place for key positions.",
+    "example_zh": "该公司为关键职位制定了明确的继任计划。",
+    "level": "kaoyan",
+    "category": "领导继任"
+  },
+  {
+    "word": "amorality",
+    "pos": "n.",
+    "meaning_zh": "非道德性",
+    "example_en": "The amorality of the decision was questioned.",
+    "example_zh": "这项决定的非道德性遭到了质疑。",
+    "level": "kaoyan",
+    "category": "道德"
+  },
+  {
+    "word": "beneficence",
+    "pos": "n.",
+    "meaning_zh": "仁慈",
+    "example_en": "The doctor's beneficence saved many lives.",
+    "example_zh": "医生的仁慈拯救了很多生命。",
+    "level": "kaoyan",
+    "category": "伦理"
+  },
+  {
+    "word": "conscience",
+    "pos": "n.",
+    "meaning_zh": "良心",
+    "example_en": "His conscience told him to do the right thing.",
+    "example_zh": "他的良心告诉他要做正确的事情。",
+    "level": "kaoyan",
+    "category": "道德"
+  },
+  {
+    "word": "integrity",
+    "pos": "n.",
+    "meaning_zh": "诚信",
+    "example_en": "The company values integrity in its employees.",
+    "example_zh": "公司重视员工的诚信。",
+    "level": "kaoyan",
+    "category": "道德"
+  },
+  {
+    "word": "moralism",
+    "pos": "n.",
+    "meaning_zh": "道德说教",
+    "example_en": "Moralism can be seen as overly judgmental.",
+    "example_zh": "道德说教可能被视为过于批判。",
+    "level": "kaoyan",
+    "category": "伦理"
+  },
+  {
+    "word": "nonconformity",
+    "pos": "n.",
+    "meaning_zh": "不墨守成规",
+    "example_en": "Nonconformity can lead to innovation.",
+    "example_zh": "不墨守成规可能导致创新。",
+    "level": "kaoyan",
+    "category": "社会"
+  },
+  {
+    "word": "pacifism",
+    "pos": "n.",
+    "meaning_zh": "和平主义",
+    "example_en": "Pacifism rejects violence as a means to resolve conflicts.",
+    "example_zh": "和平主义拒绝使用暴力来解决冲突。",
+    "level": "kaoyan",
+    "category": "政治"
+  },
+  {
+    "word": "prudence",
+    "pos": "n.",
+    "meaning_zh": "谨慎",
+    "example_en": "Prudence is a virtue in financial decisions.",
+    "example_zh": "谨慎是财务决策中的美德。",
+    "level": "kaoyan",
+    "category": "道德"
+  },
+  {
+    "word": "responsibility",
+    "pos": "n.",
+    "meaning_zh": "责任",
+    "example_en": "The company takes responsibility for its actions.",
+    "example_zh": "公司对自己的行为负责。",
+    "level": "kaoyan",
+    "category": "伦理"
+  },
+  {
+    "word": "veracity",
+    "pos": "n.",
+    "meaning_zh": "真实性",
+    "example_en": "Veracity is a key value in journalism.",
+    "example_zh": "真实性是新闻业的一个关键价值。",
+    "level": "kaoyan",
+    "category": "道德"
+  },
+  {
+    "word": "wisdom",
+    "pos": "n.",
+    "meaning_zh": "智慧",
+    "example_en": "Wisdom is a highly valued trait.",
+    "example_zh": "智慧是一种备受推崇的特质。",
+    "level": "kaoyan",
+    "category": "道德"
+  },
+  {
+    "word": "emancipation",
+    "pos": "n.",
+    "meaning_zh": "解放",
+    "example_en": "The emancipation of slaves was a major social change.",
+    "example_zh": "奴隶的解放是社会变革的一个重要方面。",
+    "level": "kaoyan",
+    "category": "社会变革"
+  },
+  {
+    "word": "synchrony",
+    "pos": "n.",
+    "meaning_zh": "同时性",
+    "example_en": "The synchrony of historical events is crucial for understanding social change.",
+    "example_zh": "历史事件的同时性对于理解社会变革至关重要。",
+    "level": "kaoyan",
+    "category": "历史研究"
+  },
+  {
+    "word": "diachrony",
+    "pos": "n.",
+    "meaning_zh": "历时性",
+    "example_en": "The diachrony of language development reveals its evolution over time.",
+    "example_zh": "语言发展的历时性揭示了其随时间的演变。",
+    "level": "kaoyan",
+    "category": "语言学"
+  },
+  {
+    "word": "archaeology",
+    "pos": "n.",
+    "meaning_zh": "考古学",
+    "example_en": "Archaeology provides valuable insights into the history of social change.",
+    "example_zh": "考古学为我们提供了对社会变革历史的宝贵见解。",
+    "level": "kaoyan",
+    "category": "历史研究"
+  },
+  {
+    "word": "historiography",
+    "pos": "n.",
+    "meaning_zh": "历史学",
+    "example_en": "Historiography is the study of how history is written and interpreted, reflecting social change.",
+    "example_zh": "历史学是研究历史如何被书写和解释的，反映了社会变革。",
+    "level": "kaoyan",
+    "category": "历史研究"
+  },
+  {
+    "word": "ephemeral",
+    "pos": "adj.",
+    "meaning_zh": "短暂的",
+    "example_en": "Ephemeral social movements can have lasting impacts on history and social change.",
+    "example_zh": "短暂的社会运动可以对历史和社会变革产生持久的影响。",
+    "level": "kaoyan",
+    "category": "社会理论"
+  },
+  {
+    "word": "perfidy",
+    "pos": "n.",
+    "meaning_zh": "背叛",
+    "example_en": "Historical accounts of perfidy reveal the complex dynamics of social change and conflict.",
+    "example_zh": "背叛的历史记载揭示了社会变革和冲突的复杂动态。",
+    "level": "kaoyan",
+    "category": "历史研究"
+  },
+  {
+    "word": "nomadism",
+    "pos": "n.",
+    "meaning_zh": "游牧主义",
+    "example_en": "Nomadism has been a significant factor in the social and cultural changes of certain regions.",
+    "example_zh": "游牧主义是某些地区社会和文化变化的一个重要因素。",
+    "level": "kaoyan",
+    "category": "人类学"
+  },
+  {
+    "word": "orientalism",
+    "pos": "n.",
+    "meaning_zh": "东方主义",
+    "example_en": "Orientalism has been criticized for its role in shaping Western perceptions of Eastern cultures and influencing social change.",
+    "example_zh": "东方主义因其在塑造西方对东方文化的认知和影响社会变革方面的作用而受到批评。",
+    "level": "kaoyan",
+    "category": "文化研究"
+  },
+  {
+    "word": "pacification",
+    "pos": "n.",
+    "meaning_zh": "平定",
+    "example_en": "Pacification efforts are often necessary in post-conflict regions to achieve social change and stability.",
+    "example_zh": "平定努力通常在冲突后的地区是必要的，以实现社会变革和稳定。",
+    "level": "kaoyan",
+    "category": "政治学"
+  },
+  {
+    "word": "patronage",
+    "pos": "n.",
+    "meaning_zh": "赞助",
+    "example_en": "Patronage has played a significant role in the development of arts and culture, reflecting social change.",
+    "example_zh": "赞助在艺术和文化的发展中发挥了重要作用，反映了社会变革。",
+    "level": "kaoyan",
+    "category": "艺术史"
+  },
+  {
+    "word": "reformation",
+    "pos": "n.",
+    "meaning_zh": "改革",
+    "example_en": "The Reformation was a significant religious and social change movement in European history.",
+    "example_zh": "宗教改革是欧洲历史上一次重要的宗教和社会变革运动。",
+    "level": "kaoyan",
+    "category": "历史研究"
+  },
+  {
+    "word": "revolution",
+    "pos": "n.",
+    "meaning_zh": "革命",
+    "example_en": "Revolution is a drastic form of social change that can reshape the political and social landscape.",
+    "example_zh": "革命是一种激烈的社会变革，可以重塑政治和社会格局。",
+    "level": "kaoyan",
+    "category": "政治学"
+  },
+  {
+    "word": "civil",
+    "pos": "adj.",
+    "meaning_zh": "民间的",
+    "example_en": "Civil society plays a vital role in public policy.",
+    "example_zh": "民间社会在公共政策中扮演着至关重要的角色。",
+    "level": "kaoyan",
+    "category": "社会"
+  },
+  {
+    "word": "decentralization",
+    "pos": "n.",
+    "meaning_zh": "分散化",
+    "example_en": "Decentralization of power can lead to more efficient governance.",
+    "example_zh": "权力的分散化可以带来更高效的治理。",
+    "level": "kaoyan",
+    "category": "治理"
+  },
+  {
+    "word": "federalism",
+    "pos": "n.",
+    "meaning_zh": "联邦主义",
+    "example_en": "Federalism allows for more regional autonomy.",
+    "example_zh": "联邦主义允许更多的地区自治。",
+    "level": "kaoyan",
+    "category": "政治"
+  },
+  {
+    "word": "institutional",
+    "pos": "adj.",
+    "meaning_zh": "机构的",
+    "example_en": "Institutional framework is crucial for policy implementation.",
+    "example_zh": "机构框架对于政策实施至关重要。",
+    "level": "kaoyan",
+    "category": "治理"
+  },
+  {
+    "word": "mandate",
+    "pos": "n.",
+    "meaning_zh": "授权",
+    "example_en": "The new government has a clear mandate from the people.",
+    "example_zh": "新政府得到了人民的明确授权。",
+    "level": "kaoyan",
+    "category": "政治"
+  },
+  {
+    "word": "Nation-building",
+    "pos": "n.",
+    "meaning_zh": "国家建设",
+    "example_en": "Nation-building requires a strong and stable government.",
+    "example_zh": "国家建设需要一个强大且稳定的政府。",
+    "level": "kaoyan",
+    "category": "国家"
+  },
+  {
+    "word": "oversight",
+    "pos": "n.",
+    "meaning_zh": "监督",
+    "example_en": "Congress has oversight responsibility over the executive branch.",
+    "example_zh": "国会对行政部门具有监督职责。",
+    "level": "kaoyan",
+    "category": "治理"
+  },
+  {
+    "word": "participatory",
+    "pos": "adj.",
+    "meaning_zh": "参与式的",
+    "example_en": "Participatory governance involves citizens in decision-making.",
+    "example_zh": "参与式治理让公民参与决策。",
+    "level": "kaoyan",
+    "category": "治理"
+  },
+  {
+    "word": "vulnerability",
+    "pos": "n.",
+    "meaning_zh": "脆弱性",
+    "example_en": "The vulnerability of certain groups must be considered in policy-making.",
+    "example_zh": "某些群体的脆弱性必须在政策制定中被考虑。",
+    "level": "kaoyan",
+    "category": "社会"
+  },
+  {
+    "word": "welfare",
+    "pos": "n.",
+    "meaning_zh": "福利",
+    "example_en": "Social welfare programs are designed to support vulnerable populations.",
+    "example_zh": "社会福利计划旨在支持脆弱人群。",
+    "level": "kaoyan",
+    "category": "社会"
+  },
+  {
+    "word": "youth",
+    "pos": "n.",
+    "meaning_zh": "青年",
+    "example_en": "Youth participation in politics is crucial for the future of democracy.",
+    "example_zh": "青年在政治中的参与对于民主的未来至关重要。",
+    "level": "kaoyan",
+    "category": "社会"
+  },
+  {
+    "word": "zoning",
+    "pos": "n.",
+    "meaning_zh": "分区",
+    "example_en": "Zoning regulations can impact urban development and public policy.",
+    "example_zh": "分区法规可能影响城市发展和公共政策。",
+    "level": "kaoyan",
+    "category": "城市"
   }
 ]

@@ -23,7 +23,7 @@
   };
 
   const LEVEL_ZH = { beginner: '初级', intermediate: '中级', advanced: '高级' };
-  const VOCAB_LEVEL_ZH = { cet4: '四级', cet6: '六级', toefl: '托福', gre: 'GRE' };
+  const VOCAB_LEVEL_ZH = { cet4: '四级', cet6: '六级', kaoyan: '考研', toefl: '托福', gre: 'GRE' };
   const LANG_BCP47 = { zh: 'zh-CN', en: 'en-US', ja: 'ja-JP', ko: 'ko-KR', fr: 'fr-FR', de: 'de-DE', es: 'es-ES' };
 
   // ---------- 工具函数 ----------
