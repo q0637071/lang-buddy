@@ -369,26 +369,13 @@
 
   function voicePrefKey(lang) { return 'lb_voice_' + lang; }
 
-  // iOS/macOS 系统自带一批"搞怪音效"语音（气泡音、金属音、风琴音等），并非正常人声，
-  // 学语言用不上，默认从候选列表里过滤掉，只保留听起来像真人的语音
-  const NOVELTY_VOICE_NAMES = new Set([
-    'albert', 'bad news', 'bahh', 'bells', 'boing', 'bubbles', 'cellos', 'good news',
-    'jester', 'organ', 'superstar', 'trinoids', 'whisper', 'wobble', 'zarvox',
-    'deranged', 'hysterical', 'pipe organ',
-  ]);
-  function isNoveltyVoice(v) {
-    return NOVELTY_VOICE_NAMES.has(v.name.trim().toLowerCase());
-  }
-
   function populateVoiceSelect() {
     const select = $('#voiceSelect');
     if (!select) return;
     const lang = replyLangBcp47();
     const langPrefix = lang.split('-')[0];
     const matching = availableVoices.filter(v => v.lang.toLowerCase().startsWith(langPrefix));
-    let list = matching.length ? matching : availableVoices;
-    const naturalOnly = list.filter(v => !isNoveltyVoice(v));
-    if (naturalOnly.length) list = naturalOnly;
+    const list = matching.length ? matching : availableVoices;
 
     if (!list.length) {
       select.innerHTML = '<option value="">（当前设备没有可用的语音包）</option>';
