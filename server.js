@@ -194,6 +194,22 @@ const LEVEL_ZH = { beginner: '初级', intermediate: '中级', advanced: '高级
 const LANG_NAME = { zh: '中文', en: '英语', ja: '日语', ko: '韩语', fr: '法语', de: '德语', es: '西班牙语' };
 const LANG_BCP47 = { zh: 'zh-CN', en: 'en-US', ja: 'ja-JP', ko: 'ko-KR', fr: 'fr-FR', de: 'de-DE', es: 'es-ES' };
 
+// 全站所有用户共用同一个 Groq API Key，免费额度有限（按分钟/按天限量）。
+// Groq 返回的原始错误信息是给开发者看的技术细节，不应该直接展示给用户，
+// 这里统一转换成用户能看懂的提示，同时把原始信息打到服务端日志方便排查。
+function friendlyAiError(e) {
+  const msg = e?.message || '';
+  // 已经是写好的中文提示（比如某个接口针对特定情况提前抛出的友好错误），直接透传，不要覆盖
+  if (/[一-龥]/.test(msg)) return msg;
+  if (/rate limit/i.test(msg) || /tokens per (minute|day)/i.test(msg) || /requests per (minute|day)/i.test(msg)) {
+    return 'AI 助教当前使用人数较多，额度已用完，请等几分钟后再试';
+  }
+  if (/validate JSON/i.test(msg)) {
+    return 'AI 返回内容解析失败，请重试一次';
+  }
+  return 'AI 服务暂时不可用，请稍后重试';
+}
+
 // ==================== 账号 & 会员 ====================
 
 app.post('/api/register', rateLimit(10), async (req, res) => {
@@ -438,7 +454,7 @@ ${sameLang
     res.json({ reply });
   } catch (e) {
     console.error('对话失败:', e.message);
-    res.status(500).json({ error: 'AI 回复失败：' + e.message });
+    res.status(500).json({ error: friendlyAiError(e) });
   }
 });
 
@@ -479,7 +495,7 @@ app.post('/api/grammar/check', requireMember, rateLimit(15), async (req, res) =>
     res.json({ result });
   } catch (e) {
     console.error('语法检查失败:', e.message);
-    res.status(500).json({ error: 'AI 检查失败：' + e.message });
+    res.status(500).json({ error: friendlyAiError(e) });
   }
 });
 
@@ -614,7 +630,7 @@ corrections 数组要覆盖原文中每一处修改，按原文顺序排列；�
     res.json(result);
   } catch (e) {
     console.error('作文批改失败:', e.message);
-    res.status(500).json({ error: 'AI 批改失败：' + e.message });
+    res.status(500).json({ error: friendlyAiError(e) });
   }
 });
 
@@ -941,7 +957,7 @@ app.post('/api/mistakes/upload', allowMemberOrFreeQuota('mistake', { type: 'coun
   } catch (e) {
     cleanupFile();
     console.error('错题解析失败:', e.message);
-    res.status(500).json({ error: 'AI 解析失败：' + e.message });
+    res.status(500).json({ error: friendlyAiError(e) });
   }
 });
 
@@ -1037,7 +1053,7 @@ ${examType ? `\n学生提示的考试类型：${String(examType).slice(0, 20)}` 
     res.json({ mistake: { ...mistake, imageUrl: mistakeImageUrl(mistake) } });
   } catch (e) {
     console.error('文字错题解析失败:', e.message);
-    res.status(500).json({ error: 'AI 解析失败：' + e.message });
+    res.status(500).json({ error: friendlyAiError(e) });
   }
 });
 
