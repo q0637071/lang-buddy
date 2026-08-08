@@ -20,6 +20,7 @@
     mistakeFile: null,
     mistakeFilter: { category: '' },
     quiz: { questions: [], index: 0, score: 0, active: false },
+    voiceErrorStreak: 0,
   };
 
   const LEVEL_ZH = { beginner: '初级', intermediate: '中级', advanced: '高级' };
@@ -513,7 +514,7 @@
       'not-allowed': '麦克风权限被拒绝，请在浏览器地址栏允许访问麦克风后重试',
       'no-speech': '没有检测到语音，请靠近麦克风再说一次',
       'audio-capture': '未检测到麦克风设备',
-      'network': '语音识别网络异常，请检查网络后重试',
+      'network': '语音识别服务连接失败（该功能依赖浏览器自带的在线语音识别，国内网络下常不稳定），建议改用打字输入',
     };
     return messages[error] || '语音识别出错，请重试';
   }
@@ -543,6 +544,7 @@
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
     recognition.onresult = (event) => {
+      state.voiceErrorStreak = 0;
       const text = event.results[0][0].transcript.trim();
       if (text) {
         sendChatMessage(text);
@@ -558,8 +560,18 @@
         return;
       }
       if (event.error === 'no-speech') {
+        state.voiceErrorStreak = 0;
         setCallStatus('listening', '🎙️ 没听到声音，请再说一次');
         setTimeout(() => { if (state.voiceCallActive) listenTurn(); }, 500);
+        return;
+      }
+      // network 等错误连续出现多次时（常见于国内网络无法连接浏览器自带的在线语音识别服务），
+      // 不再无限重试刷屏报错，而是直接退出语音模式并给出明确提示，引导用户改用打字输入
+      state.voiceErrorStreak++;
+      if (state.voiceErrorStreak >= 3) {
+        toast(recognitionErrorMessage(event.error) + '，已退出语音对话模式');
+        state.voiceErrorStreak = 0;
+        stopVoiceCall();
         return;
       }
       setCallStatus('error', '⚠️ ' + recognitionErrorMessage(event.error));
@@ -571,6 +583,7 @@
   function startVoiceCall() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) { toast('当前浏览器不支持语音识别，无法使用语音对话模式'); return; }
+    state.voiceErrorStreak = 0;
     state.voiceCallActive = true;
     state.autoSpeak = true;
     $('#autoSpeakToggle').checked = true;
