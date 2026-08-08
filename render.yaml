@@ -8,6 +8,8 @@ services:
     envVars:
       - key: SF_API_KEY
         sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
       - key: SESSION_SECRET
         generateValue: true
       - key: ADMIN_USERNAME

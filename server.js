@@ -9,11 +9,17 @@ const multer = require('multer');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Groq API 配置（免费）
+// Groq API 配置（免费，主力）
 const SF_API_KEY = process.env.SF_API_KEY;
 const SF_BASE_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const SF_MODEL = 'llama-3.3-70b-versatile';
 const VISION_MODEL = process.env.VISION_MODEL || 'qwen/qwen3.6-27b';
+
+// OpenRouter 配置（备用，免费模型）：Groq 触发限流/报错时自动无缝切换过来救急，
+// 每次请求都会重新优先尝试 Groq，Groq 恢复后自动切回，不需要额外的"探测恢复"逻辑
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'nvidia/nemotron-3-super-120b-a12b:free';
 
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_PATH = path.join(DATA_DIR, 'db.json');
@@ -208,6 +214,48 @@ function friendlyAiError(e) {
     return 'AI 返回内容解析失败，请重试一次';
   }
   return 'AI 服务暂时不可用，请稍后重试';
+}
+
+function isRateLimitError(e) {
+  const msg = e?.message || '';
+  return e?.status === 429 || /rate limit/i.test(msg) || /tokens per (minute|day)/i.test(msg) || /requests per (minute|day)/i.test(msg);
+}
+
+async function callTextModel(baseUrl, apiKey, model, { messages, maxTokens, temperature, jsonMode }) {
+  const response = await fetch(baseUrl, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model,
+      max_tokens: maxTokens,
+      temperature,
+      ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
+      messages,
+    }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    const e = new Error(err?.error?.message || `API错误 ${response.status}`);
+    e.status = response.status;
+    throw e;
+  }
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content || '';
+}
+
+// 统一的文本AI调用入口：优先用 Groq，触发限流/报错时（如果配置了 OPENROUTER_API_KEY）
+// 自动无缝切换到 OpenRouter 的免费模型救急；每次调用都重新优先尝试 Groq，
+// Groq 恢复后下一次调用会自动切回，不需要额外的"探测恢复"逻辑
+async function callChatAPI(opts) {
+  try {
+    return await callTextModel(SF_BASE_URL, SF_API_KEY, SF_MODEL, opts);
+  } catch (e) {
+    if (isRateLimitError(e) && OPENROUTER_API_KEY) {
+      console.warn('Groq 触发限流，自动切换到 OpenRouter 备用模型:', e.message);
+      return await callTextModel(OPENROUTER_BASE_URL, OPENROUTER_API_KEY, OPENROUTER_MODEL, opts);
+    }
+    throw e;
+  }
 }
 
 // ==================== 账号 & 会员 ====================
@@ -437,17 +485,7 @@ ${sameLang
   ];
 
   try {
-    const response = await fetch(SF_BASE_URL, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${SF_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: SF_MODEL, max_tokens: 400, temperature: 0.5, messages }),
-    });
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err?.error?.message || `API错误 ${response.status}`);
-    }
-    const data = await response.json();
-    const reply = data.choices?.[0]?.message?.content || '';
+    const reply = await callChatAPI({ messages, maxTokens: 400, temperature: 0.5 });
     user.chatCount = (user.chatCount || 0) + 1;
     recordActivity(user);
     saveDB(db);
@@ -479,17 +517,7 @@ app.post('/api/grammar/check', requireMember, rateLimit(15), async (req, res) =>
 【错误解释】（用1-3句话说明错误类型和原因；没有则写"句子正确，表达自然"）`;
 
   try {
-    const response = await fetch(SF_BASE_URL, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${SF_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: SF_MODEL, max_tokens: 300, messages: [{ role: 'user', content: prompt }] }),
-    });
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err?.error?.message || `API错误 ${response.status}`);
-    }
-    const data = await response.json();
-    const result = data.choices?.[0]?.message?.content || '';
+    const result = await callChatAPI({ messages: [{ role: 'user', content: prompt }], maxTokens: 300 });
     recordActivity(user);
     saveDB(db);
     res.json({ result });
@@ -574,25 +602,18 @@ corrections 数组要覆盖原文中每一处修改，按原文顺序排列；�
   }
 
   try {
-    const response = await fetch(SF_BASE_URL, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${SF_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: SF_MODEL,
-        max_tokens: 3500,
-        temperature: 0.4,
-        response_format: { type: 'json_object' },
+    let raw;
+    try {
+      raw = await callChatAPI({
         messages: [{ role: 'user', content: prompt }],
-      }),
-    });
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      const msg = err?.error?.message || `API错误 ${response.status}`;
-      if (/validate JSON/i.test(msg)) throw new Error('作文内容较复杂，AI 批改未能完成，请重试一次或缩短作文长度');
-      throw new Error(msg);
+        maxTokens: 3500,
+        temperature: 0.4,
+        jsonMode: true,
+      });
+    } catch (e) {
+      if (/validate JSON/i.test(e.message)) throw new Error('作文内容较复杂，AI 批改未能完成，请重试一次或缩短作文长度');
+      throw e;
     }
-    const data = await response.json();
-    const raw = data.choices?.[0]?.message?.content || '';
     let parsed = null;
     try {
       parsed = JSON.parse(raw);
@@ -993,23 +1014,12 @@ ${examType ? `\n学生提示的考试类型：${String(examType).slice(0, 20)}` 
 }`;
 
   try {
-    const response = await fetch(SF_BASE_URL, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${SF_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: SF_MODEL,
-        max_tokens: 1500,
-        temperature: 0.4,
-        response_format: { type: 'json_object' },
-        messages: [{ role: 'user', content: prompt }],
-      }),
+    const raw = await callChatAPI({
+      messages: [{ role: 'user', content: prompt }],
+      maxTokens: 1500,
+      temperature: 0.4,
+      jsonMode: true,
     });
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err?.error?.message || `API错误 ${response.status}`);
-    }
-    const data = await response.json();
-    const raw = data.choices?.[0]?.message?.content || '';
     let parsed = null;
     try {
       parsed = JSON.parse(raw);
