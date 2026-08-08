@@ -127,6 +127,45 @@ function requireMember(req, res, next) {
   next();
 }
 
+// 非会员每日免费体验额度：会员不限量，非会员每天限量试用，用完后提示开通会员
+// type: 'window' 表示从当天第一次使用起计算的时长限额（如AI对话每天5分钟）；'count' 表示每天限次数（如作文批改/错题本每天1次）
+function allowMemberOrFreeQuota(feature, quota) {
+  return (req, res, next) => {
+    if (!req.session.userId) return res.status(401).json({ error: '请先登录' });
+    const db = loadDB();
+    const user = db.users[req.session.userId];
+    if (!user) return res.status(401).json({ error: '请先登录' });
+    if (user.isMember) return next();
+
+    if (!user.freeUsage) user.freeUsage = {};
+    const today = dateKey(new Date());
+    const rec = user.freeUsage[feature];
+
+    if (quota.type === 'window') {
+      if (!rec || rec.date !== today) {
+        user.freeUsage[feature] = { date: today, firstAt: Date.now() };
+        saveDB(db);
+        return next();
+      }
+      if (Date.now() - rec.firstAt < quota.windowMs) return next();
+      return res.status(403).json({ error: `非会员每天可免费体验${Math.round(quota.windowMs / 60000)}分钟AI对话，开通会员畅享无限时长`, needMembership: true });
+    }
+
+    // type === 'count'
+    if (!rec || rec.date !== today) {
+      user.freeUsage[feature] = { date: today, count: 1 };
+      saveDB(db);
+      return next();
+    }
+    if (rec.count < quota.max) {
+      rec.count += 1;
+      saveDB(db);
+      return next();
+    }
+    return res.status(403).json({ error: '今日免费试用次数已用完，开通会员畅享无限次使用', needMembership: true });
+  };
+}
+
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || '';
 
 function requireAdmin(req, res, next) {
@@ -344,7 +383,7 @@ app.get('/api/meta/languages', (req, res) => {
 
 // ==================== AI 1对1 对话 ====================
 
-app.post('/api/chat', requireMember, rateLimit(15), async (req, res) => {
+app.post('/api/chat', allowMemberOrFreeQuota('chat', { type: 'window', windowMs: 5 * 60 * 1000 }), rateLimit(15), async (req, res) => {
   const { message, history, inputLang, replyLang } = req.body || {};
   if (!message || !String(message).trim()) return res.status(400).json({ error: '消息不能为空' });
   if (message.length > 500) return res.status(400).json({ error: '消息过长（最多500字符）' });
@@ -455,7 +494,7 @@ const ENGLISH_EXAM_RUBRIC = {
   '其他': '英语考试作文，按内容、结构、语言三方面综合评分',
 };
 
-app.post('/api/essay/check', requireMember, rateLimit(8), async (req, res) => {
+app.post('/api/essay/check', allowMemberOrFreeQuota('essay', { type: 'count', max: 1 }), rateLimit(8), async (req, res) => {
   const { essayText, examType, mode } = req.body || {};
   if (!essayText || !String(essayText).trim()) return res.status(400).json({ error: '请输入作文内容' });
   if (essayText.length > 3000) return res.status(400).json({ error: '作文过长（最多3000字符）' });
@@ -791,7 +830,7 @@ const mistakeUpload = multer({
   },
 });
 
-app.post('/api/mistakes/upload', requireMember, rateLimit(6), mistakeUpload.single('image'), async (req, res) => {
+app.post('/api/mistakes/upload', allowMemberOrFreeQuota('mistake', { type: 'count', max: 1 }), rateLimit(6), mistakeUpload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '请上传一张错题图片' });
 
   const cleanupFile = () => fs.unlink(req.file.path, () => {});
@@ -907,7 +946,7 @@ app.post('/api/mistakes/upload', requireMember, rateLimit(6), mistakeUpload.sing
 });
 
 // 打字手动输入错题（不需要图片，直接用文本模型分析，速度更快、不受视觉模型的额度限制）
-app.post('/api/mistakes/submit-text', requireMember, rateLimit(15), async (req, res) => {
+app.post('/api/mistakes/submit-text', allowMemberOrFreeQuota('mistake', { type: 'count', max: 1 }), rateLimit(15), async (req, res) => {
   const { questionText, examType } = req.body || {};
   if (!questionText || !String(questionText).trim()) return res.status(400).json({ error: '请输入错题内容' });
   if (String(questionText).length > 2000) return res.status(400).json({ error: '内容过长（最多2000字符）' });

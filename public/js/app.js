@@ -330,10 +330,8 @@
   let recognizing = false;
 
   function renderTutor() {
-    const needMember = !state.user.isMember;
-    $('#tutorPaywall').hidden = !needMember;
-    $('#tutorPanel').hidden = needMember;
-    if (needMember) return;
+    $('#tutorPaywall').hidden = state.user.isMember;
+    $('#tutorPanel').hidden = false;
 
     const toggle = $('#autoSpeakToggle');
     toggle.checked = state.autoSpeak;
@@ -983,10 +981,8 @@
 
   // ---------- AI 错题本 ----------
   async function renderMistakes() {
-    const needMember = !state.user.isMember;
-    $('#mistakesPaywall').hidden = !needMember;
-    $('#mistakesPanel').hidden = needMember;
-    if (needMember) return;
+    $('#mistakesPaywall').hidden = state.user.isMember;
+    $('#mistakesPanel').hidden = false;
     resetMistakeUpload();
     resetMistakeTextInput();
     setMistakeInputMode('image');
@@ -1303,10 +1299,8 @@
 
   // ---------- 作文批改 ----------
   function renderEssay() {
-    const needMember = !state.user.isMember;
-    $('#essayPaywall').hidden = !needMember;
-    $('#essayPanel').hidden = needMember;
-    if (needMember) return;
+    $('#essayPaywall').hidden = state.user.isMember;
+    $('#essayPanel').hidden = false;
     $('#essayResult').hidden = true;
     $('#essayStatus').textContent = '';
     state.essayMode = state.essayMode || 'general';

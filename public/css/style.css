@@ -135,6 +135,9 @@ p { line-height: 1.6; color: var(--text-muted); }
 /* Paywall */
 .paywall { background: #fff7ed; border: 1px solid #fed7aa; border-radius: var(--radius); padding: 24px; text-align: center; box-shadow: var(--shadow-sm); }
 .paywall p { color: #9a3412; margin-bottom: 14px; }
+.paywall-banner { text-align: left; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
+.paywall-banner p { margin: 0; font-size: 13.5px; flex: 1; min-width: 200px; }
+.paywall-banner .btn { flex-shrink: 0; }
 
 /* Chat */
 .lang-pair-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; font-size: 13.5px; color: var(--text-muted); }
