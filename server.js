@@ -103,7 +103,13 @@ function cookieSession(req, res, next) {
 }
 
 app.use(cookieSession);
-app.use(express.static(path.join(__dirname, 'public')));
+// 静态资源默认不带 Cache-Control，部分手机浏览器会激进地长期复用旧缓存，
+// 导致每次发新版本后，有的用户看到的还是几天前的 app.js/index.html（新功能"看起来没生效"）。
+// 用 no-cache 强制浏览器每次都带 ETag 去问一下服务器，没变化时后端仍然返回轻量的 304，
+// 内容变了才会重新下载，兼顾"总是拿到最新版本"和"没必要每次全量下载"。
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders: (res) => res.setHeader('Cache-Control', 'no-cache'),
+}));
 
 // ---- 简易速率限制 ----
 const rateLimitMap = new Map();
