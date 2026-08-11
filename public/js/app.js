@@ -989,6 +989,86 @@
           </g>
         </g>`,
     },
+    western: {
+      viewBox: '0 0 200 220',
+      height: 141,
+      transformOrigin: '100px 172px',
+      mouth: { closed: { h: 7, y: 145, rx: 3.5 }, open: { h: 22, y: 137, rx: 10 } },
+      markup: `
+        <defs>
+          <linearGradient id="avatarStroke" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ffab91"/>
+            <stop offset="100%" stop-color="#ff8a65"/>
+          </linearGradient>
+          <radialGradient id="avatarFace" cx="35%" cy="20%" r="90%">
+            <stop offset="0%" stop-color="#fff5ee"/>
+            <stop offset="55%" stop-color="#ffe3cc"/>
+            <stop offset="100%" stop-color="#f0c19f"/>
+          </radialGradient>
+          <linearGradient id="avatarHair" x1="10%" y1="0%" x2="90%" y2="100%">
+            <stop offset="0%" stop-color="#f9e6ae"/>
+            <stop offset="45%" stop-color="#eccb77"/>
+            <stop offset="100%" stop-color="#d4a94a"/>
+          </linearGradient>
+          <linearGradient id="avatarShoulder" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ffb199"/>
+            <stop offset="100%" stop-color="#ff8a71"/>
+          </linearGradient>
+          <radialGradient id="avatarGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#ff8a71" stop-opacity=".28"/>
+            <stop offset="100%" stop-color="#ff8a71" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <circle class="avatar-glow" cx="100" cy="112" r="100" fill="url(#avatarGlow)"/>
+        <text class="avatar-sparkle avatar-sparkle-1" x="18" y="56" font-size="13">✨</text>
+        <text class="avatar-sparkle avatar-sparkle-2" x="168" y="46" font-size="10">✨</text>
+        <path d="M14 220 C18 172 46 152 78 148 L122 148 C154 152 182 172 186 220 Z" fill="url(#avatarShoulder)"/>
+        <path d="M78 149 Q100 168 122 149 L120 160 Q100 176 80 160 Z" fill="#e8735a" opacity=".35"/>
+        <rect x="86" y="144" width="28" height="30" rx="12" fill="url(#avatarFace)"/>
+        <g class="avatar-head">
+          <path d="M36 92 Q24 128 31 162 Q35 190 48 205 Q56 198 51 178 Q46 148 52 112 Z" fill="url(#avatarHair)"/>
+          <path d="M164 92 Q176 128 169 162 Q165 190 152 205 Q144 198 149 178 Q154 148 148 112 Z" fill="url(#avatarHair)"/>
+          <path d="M40 122 Q36 150 41 176" fill="none" stroke="#c99a3f" stroke-width="1.3" stroke-linecap="round" opacity=".4"/>
+          <path d="M160 122 Q164 150 159 176" fill="none" stroke="#c99a3f" stroke-width="1.3" stroke-linecap="round" opacity=".4"/>
+          <path d="M32 106 Q24 40 100 27 Q176 40 168 106 Q170 82 150 74 Q142 50 100 46 Q58 50 50 74 Q30 82 32 106 Z" fill="url(#avatarHair)"/>
+          <ellipse cx="88" cy="42" rx="34" ry="13" fill="#ffffff" opacity=".14"/>
+          <ellipse cx="42" cy="112" rx="8" ry="14" fill="url(#avatarFace)"/>
+          <ellipse cx="158" cy="112" rx="8" ry="14" fill="url(#avatarFace)"/>
+          <path d="M100 40 C144 40 156 74 152 106 C150 138 128 165 100 165 C72 165 50 138 48 106 C44 74 56 40 100 40 Z" fill="url(#avatarFace)" stroke="url(#avatarStroke)" stroke-width="2.5"/>
+          <ellipse cx="78" cy="64" rx="18" ry="9" fill="#ffffff" opacity=".3"/>
+          <path d="M56 96 Q47 118 54 140" fill="none" stroke="url(#avatarHair)" stroke-width="5" stroke-linecap="round"/>
+          <path d="M144 96 Q153 118 146 140" fill="none" stroke="url(#avatarHair)" stroke-width="5" stroke-linecap="round"/>
+          <path d="M38 90 Q30 46 100 38 Q170 46 162 90 Q152 58 122 52 Q136 70 126 82 Q118 56 100 55 Q82 56 74 82 Q64 70 78 52 Q48 58 38 90 Z" fill="url(#avatarHair)"/>
+          <path d="M62 87 Q73 80 86 86" fill="none" stroke="#b8873a" stroke-width="2.1" stroke-linecap="round"/>
+          <path d="M114 86 Q127 80 138 87" fill="none" stroke="#b8873a" stroke-width="2.1" stroke-linecap="round"/>
+          <g class="avatar-eye avatar-eye-l">
+            <path d="M62 100 Q68.5 92.5 77 93.5 Q85.5 92.5 90 98.5 Q81 107 74 107 Q66.5 107 62 100 Z" fill="#fff"/>
+            <circle cx="77" cy="100.5" r="6.4" fill="#5c9ead"/>
+            <circle cx="77" cy="100.5" r="3.1" fill="#1c2e30"/>
+            <circle cx="79.3" cy="97.5" r="2.1" fill="#fff"/>
+          </g>
+          <g class="avatar-eye avatar-eye-r">
+            <path d="M138 100 Q131.5 92.5 123 93.5 Q114.5 92.5 110 98.5 Q119 107 126 107 Q133.5 107 138 100 Z" fill="#fff"/>
+            <circle cx="123" cy="100.5" r="6.4" fill="#5c9ead"/>
+            <circle cx="123" cy="100.5" r="3.1" fill="#1c2e30"/>
+            <circle cx="125.3" cy="97.5" r="2.1" fill="#fff"/>
+          </g>
+          <path d="M98 109 Q95.5 121 100 125 Q103.5 125 102.5 121.5" fill="none" stroke="#dba57e" stroke-width="1.8" stroke-linecap="round"/>
+          <g fill="#c98a5c" opacity=".55">
+            <circle cx="68" cy="112" r="1.1"/>
+            <circle cx="74" cy="117" r="1"/>
+            <circle cx="80" cy="112" r="1"/>
+            <circle cx="94" cy="115" r="1"/>
+            <circle cx="106" cy="115" r="1"/>
+            <circle cx="120" cy="112" r="1"/>
+            <circle cx="126" cy="117" r="1"/>
+            <circle cx="132" cy="112" r="1.1"/>
+          </g>
+          <ellipse cx="59" cy="124" rx="11" ry="6" fill="#ff9e80" opacity=".35"/>
+          <ellipse cx="141" cy="124" rx="11" ry="6" fill="#ff9e80" opacity=".35"/>
+          <rect id="avatarMouth" x="84" y="145" width="32" height="7" rx="3.5" fill="#e2705a"/>
+        </g>`,
+    },
   };
 
   // 部分国产手机浏览器内核（如一些WebView套壳浏览器）对 SVG 元素的 innerHTML setter
