@@ -981,6 +981,24 @@
     },
   };
 
+  // 部分国产手机浏览器内核（如一些WebView套壳浏览器）对 SVG 元素的 innerHTML setter
+  // 支持不完整，直接赋值有时会静默失败，切换头像没反应。改用 DOMParser 按 XML 方式
+  // 解析后逐个搬运节点，兼容性更好；万一解析失败还会兜底退回 innerHTML。
+  function setSvgContent(svg, markup) {
+    try {
+      const doc = new DOMParser().parseFromString(
+        `<svg xmlns="http://www.w3.org/2000/svg">${markup}</svg>`,
+        'image/svg+xml'
+      );
+      const root = doc.documentElement;
+      if (!root || root.querySelector('parsererror')) throw new Error('SVG parse error');
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      Array.from(root.childNodes).forEach(node => svg.appendChild(document.importNode(node, true)));
+    } catch {
+      svg.innerHTML = markup;
+    }
+  }
+
   function applyAvatarStyle(key) {
     const cfg = AVATAR_STYLES[key] || AVATAR_STYLES.ghost;
     key = AVATAR_STYLES[key] ? key : 'ghost';
@@ -989,7 +1007,7 @@
     const svg = $('#aiAvatar');
     if (!svg) return;
     svg.setAttribute('viewBox', cfg.viewBox);
-    svg.innerHTML = cfg.markup;
+    setSvgContent(svg, cfg.markup);
     svg.style.height = cfg.height + 'px';
     const head = svg.querySelector('.avatar-head');
     if (head) head.style.transformOrigin = cfg.transformOrigin;

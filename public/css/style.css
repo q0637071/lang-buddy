@@ -147,7 +147,7 @@ p { line-height: 1.6; color: var(--text-muted); }
 .lang-pair-arrow { color: var(--primary); font-weight: 700; }
 .ai-avatar-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 18px; }
 .avatar-style-picker { display: flex; gap: 6px; }
-.avatar-style-btn { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--border); background: #fff; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
+.avatar-style-btn { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--border); background: #fff; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease; touch-action: manipulation; }
 .avatar-style-btn:hover { transform: translateY(-1px); }
 .avatar-style-btn.active { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(91,82,240,.14); }
 .ai-avatar { width: 128px; height: 128px; filter: drop-shadow(0 6px 14px rgba(245,166,35,.25)); }
