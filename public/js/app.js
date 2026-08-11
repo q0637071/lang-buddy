@@ -888,8 +888,8 @@
       markup: `
         <defs>
           <linearGradient id="avatarStroke" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#a78bfa"/>
-            <stop offset="100%" stop-color="#5b52f0"/>
+            <stop offset="0%" stop-color="#6FE0DB"/>
+            <stop offset="100%" stop-color="#0ABAB5"/>
           </linearGradient>
           <radialGradient id="avatarFace" cx="35%" cy="20%" r="90%">
             <stop offset="0%" stop-color="#fff2e0"/>
@@ -902,12 +902,12 @@
             <stop offset="100%" stop-color="#120d0b"/>
           </linearGradient>
           <linearGradient id="avatarShoulder" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#8b5cf6"/>
-            <stop offset="100%" stop-color="#5b52f0"/>
+            <stop offset="0%" stop-color="#3DD9D2"/>
+            <stop offset="100%" stop-color="#0ABAB5"/>
           </linearGradient>
           <radialGradient id="avatarGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="#8b5cf6" stop-opacity=".3"/>
-            <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"/>
+            <stop offset="0%" stop-color="#3DD9D2" stop-opacity=".3"/>
+            <stop offset="100%" stop-color="#3DD9D2" stop-opacity="0"/>
           </radialGradient>
         </defs>
         <circle class="avatar-glow" cx="100" cy="112" r="100" fill="url(#avatarGlow)"/>
@@ -915,7 +915,7 @@
         <text class="avatar-sparkle avatar-sparkle-2" x="168" y="46" font-size="10">✨</text>
         <path d="M14 220 C18 172 46 152 78 148 L122 148 C154 152 182 172 186 220 Z" fill="url(#avatarShoulder)"/>
         <rect x="86" y="144" width="28" height="30" rx="12" fill="url(#avatarFace)"/>
-        <path d="M76 150 Q100 145 124 150 L120 173 Q100 178 80 173 Z" fill="#241a42"/>
+        <path d="M76 150 Q100 145 124 150 L120 173 Q100 178 80 173 Z" fill="#123f3d"/>
         <path d="M76 150 Q100 145 124 150" fill="none" stroke="#e8c15a" stroke-width="2" stroke-linecap="round" opacity=".85"/>
         <path d="M80 173 Q100 178 120 173" fill="none" stroke="#e8c15a" stroke-width="1.4" stroke-linecap="round" opacity=".6"/>
         <circle cx="88" cy="161" r="1.6" fill="#e8c15a" opacity=".75"/>
