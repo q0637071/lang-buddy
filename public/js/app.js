@@ -329,6 +329,8 @@
   // ---------- AI 对话 (Tutor) ----------
   let recognition = null;
   let recognizing = false;
+  let voiceRetryTimer = null; // 语音对话模式里排队等待重试的定时器，结束通话时要一并清掉，避免"停不下来"
+  let speakSafetyTimer = null; // 朗读的兜底超时：部分安卓机型 onend/onerror 从不触发，靠这个定时器强制续上
 
   function renderTutor() {
     $('#tutorPaywall').hidden = state.user.isMember;
@@ -480,6 +482,7 @@
 
   $('#chatForm').addEventListener('submit', (e) => {
     e.preventDefault();
+    unlockSpeechSynthesis();
     const input = $('#chatInput');
     const message = input.value.trim();
     if (!message) return;
@@ -560,12 +563,13 @@
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
     recognition.onresult = (event) => {
+      if (!state.voiceCallActive) return; // 用户已点击结束通话，忽略这次迟到的识别结果
       state.voiceErrorStreak = 0;
       const text = event.results[0][0].transcript.trim();
       if (text) {
         sendChatMessage(text);
-      } else if (state.voiceCallActive) {
-        setTimeout(listenTurn, 600);
+      } else {
+        voiceRetryTimer = setTimeout(listenTurn, 600);
       }
     };
     recognition.onerror = (event) => {
@@ -578,7 +582,7 @@
       if (event.error === 'no-speech') {
         state.voiceErrorStreak = 0;
         setCallStatus('listening', '🎙️ 没听到声音，请再说一次');
-        setTimeout(() => { if (state.voiceCallActive) listenTurn(); }, 500);
+        voiceRetryTimer = setTimeout(() => { if (state.voiceCallActive) listenTurn(); }, 500);
         return;
       }
       // network 等错误连续出现多次时（常见于国内网络无法连接浏览器自带的在线语音识别服务），
@@ -591,14 +595,29 @@
         return;
       }
       setCallStatus('error', '⚠️ ' + recognitionErrorMessage(event.error));
-      setTimeout(() => { if (state.voiceCallActive) listenTurn(); }, 1500);
+      voiceRetryTimer = setTimeout(() => { if (state.voiceCallActive) listenTurn(); }, 1500);
     };
     recognition.start();
+  }
+
+  // 部分安卓机型（含OPPO ColorOS浏览器）的朗读接口要求先在一次真实的用户点击里"预热"一次，
+  // 后面异步触发（比如AI回复回来之后）才会正常出声，否则会一直无声。这里在语音相关按钮的
+  // 首次点击里静默播放一个空白句子来解锁，只做一次。
+  let speechUnlocked = false;
+  function unlockSpeechSynthesis() {
+    if (speechUnlocked || !window.speechSynthesis) return;
+    speechUnlocked = true;
+    try {
+      const warmup = new SpeechSynthesisUtterance(' ');
+      warmup.volume = 0;
+      window.speechSynthesis.speak(warmup);
+    } catch {}
   }
 
   function startVoiceCall() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) { toast('当前浏览器不支持语音识别，无法使用语音对话模式'); return; }
+    unlockSpeechSynthesis();
     state.voiceErrorStreak = 0;
     state.voiceCallActive = true;
     state.autoSpeak = true;
@@ -614,8 +633,13 @@
   function stopVoiceCall() {
     if (!state.voiceCallActive) return;
     state.voiceCallActive = false;
-    if (recognition) { try { recognition.stop(); } catch {} }
-    window.speechSynthesis.cancel();
+    clearTimeout(voiceRetryTimer);
+    clearTimeout(speakSafetyTimer);
+    // 先立刻把界面和头像状态复原，不依赖 recognition/speechSynthesis 的回调是否真的触发
+    // （部分安卓机型上这些回调不可靠，是"点了结束但停不下来"的根源）
+    setAvatarTalking(false);
+    if (recognition) { try { recognition.abort(); } catch { try { recognition.stop(); } catch {} } }
+    try { window.speechSynthesis.cancel(); } catch {}
     $('#autoSpeakToggle').disabled = false;
     $('#chatForm').hidden = false;
     $('#callStatusBar').hidden = true;
@@ -636,11 +660,23 @@
     utter.lang = lang || replyLangBcp47();
     const preferredVoice = getPreferredVoice(utter.lang);
     if (preferredVoice) utter.voice = preferredVoice;
+    let finished = false;
+    const finish = () => {
+      if (finished) return; // 避免 onend/onerror 和兜底定时器重复触发
+      finished = true;
+      clearTimeout(speakSafetyTimer);
+      setAvatarTalking(false);
+      if (onEnd) onEnd();
+    };
     utter.onstart = () => setAvatarTalking(true);
-    const finish = () => { setAvatarTalking(false); if (onEnd) onEnd(); };
     utter.onend = finish;
     utter.onerror = finish;
     window.speechSynthesis.speak(utter);
+    // 兜底：部分安卓机型的 onend/onerror 完全不触发，会让语音对话卡住"停不下来"。
+    // 按文字长度粗略估算朗读时长，超时还没结束就强制续上，保底至少4秒、最多20秒。
+    const estimateMs = Math.min(20000, Math.max(4000, text.length * 220));
+    clearTimeout(speakSafetyTimer);
+    speakSafetyTimer = setTimeout(finish, estimateMs);
   }
 
   // ---------- AI 头像：嘴型随语音张合，配合轻微摆动的"说话姿势" ----------
