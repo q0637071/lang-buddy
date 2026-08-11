@@ -148,6 +148,11 @@ function allowMemberOrFreeQuota(feature, quota) {
     const user = db.users[req.session.userId];
     if (!user) return res.status(401).json({ error: '请先登录' });
     if (user.isMember) return next();
+    // 防止有人靠无限注册小号白嫖每日免费额度：只有验证过手机号的账号才给免费额度，
+    // 用户名密码注册的账号默认没验证过，需要去"我的"页面绑定手机号才能解锁
+    if (!user.phoneVerified) {
+      return res.status(403).json({ error: '未验证手机号的账号暂不提供每日免费额度，请先在"我的"页面验证手机号解锁', needPhoneVerify: true });
+    }
 
     if (!user.freeUsage) user.freeUsage = {};
     const today = dateKey(new Date());
@@ -199,6 +204,7 @@ function publicUser(user) {
     createdAt: user.createdAt,
     isAdmin: !!ADMIN_USERNAME && user.username === ADMIN_USERNAME,
     phone: user.phone || null,
+    phoneVerified: !!user.phoneVerified,
   };
 }
 
@@ -295,6 +301,7 @@ app.post('/api/register', rateLimit(10), async (req, res) => {
     chatCount: 0,
     registrationIp: clientIp,
     registrationRegion: '查询中...',
+    phoneVerified: false,
   };
   saveDB(db);
   req.session.userId = username;
@@ -396,12 +403,38 @@ app.post('/api/auth/phone/verify', rateLimit(15), async (req, res) => {
       chatCount: 0,
       registrationIp: clientIp,
       registrationRegion: '查询中...',
+      phoneVerified: true,
     };
     saveDB(db);
   }
   req.session.userId = phone;
   res.json({ user: publicUser(db.users[phone]) });
   if (isNewUser) fillRegistrationRegion(phone, clientIp);
+});
+
+// 已登录账号绑定并验证手机号，用于解锁每日免费额度（复用 /api/auth/phone/send-code 发验证码）
+app.post('/api/profile/bind-phone', requireAuth, rateLimit(15), (req, res) => {
+  const { phone, code } = req.body || {};
+  if (!isValidPhone(phone)) return res.status(400).json({ error: '手机号格式不正确' });
+  if (!code || !String(code).trim()) return res.status(400).json({ error: '请输入验证码' });
+
+  const record = phoneCodeStore.get(phone);
+  if (!record || record.code !== String(code).trim()) return res.status(400).json({ error: '验证码错误' });
+  if (Date.now() > record.expiresAt) {
+    phoneCodeStore.delete(phone);
+    return res.status(400).json({ error: '验证码已过期，请重新获取' });
+  }
+
+  const db = loadDB();
+  const owner = Object.values(db.users).find(u => u.phone === phone && u.username !== req.session.userId);
+  if (owner) return res.status(400).json({ error: '该手机号已被其他账号绑定' });
+
+  phoneCodeStore.delete(phone);
+  const user = db.users[req.session.userId];
+  user.phone = phone;
+  user.phoneVerified = true;
+  saveDB(db);
+  res.json({ user: publicUser(user) });
 });
 
 // ==================== 微信授权登录（占位，尚未接入） ====================

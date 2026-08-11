@@ -530,6 +530,28 @@
         </div>
         <button class="btn btn-primary" id="btnSaveProfile">保存设置</button>
         <div class="profile-member-box" id="profileMemberBox"></div>
+
+        <div class="profile-phone-box" id="profilePhoneBox">
+          <div id="profilePhoneVerified" hidden>✅ 已验证手机号 <span id="profilePhoneNumber"></span></div>
+          <div id="profilePhoneUnverified" hidden>
+            <p>🎁 未验证手机号的账号暂不提供每日免费体验额度（AI对话/作文批改/错题本），验证后即可解锁。</p>
+            <div class="form-row">
+              <label>手机号</label>
+              <input type="tel" id="profileInputPhone" maxlength="11" placeholder="请输入11位手机号">
+            </div>
+            <div class="form-row">
+              <label>验证码</label>
+              <div class="phone-code-row">
+                <input type="text" id="profileInputPhoneCode" maxlength="6" placeholder="6位验证码">
+                <button type="button" class="btn btn-outline btn-sm" id="btnProfileSendCode">获取验证码</button>
+              </div>
+            </div>
+            <p class="form-hint" id="profilePhoneHint"></p>
+            <p class="form-error" id="profilePhoneError"></p>
+            <button type="button" class="btn btn-primary btn-sm" id="btnProfileBindPhone">验证并绑定</button>
+          </div>
+        </div>
+
         <button class="btn btn-ghost" id="btnLogout">退出登录</button>
       </div>
     </div>

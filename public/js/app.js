@@ -54,6 +54,7 @@
     if (!res.ok) {
       const err = new Error(data.error || '请求失败');
       err.needMembership = data.needMembership;
+      err.needPhoneVerify = data.needPhoneVerify;
       throw err;
     }
     return data;
@@ -530,6 +531,10 @@
         toast('需要开通会员才能继续对话');
         stopVoiceCall();
         renderTutor();
+      } else if (err.needPhoneVerify) {
+        toast(err.message);
+        stopVoiceCall();
+        showView('profile');
       } else {
         toast(err.message);
         if (state.voiceCallActive) setCallStatus('error', '⚠️ 出错了，点击麦克风图标重试');
@@ -1567,6 +1572,9 @@
       if (err.needMembership) {
         toast('需要开通会员才能使用错题本');
         renderMistakes();
+      } else if (err.needPhoneVerify) {
+        toast(err.message);
+        showView('profile');
       } else {
         $('#mistakeTextStatus').textContent = '❌ ' + err.message;
       }
@@ -1663,6 +1671,7 @@
     if (!res.ok) {
       const err = new Error(data.error || '上传失败');
       err.needMembership = data.needMembership;
+      err.needPhoneVerify = data.needPhoneVerify;
       throw err;
     }
     return data;
@@ -1684,6 +1693,9 @@
       if (err.needMembership) {
         toast('需要开通会员才能使用错题本');
         renderMistakes();
+      } else if (err.needPhoneVerify) {
+        toast(err.message);
+        showView('profile');
       } else {
         $('#mistakeUploadStatus').textContent = '❌ ' + err.message;
       }
@@ -1879,6 +1891,9 @@
       if (err.needMembership) {
         toast('需要开通会员才能使用作文批改');
         renderEssay();
+      } else if (err.needPhoneVerify) {
+        toast(err.message);
+        showView('profile');
       } else {
         $('#essayStatus').textContent = '❌ ' + err.message;
       }
@@ -1970,7 +1985,68 @@
       box.innerHTML = `尚未开通会员 <button class="btn btn-primary btn-sm" id="btnProfileUpgrade" style="margin-left:10px;">立即开通</button>`;
       $('#btnProfileUpgrade').addEventListener('click', upgradeMembership);
     }
+
+    $('#profilePhoneVerified').hidden = !state.user.phoneVerified;
+    $('#profilePhoneUnverified').hidden = !!state.user.phoneVerified;
+    if (state.user.phoneVerified) {
+      $('#profilePhoneNumber').textContent = state.user.phone || '';
+    } else {
+      $('#profileInputPhone').value = '';
+      $('#profileInputPhoneCode').value = '';
+      $('#profilePhoneHint').textContent = '';
+      $('#profilePhoneError').textContent = '';
+    }
   }
+
+  let profilePhoneCountdownTimer = null;
+  $('#btnProfileSendCode').addEventListener('click', async () => {
+    const phone = $('#profileInputPhone').value.trim();
+    const errEl = $('#profilePhoneError');
+    const hintEl = $('#profilePhoneHint');
+    errEl.textContent = '';
+    if (!/^1[3-9]\d{9}$/.test(phone)) { errEl.textContent = '请输入正确的11位手机号'; return; }
+    try {
+      const data = await api('/auth/phone/send-code', { method: 'POST', body: { phone } });
+      const btn = $('#btnProfileSendCode');
+      let seconds = 60;
+      btn.disabled = true;
+      btn.textContent = `${seconds}秒后重发`;
+      clearInterval(profilePhoneCountdownTimer);
+      profilePhoneCountdownTimer = setInterval(() => {
+        seconds--;
+        if (seconds <= 0) {
+          clearInterval(profilePhoneCountdownTimer);
+          btn.disabled = false;
+          btn.textContent = '获取验证码';
+        } else {
+          btn.textContent = `${seconds}秒后重发`;
+        }
+      }, 1000);
+      hintEl.textContent = data.devCode
+        ? `测试模式（未接入真实短信服务）：验证码是 ${data.devCode}`
+        : '验证码已发送，请查收短信';
+    } catch (err) {
+      errEl.textContent = err.message;
+    }
+  });
+
+  $('#btnProfileBindPhone').addEventListener('click', async () => {
+    const phone = $('#profileInputPhone').value.trim();
+    const code = $('#profileInputPhoneCode').value.trim();
+    const errEl = $('#profilePhoneError');
+    errEl.textContent = '';
+    if (!/^1[3-9]\d{9}$/.test(phone)) { errEl.textContent = '请输入正确的11位手机号'; return; }
+    if (!code) { errEl.textContent = '请输入验证码'; return; }
+    try {
+      const data = await api('/profile/bind-phone', { method: 'POST', body: { phone, code } });
+      state.user = data.user;
+      updateTopbar();
+      renderProfile();
+      toast('手机号验证成功，已解锁每日免费额度');
+    } catch (err) {
+      errEl.textContent = err.message;
+    }
+  });
 
   $('#btnSaveProfile').addEventListener('click', async () => {
     const nickname = $('#profileNickname').value.trim();

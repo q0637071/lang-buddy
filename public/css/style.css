@@ -335,6 +335,10 @@ p { line-height: 1.6; color: var(--text-muted); }
 .profile-row label { font-size: 13px; font-weight: 600; color: var(--text-muted); }
 .profile-row input, .profile-row select { padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 14px; }
 .profile-member-box { margin: 20px 0; padding: 16px; border-radius: 10px; background: var(--primary-light); font-size: 14px; }
+.profile-phone-box { margin: 0 0 20px; padding: 16px; border-radius: 10px; background: #fff7ed; border: 1px solid #fed7aa; font-size: 14px; }
+.profile-phone-box #profilePhoneVerified { color: var(--success); font-weight: 600; }
+.profile-phone-box p { color: #9a3412; margin: 0 0 12px; font-size: 13.5px; }
+.profile-phone-box .form-row { margin-bottom: 10px; }
 
 /* Modal */
 .modal-overlay { position: fixed; inset: 0; background: rgba(15,15,30,.5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 100; animation: modalOverlayIn .2s ease; }
