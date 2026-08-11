@@ -243,7 +243,10 @@
             <input type="checkbox" id="autoSpeakToggle" checked>
             🔊 自动朗读 AI 回复
           </label>
-          <button type="button" class="btn btn-outline btn-sm" id="btnVoiceCall">🎧 开启语音对话模式</button>
+          <div style="display:flex;gap:8px;">
+            <button type="button" class="btn btn-ghost btn-sm" id="btnClearChat" title="清空对话记录">🗑️ 清空对话</button>
+            <button type="button" class="btn btn-outline btn-sm" id="btnVoiceCall">🎧 开启语音对话模式</button>
+          </div>
         </div>
         <div class="chat-window" id="chatWindow"></div>
 
@@ -568,11 +571,11 @@
       </div>
       <div class="form-row">
         <label>用户名</label>
-        <input type="text" id="inputUsername" maxlength="30" required placeholder="3-30位字符">
+        <input type="text" id="inputUsername" name="username" autocomplete="username" maxlength="30" required placeholder="3-30位字符">
       </div>
       <div class="form-row">
         <label>密码</label>
-        <input type="password" id="inputPassword" required placeholder="至少6位">
+        <input type="password" id="inputPassword" name="password" autocomplete="current-password" required placeholder="至少6位">
       </div>
       <p class="form-error" id="authError"></p>
       <button type="submit" class="btn btn-primary btn-block" id="authSubmitBtn">登录</button>

@@ -21,6 +21,7 @@
     mistakeFilter: { category: '' },
     quiz: { questions: [], index: 0, score: 0, active: false },
     voiceErrorStreak: 0,
+    chatHistoryLoaded: false,
   };
 
   const LEVEL_ZH = { beginner: '初级', intermediate: '中级', advanced: '高级' };
@@ -158,6 +159,9 @@
     $('#rowNickname').hidden = mode !== 'register';
     $('#authSubmitBtn').textContent = mode === 'login' ? '登录' : '注册并进入';
     $('#authError').textContent = '';
+    // 登录/注册用同一个密码输入框，autocomplete 提示要跟着切换，
+    // 浏览器才会正确弹出"记住密码"（注册）或用已保存的密码自动填充（登录）
+    $('#inputPassword').autocomplete = mode === 'register' ? 'new-password' : 'current-password';
   }
 
   $('#modalClose').addEventListener('click', closeAuthModal);
@@ -332,13 +336,25 @@
   let voiceRetryTimer = null; // 语音对话模式里排队等待重试的定时器，结束通话时要一并清掉，避免"停不下来"
   let speakSafetyTimer = null; // 朗读的兜底超时：部分安卓机型 onend/onerror 从不触发，靠这个定时器强制续上
 
-  function renderTutor() {
+  async function renderTutor() {
     $('#tutorPaywall').hidden = state.user.isMember;
     $('#tutorPanel').hidden = false;
 
     const toggle = $('#autoSpeakToggle');
     toggle.checked = state.autoSpeak;
     toggle.onchange = () => { state.autoSpeak = toggle.checked; };
+
+    // 第一次进入这个页面时，把上次登录留下的对话记录从服务端接回来接着聊
+    if (!state.chatHistoryLoaded) {
+      state.chatHistoryLoaded = true;
+      try {
+        const data = await api('/chat/history');
+        if (Array.isArray(data.history) && data.history.length) {
+          state.chatHistory = data.history;
+          replayChatHistory(data.history);
+        }
+      } catch { /* 拿不到历史记录不影响正常使用，忽略即可 */ }
+    }
 
     const inputSel = $('#chatInputLang');
     const replySel = $('#chatReplyLang');
@@ -425,9 +441,7 @@
   $('#btnTutorUpgrade').addEventListener('click', upgradeMembership);
   $('#btnGrammarUpgrade').addEventListener('click', async () => { await upgradeMembership(); renderGrammarDetail(state.currentGrammarId); });
 
-  function appendMsg(role, text, opts = {}) {
-    state.chatHistory.push({ role, content: text });
-    const win = $('#chatWindow');
+  function buildMsgEl(role, text) {
     const div = document.createElement('div');
     div.className = 'msg ' + (role === 'user' ? 'msg-user' : 'msg-ai');
     div.textContent = text;
@@ -439,13 +453,27 @@
       speak.addEventListener('click', () => speakText(text));
       div.appendChild(speak);
     }
-    win.appendChild(div);
+    return div;
+  }
+
+  function appendMsg(role, text, opts = {}) {
+    state.chatHistory.push({ role, content: text });
+    const win = $('#chatWindow');
+    win.appendChild(buildMsgEl(role, text));
     win.scrollTop = win.scrollHeight;
     if (role === 'ai' && state.autoSpeak) {
       speakText(text, null, opts.onSpeakEnd);
     } else if (opts.onSpeakEnd) {
       opts.onSpeakEnd();
     }
+  }
+
+  // 把服务端存的历史对话原样铺回聊天窗口（不重新入队 state.chatHistory，也不触发自动朗读）
+  function replayChatHistory(history) {
+    const win = $('#chatWindow');
+    win.innerHTML = '';
+    history.forEach(({ role, content }) => win.appendChild(buildMsgEl(role, content)));
+    win.scrollTop = win.scrollHeight;
   }
 
   async function sendChatMessage(message) {
@@ -488,6 +516,20 @@
     if (!message) return;
     input.value = '';
     sendChatMessage(message);
+  });
+
+  $('#btnClearChat').addEventListener('click', async () => {
+    if (!confirm('确定要清空所有对话记录吗？此操作无法撤销。')) return;
+    try {
+      await api('/chat/clear', { method: 'POST' });
+      state.chatHistory = [];
+      $('#chatWindow').innerHTML = '';
+      const langN = langName(state.chatReplyLang);
+      appendMsg('ai', `你好！我是你的${langN}私教 👋 我们可以用打字或语音练习对话，随时开始吧！`);
+      toast('对话记录已清空');
+    } catch (err) {
+      toast(err.message);
+    }
   });
 
   function setupSpeech() {
@@ -1541,6 +1583,7 @@
     await api('/logout', { method: 'POST' });
     state.user = null;
     state.chatHistory = [];
+    state.chatHistoryLoaded = false;
     state.mistakes = [];
     state.mistakeFile = null;
     updateTopbar();

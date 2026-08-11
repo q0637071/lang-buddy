@@ -487,6 +487,12 @@ ${sameLang
   try {
     const reply = await callChatAPI({ messages, maxTokens: 400, temperature: 0.5 });
     user.chatCount = (user.chatCount || 0) + 1;
+    // 把这轮对话存到用户账号下，下次登录（换设备也一样）能接着上次的对话继续，
+    // 只保留最近60条（30轮），避免无限增长
+    if (!Array.isArray(user.chatHistory)) user.chatHistory = [];
+    user.chatHistory.push({ role: 'user', content: String(message).trim() });
+    user.chatHistory.push({ role: 'ai', content: reply });
+    if (user.chatHistory.length > 60) user.chatHistory = user.chatHistory.slice(-60);
     recordActivity(user);
     saveDB(db);
     res.json({ reply });
@@ -494,6 +500,20 @@ ${sameLang
     console.error('对话失败:', e.message);
     res.status(500).json({ error: friendlyAiError(e) });
   }
+});
+
+app.get('/api/chat/history', requireAuth, (req, res) => {
+  const db = loadDB();
+  const user = db.users[req.session.userId];
+  res.json({ history: Array.isArray(user.chatHistory) ? user.chatHistory : [] });
+});
+
+app.post('/api/chat/clear', requireAuth, (req, res) => {
+  const db = loadDB();
+  const user = db.users[req.session.userId];
+  user.chatHistory = [];
+  saveDB(db);
+  res.json({ ok: true });
 });
 
 // ==================== 语法 AI 批改 ====================
