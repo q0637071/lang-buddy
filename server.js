@@ -279,6 +279,7 @@ app.post('/api/register', rateLimit(10), async (req, res) => {
   if (db.users[username]) return res.status(400).json({ error: '用户名已被注册' });
 
   const passwordHash = await bcrypt.hash(password, 10);
+  const clientIp = normalizeIp(req.ip);
   db.users[username] = {
     username,
     nickname: (nickname && String(nickname).slice(0, 30)) || username,
@@ -292,10 +293,13 @@ app.post('/api/register', rateLimit(10), async (req, res) => {
     mistakes: [],
     activityLog: {},
     chatCount: 0,
+    registrationIp: clientIp,
+    registrationRegion: '查询中...',
   };
   saveDB(db);
   req.session.userId = username;
   res.json({ user: publicUser(db.users[username]) });
+  fillRegistrationRegion(username, clientIp);
 });
 
 app.post('/api/login', rateLimit(20), async (req, res) => {
@@ -373,7 +377,9 @@ app.post('/api/auth/phone/verify', rateLimit(15), async (req, res) => {
   phoneCodeStore.delete(phone); // 验证码一次性使用
 
   const db = loadDB();
-  if (!db.users[phone]) {
+  const isNewUser = !db.users[phone];
+  const clientIp = normalizeIp(req.ip);
+  if (isNewUser) {
     db.users[phone] = {
       username: phone,
       nickname: '用户' + phone.slice(-4),
@@ -388,11 +394,14 @@ app.post('/api/auth/phone/verify', rateLimit(15), async (req, res) => {
       mistakes: [],
       activityLog: {},
       chatCount: 0,
+      registrationIp: clientIp,
+      registrationRegion: '查询中...',
     };
     saveDB(db);
   }
   req.session.userId = phone;
   res.json({ user: publicUser(db.users[phone]) });
+  if (isNewUser) fillRegistrationRegion(phone, clientIp);
 });
 
 // ==================== 微信授权登录（占位，尚未接入） ====================
@@ -725,6 +734,42 @@ function computeStreak(activityLog) {
     cursor.setDate(cursor.getDate() - 1);
   }
   return streak;
+}
+
+// ---- 注册来源IP归属地查询（用于管理后台统计），本地/内网IP直接跳过 ----
+function normalizeIp(ip) {
+  return String(ip || '').replace('::ffff:', '');
+}
+function isPrivateIp(ip) {
+  const clean = normalizeIp(ip);
+  if (!clean) return true;
+  return clean === '::1' || clean === '127.0.0.1' || /^10\./.test(clean) ||
+    /^192\.168\./.test(clean) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(clean);
+}
+// 用免费的 ip-api.com 查归属地（无需 key，个人/小流量用途够用），查询失败不影响注册本身
+async function lookupIpRegion(ip) {
+  if (isPrivateIp(ip)) return '本地/内网';
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 3000);
+    const resp = await fetch(`http://ip-api.com/json/${encodeURIComponent(normalizeIp(ip))}?fields=status,country,regionName,city&lang=zh-CN`, { signal: controller.signal });
+    clearTimeout(timer);
+    const data = await resp.json();
+    if (data.status !== 'success') return '未知';
+    return [data.country, data.regionName, data.city].filter(Boolean).join(' ') || '未知';
+  } catch {
+    return '未知';
+  }
+}
+// 注册成功后异步查归属地，不阻塞注册响应；查到了再补写回用户记录
+function fillRegistrationRegion(username, ip) {
+  lookupIpRegion(ip).then(region => {
+    const db = loadDB();
+    if (db.users[username]) {
+      db.users[username].registrationRegion = region;
+      saveDB(db);
+    }
+  }).catch(() => {});
 }
 
 app.get('/api/vocab/review', requireAuth, (req, res) => {
@@ -1163,13 +1208,24 @@ app.get('/api/admin/overview', requireAdmin, (req, res) => {
   const vocab = readVocab();
 
   let totalMistakes = 0, totalChats = 0, totalVocabMastered = 0, totalMembers = 0;
+  let newUsersToday = 0, newUsersThisWeek = 0;
+  const todayKey = dateKey(new Date());
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const regionCounts = {};
   users.forEach(u => {
     totalMistakes += (u.mistakes || []).length;
     totalChats += u.chatCount || 0;
     if (u.isMember) totalMembers++;
     const stats = computeStats(vocab, u.vocabProgress || {});
     totalVocabMastered += stats.known;
+    if (u.createdAt && dateKey(new Date(u.createdAt)) === todayKey) newUsersToday++;
+    if (u.createdAt && u.createdAt >= weekAgo) newUsersThisWeek++;
+    const region = u.registrationRegion || '未知';
+    regionCounts[region] = (regionCounts[region] || 0) + 1;
   });
+  const regionBreakdown = Object.entries(regionCounts)
+    .map(([region, count]) => ({ region, count }))
+    .sort((a, b) => b.count - a.count);
 
   res.json({
     totalUsers: users.length,
@@ -1178,6 +1234,9 @@ app.get('/api/admin/overview', requireAdmin, (req, res) => {
     totalChats,
     totalVocabMastered,
     vocabBankSize: vocab.length,
+    newUsersToday,
+    newUsersThisWeek,
+    regionBreakdown,
   });
 });
 
@@ -1199,6 +1258,8 @@ app.get('/api/admin/users', requireAdmin, (req, res) => {
       mistakesTotal: (u.mistakes || []).length,
       chatCount: u.chatCount || 0,
       streakDays: computeStreak(u.activityLog),
+      registrationIp: u.registrationIp || '-',
+      registrationRegion: u.registrationRegion || '未知',
     };
   }).sort((a, b) => b.createdAt - a.createdAt);
   res.json({ users });

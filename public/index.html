@@ -544,13 +544,24 @@
         <div class="metric-card"><div class="metric-icon">💎</div><div class="metric-value" id="adminTotalMembers">-</div><div class="metric-label">会员数</div></div>
         <div class="metric-card"><div class="metric-icon">💬</div><div class="metric-value" id="adminTotalChats">-</div><div class="metric-label">累计AI对话</div></div>
         <div class="metric-card"><div class="metric-icon">📝</div><div class="metric-value" id="adminTotalMistakes">-</div><div class="metric-label">累计错题</div></div>
+        <div class="metric-card"><div class="metric-icon">🆕</div><div class="metric-value" id="adminNewToday">-</div><div class="metric-label">今日新增</div></div>
+        <div class="metric-card"><div class="metric-icon">📈</div><div class="metric-value" id="adminNewWeek">-</div><div class="metric-label">近7天新增</div></div>
       </div>
+
+      <h3 class="section-title">注册地区分布</h3>
+      <div class="admin-table-wrap">
+        <table class="admin-table" id="adminRegionTable">
+          <thead><tr><th>地区</th><th>用户数</th></tr></thead>
+          <tbody id="adminRegionBody"></tbody>
+        </table>
+      </div>
+
       <h3 class="section-title">用户列表</h3>
       <div class="admin-table-wrap">
         <table class="admin-table" id="adminUsersTable">
           <thead>
             <tr>
-              <th>用户名</th><th>昵称</th><th>会员</th><th>目标语言</th><th>已掌握词</th><th>学习中</th><th>错题数</th><th>AI对话</th><th>连续天数</th><th>注册时间</th>
+              <th>用户名</th><th>昵称</th><th>会员</th><th>目标语言</th><th>已掌握词</th><th>学习中</th><th>错题数</th><th>AI对话</th><th>连续天数</th><th>注册IP</th><th>注册地区</th><th>注册时间</th>
             </tr>
           </thead>
           <tbody id="adminUsersBody"></tbody>

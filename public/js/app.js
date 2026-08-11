@@ -1909,6 +1909,12 @@
       $('#adminTotalMembers').textContent = overview.totalMembers;
       $('#adminTotalChats').textContent = overview.totalChats;
       $('#adminTotalMistakes').textContent = overview.totalMistakes;
+      $('#adminNewToday').textContent = overview.newUsersToday;
+      $('#adminNewWeek').textContent = overview.newUsersThisWeek;
+
+      $('#adminRegionBody').innerHTML = (overview.regionBreakdown || []).map(r => `
+        <tr><td>${escapeHtml(r.region)}</td><td>${r.count}</td></tr>
+      `).join('') || '<tr><td colspan="2">暂无数据</td></tr>';
 
       $('#adminUsersBody').innerHTML = usersData.users.map(u => `
         <tr>
@@ -1921,6 +1927,8 @@
           <td>${u.mistakesTotal}</td>
           <td>${u.chatCount}</td>
           <td>${u.streakDays}</td>
+          <td>${escapeHtml(u.registrationIp)}</td>
+          <td>${escapeHtml(u.registrationRegion)}</td>
           <td>${new Date(u.createdAt).toLocaleDateString('zh-CN')}</td>
         </tr>
       `).join('');
