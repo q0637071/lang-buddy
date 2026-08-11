@@ -33,6 +33,16 @@
   const $ = (sel) => document.querySelector(sel);
   const $all = (sel) => Array.from(document.querySelectorAll(sel));
 
+  // iOS Safari 隐私浏览模式下 localStorage.setItem 会直接抛异常（配额为0），
+  // 如果不接住会导致调用它的函数在那一行整个中断、后面的代码根本不会执行——
+  // 之前头像切换在苹果手机上完全没反应，根源就是这个。全部改用这两个安全封装。
+  function safeGetItem(key) {
+    try { return localStorage.getItem(key); } catch { return null; }
+  }
+  function safeSetItem(key, value) {
+    try { localStorage.setItem(key, value); } catch { /* 存不进去就算了，不影响当次使用 */ }
+  }
+
   async function api(path, options = {}) {
     const res = await fetch('/api' + path, {
       method: options.method || 'GET',
@@ -418,14 +428,14 @@
       return;
     }
     select.disabled = false;
-    const saved = localStorage.getItem(voicePrefKey(lang));
+    const saved = safeGetItem(voicePrefKey(lang));
     select.innerHTML = list.map(v => `<option value="${escapeHtml(v.name)}">${escapeHtml(v.name.replace(/^Microsoft /, ''))}</option>`).join('');
     if (saved && list.some(v => v.name === saved)) select.value = saved;
   }
 
   $('#voiceSelect').addEventListener('change', () => {
     const lang = replyLangBcp47();
-    localStorage.setItem(voicePrefKey(lang), $('#voiceSelect').value);
+    safeSetItem(voicePrefKey(lang), $('#voiceSelect').value);
   });
 
   $('#btnPreviewVoice').addEventListener('click', () => {
@@ -434,7 +444,7 @@
   });
 
   function getPreferredVoice(lang) {
-    const name = localStorage.getItem(voicePrefKey(lang));
+    const name = safeGetItem(voicePrefKey(lang));
     if (!name) return null;
     return availableVoices.find(v => v.name === name) || null;
   }
@@ -1003,7 +1013,8 @@
     const cfg = AVATAR_STYLES[key] || AVATAR_STYLES.ghost;
     key = AVATAR_STYLES[key] ? key : 'ghost';
     state.avatarStyle = key;
-    localStorage.setItem('lb_avatar_style', key);
+    // 视觉切换放在存偏好设置之前：就算 localStorage 写入失败（比如iOS隐私浏览模式），
+    // 头像也必须先换成功，不能让存储失败连累整个切换动作
     const svg = $('#aiAvatar');
     if (!svg) return;
     svg.setAttribute('viewBox', cfg.viewBox);
@@ -1012,13 +1023,14 @@
     const head = svg.querySelector('.avatar-head');
     if (head) head.style.transformOrigin = cfg.transformOrigin;
     $all('.avatar-style-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.style === key));
+    safeSetItem('lb_avatar_style', key);
   }
 
   $all('.avatar-style-btn').forEach(btn => {
     btn.addEventListener('click', () => applyAvatarStyle(btn.dataset.style));
   });
 
-  applyAvatarStyle(localStorage.getItem('lb_avatar_style') || 'ghost');
+  applyAvatarStyle(safeGetItem('lb_avatar_style') || 'ghost');
 
   // ---------- AI 头像：嘴型随语音张合，配合轻微摆动的"说话姿势" ----------
   // 优先用 SpeechSynthesisUtterance 的 boundary 事件（按实际读到哪个词触发），
