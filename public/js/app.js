@@ -22,6 +22,7 @@
     quiz: { questions: [], index: 0, score: 0, active: false },
     voiceErrorStreak: 0,
     chatHistoryLoaded: false,
+    avatarStyle: 'ghost',
   };
 
   const LEVEL_ZH = { beginner: '初级', intermediate: '中级', advanced: '高级' };
@@ -735,6 +736,272 @@
     speakSafetyTimer = setTimeout(finish, estimateMs);
   }
 
+  // ---------- AI 头像形象切换（萌怪 / 机器人 / 人像） ----------
+  const AVATAR_STYLES = {
+    ghost: {
+      viewBox: '0 0 200 200',
+      height: 128,
+      transformOrigin: '100px 130px',
+      mouth: { closed: { h: 4, y: 126, rx: 2 }, open: { h: 16, y: 120, rx: 6 } },
+      markup: `
+        <defs>
+          <linearGradient id="avatarStroke" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ffd35c"/>
+            <stop offset="100%" stop-color="#f5a623"/>
+          </linearGradient>
+          <linearGradient id="avatarFace" x1="20%" y1="0%" x2="80%" y2="100%">
+            <stop offset="0%" stop-color="#ffe28a"/>
+            <stop offset="55%" stop-color="#ffc93c"/>
+            <stop offset="100%" stop-color="#f5a11a"/>
+          </linearGradient>
+          <radialGradient id="avatarGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#ffc93c" stop-opacity=".32"/>
+            <stop offset="100%" stop-color="#ffc93c" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="avatarBall" cx="35%" cy="30%" r="75%">
+            <stop offset="0%" stop-color="#fff2c4"/>
+            <stop offset="100%" stop-color="#ffc93c"/>
+          </radialGradient>
+        </defs>
+        <circle class="avatar-glow" cx="100" cy="112" r="98" fill="url(#avatarGlow)"/>
+        <text class="avatar-sparkle avatar-sparkle-1" x="20" y="56" font-size="13">✨</text>
+        <text class="avatar-sparkle avatar-sparkle-2" x="166" y="70" font-size="10">✨</text>
+        <ellipse cx="100" cy="188" rx="52" ry="8" fill="#f5a11a" opacity=".18"/>
+        <g class="avatar-head">
+          <path d="M100 46 L100 62" stroke="url(#avatarStroke)" stroke-width="10" stroke-linecap="round"/>
+          <circle cx="100" cy="34" r="17" fill="url(#avatarBall)" stroke="url(#avatarStroke)" stroke-width="2"/>
+          <ellipse cx="94" cy="28" rx="6" ry="4" fill="#ffffff" opacity=".55"/>
+          <path d="M148 128 Q172 118 168 96 Q182 112 172 132 Q162 144 148 138 Z" fill="url(#avatarFace)" stroke="url(#avatarStroke)" stroke-width="2.5"/>
+          <path d="M52 138 Q34 142 34 158 Q22 148 28 130 Q36 120 48 124 Z" fill="url(#avatarFace)" stroke="url(#avatarStroke)" stroke-width="2.5" opacity=".9"/>
+          <path d="M100 58 C142 58 168 88 168 128 L168 148 C168 148 158 172 146 150 C138 166 128 148 118 162 C110 174 100 156 90 162 C80 168 72 174 64 150 C52 172 42 148 42 128 C42 88 58 58 100 58 Z" fill="url(#avatarFace)" stroke="url(#avatarStroke)" stroke-width="3"/>
+          <ellipse cx="72" cy="78" rx="24" ry="13" fill="#ffffff" opacity=".4"/>
+          <ellipse cx="62" cy="118" rx="11" ry="7" fill="#ff8f6b" opacity=".45"/>
+          <ellipse cx="138" cy="118" rx="11" ry="7" fill="#ff8f6b" opacity=".45"/>
+          <g class="avatar-eye avatar-eye-l">
+            <ellipse cx="80" cy="104" rx="7" ry="9" fill="#2a2418"/>
+            <circle cx="82.5" cy="99" r="2" fill="#fff"/>
+          </g>
+          <g class="avatar-eye avatar-eye-r">
+            <ellipse cx="120" cy="104" rx="7" ry="9" fill="#2a2418"/>
+            <circle cx="122.5" cy="99" r="2" fill="#fff"/>
+          </g>
+          <rect id="avatarMouth" x="90" y="126" width="20" height="4" rx="2" fill="#2a2418"/>
+        </g>`,
+    },
+    robot: {
+      viewBox: '0 0 200 220',
+      height: 141,
+      transformOrigin: '100px 150px',
+      mouth: { closed: { h: 5, y: 108, rx: 2.5 }, open: { h: 14, y: 103, rx: 4 } },
+      markup: `
+        <defs>
+          <linearGradient id="avatarStroke" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ff9ec4"/>
+            <stop offset="100%" stop-color="#ff6fa8"/>
+          </linearGradient>
+          <radialGradient id="avatarFace" cx="32%" cy="20%" r="95%">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="60%" stop-color="#fbf7fa"/>
+            <stop offset="100%" stop-color="#f3e3ec"/>
+          </radialGradient>
+          <linearGradient id="avatarShoulder" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="100%" stop-color="#ffd6e6"/>
+          </linearGradient>
+          <radialGradient id="avatarGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#ff9ec4" stop-opacity=".32"/>
+            <stop offset="100%" stop-color="#ff9ec4" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="avatarEyeGlow" cx="35%" cy="30%" r="75%">
+            <stop offset="0%" stop-color="#e6fff9"/>
+            <stop offset="45%" stop-color="#5eead4"/>
+            <stop offset="100%" stop-color="#14b8a6"/>
+          </radialGradient>
+          <linearGradient id="avatarScreen" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#333a63"/>
+            <stop offset="100%" stop-color="#181c34"/>
+          </linearGradient>
+          <radialGradient id="avatarBall" cx="35%" cy="30%" r="75%">
+            <stop offset="0%" stop-color="#ffe3ef"/>
+            <stop offset="100%" stop-color="#ff6fa8"/>
+          </radialGradient>
+        </defs>
+        <circle class="avatar-glow" cx="100" cy="112" r="100" fill="url(#avatarGlow)"/>
+        <text class="avatar-sparkle avatar-sparkle-1" x="18" y="56" font-size="13">✨</text>
+        <text class="avatar-sparkle avatar-sparkle-2" x="168" y="46" font-size="10">✨</text>
+        <path d="M20 220 C22 178 48 158 78 154 L122 154 C152 158 178 178 180 220 Z" fill="url(#avatarShoulder)" stroke="url(#avatarStroke)" stroke-width="2.5"/>
+        <path d="M84 156 Q100 172 116 156" fill="none" stroke="url(#avatarStroke)" stroke-width="2.5" opacity=".7"/>
+        <circle cx="100" cy="196" r="7" fill="#fff" stroke="url(#avatarStroke)" stroke-width="2"/>
+        <circle cx="100" cy="196" r="4.5" fill="url(#avatarEyeGlow)"/>
+        <path d="M22 198 Q6 205 9 216" fill="none" stroke="url(#avatarStroke)" stroke-width="9" stroke-linecap="round"/>
+        <circle cx="9" cy="217" r="8" fill="url(#avatarShoulder)" stroke="url(#avatarStroke)" stroke-width="2.5"/>
+        <path d="M178 198 Q194 205 191 216" fill="none" stroke="url(#avatarStroke)" stroke-width="9" stroke-linecap="round"/>
+        <circle cx="191" cy="217" r="8" fill="url(#avatarShoulder)" stroke="url(#avatarStroke)" stroke-width="2.5"/>
+        <rect x="88" y="140" width="24" height="20" rx="8" fill="#f3e3ec"/>
+        <g class="avatar-head">
+          <path d="M100 38 L100 20" stroke="url(#avatarStroke)" stroke-width="4" stroke-linecap="round"/>
+          <circle class="avatar-sparkle" cx="100" cy="16" r="9" fill="#ff9ec4" opacity=".25"/>
+          <circle cx="100" cy="16" r="6" fill="url(#avatarBall)" stroke="#fff" stroke-width="1"/>
+          <ellipse cx="36" cy="104" rx="15" ry="20" fill="url(#avatarStroke)"/>
+          <ellipse cx="164" cy="104" rx="15" ry="20" fill="url(#avatarStroke)"/>
+          <ellipse cx="33" cy="98" rx="7" ry="12" fill="#fff" opacity=".85"/>
+          <ellipse cx="167" cy="98" rx="7" ry="12" fill="#fff" opacity=".85"/>
+          <circle cx="36" cy="104" r="3" fill="#fff" opacity=".6"/>
+          <circle cx="164" cy="104" r="3" fill="#fff" opacity=".6"/>
+          <rect x="42" y="38" width="116" height="112" rx="42" fill="url(#avatarFace)" stroke="url(#avatarStroke)" stroke-width="3"/>
+          <ellipse cx="76" cy="62" rx="26" ry="12" fill="#ffffff" opacity=".6"/>
+          <path d="M52 128 Q100 148 148 128 L148 140 Q100 156 52 140 Z" fill="#ffd6e6" opacity=".4"/>
+          <ellipse cx="55" cy="118" rx="10" ry="6" fill="#ff9ec4" opacity=".4"/>
+          <ellipse cx="145" cy="118" rx="10" ry="6" fill="#ff9ec4" opacity=".4"/>
+          <rect x="62" y="66" width="76" height="58" rx="26" fill="url(#avatarScreen)" stroke="#4a5085" stroke-width="1.5"/>
+          <ellipse cx="82" cy="78" rx="18" ry="8" fill="#4a5085" opacity=".4"/>
+          <g class="avatar-eye avatar-eye-l">
+            <circle cx="84" cy="94" r="11" fill="#5eead4" opacity=".35"/>
+            <circle cx="84" cy="94" r="9" fill="url(#avatarEyeGlow)"/>
+            <circle cx="84" cy="94" r="4.5" fill="#e6fff9"/>
+            <circle cx="81" cy="91" r="2.2" fill="#fff"/>
+          </g>
+          <g class="avatar-eye avatar-eye-r">
+            <circle cx="116" cy="94" r="11" fill="#5eead4" opacity=".35"/>
+            <circle cx="116" cy="94" r="9" fill="url(#avatarEyeGlow)"/>
+            <circle cx="116" cy="94" r="4.5" fill="#e6fff9"/>
+            <circle cx="113" cy="91" r="2.2" fill="#fff"/>
+          </g>
+          <rect id="avatarMouth" x="88" y="108" width="24" height="5" rx="2.5" fill="url(#avatarEyeGlow)"/>
+        </g>`,
+    },
+    human: {
+      viewBox: '0 0 200 220',
+      height: 141,
+      transformOrigin: '100px 172px',
+      mouth: { closed: { h: 7, y: 146, rx: 3.5 }, open: { h: 22, y: 138, rx: 10 } },
+      markup: `
+        <defs>
+          <linearGradient id="avatarStroke" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#a78bfa"/>
+            <stop offset="100%" stop-color="#5b52f0"/>
+          </linearGradient>
+          <radialGradient id="avatarFace" cx="35%" cy="20%" r="90%">
+            <stop offset="0%" stop-color="#fff2e0"/>
+            <stop offset="55%" stop-color="#f8d9b3"/>
+            <stop offset="100%" stop-color="#e9bd8c"/>
+          </radialGradient>
+          <linearGradient id="avatarHair" x1="10%" y1="0%" x2="90%" y2="100%">
+            <stop offset="0%" stop-color="#4a3c34"/>
+            <stop offset="45%" stop-color="#2a211c"/>
+            <stop offset="100%" stop-color="#120d0b"/>
+          </linearGradient>
+          <linearGradient id="avatarShoulder" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#8b5cf6"/>
+            <stop offset="100%" stop-color="#5b52f0"/>
+          </linearGradient>
+          <radialGradient id="avatarGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#8b5cf6" stop-opacity=".3"/>
+            <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <circle class="avatar-glow" cx="100" cy="112" r="100" fill="url(#avatarGlow)"/>
+        <text class="avatar-sparkle avatar-sparkle-1" x="18" y="56" font-size="13">✨</text>
+        <text class="avatar-sparkle avatar-sparkle-2" x="168" y="46" font-size="10">✨</text>
+        <path d="M14 220 C18 172 46 152 78 148 L122 148 C154 152 182 172 186 220 Z" fill="url(#avatarShoulder)"/>
+        <rect x="86" y="144" width="28" height="30" rx="12" fill="url(#avatarFace)"/>
+        <path d="M76 150 Q100 145 124 150 L120 173 Q100 178 80 173 Z" fill="#241a42"/>
+        <path d="M76 150 Q100 145 124 150" fill="none" stroke="#e8c15a" stroke-width="2" stroke-linecap="round" opacity=".85"/>
+        <path d="M80 173 Q100 178 120 173" fill="none" stroke="#e8c15a" stroke-width="1.4" stroke-linecap="round" opacity=".6"/>
+        <circle cx="88" cy="161" r="1.6" fill="#e8c15a" opacity=".75"/>
+        <circle cx="112" cy="161" r="1.6" fill="#e8c15a" opacity=".75"/>
+        <g class="avatar-head">
+          <path d="M36 92 Q24 132 30 170 Q33 202 47 217 Q56 209 50 186 Q45 150 51 110 Z" fill="url(#avatarHair)"/>
+          <path d="M164 92 Q176 132 170 170 Q167 202 153 217 Q144 209 150 186 Q155 150 149 110 Z" fill="url(#avatarHair)"/>
+          <path d="M40 130 Q36 160 42 188" fill="none" stroke="#5c4a3f" stroke-width="1.3" stroke-linecap="round" opacity=".45"/>
+          <path d="M160 130 Q164 160 158 188" fill="none" stroke="#5c4a3f" stroke-width="1.3" stroke-linecap="round" opacity=".45"/>
+          <path d="M33 105 Q28 140 33 175" fill="none" stroke="#8a725f" stroke-width="1.1" stroke-linecap="round" opacity=".35"/>
+          <path d="M167 105 Q172 140 167 175" fill="none" stroke="#8a725f" stroke-width="1.1" stroke-linecap="round" opacity=".35"/>
+          <path d="M32 108 Q23 38 100 25 Q177 38 168 108 Q170 83 151 75 Q143 52 100 48 Q57 52 49 75 Q30 83 32 108 Z" fill="url(#avatarHair)"/>
+          <ellipse cx="90" cy="44" rx="36" ry="14" fill="#ffffff" opacity=".12"/>
+          <ellipse cx="42" cy="112" rx="8" ry="14" fill="url(#avatarFace)"/>
+          <ellipse cx="158" cy="112" rx="8" ry="14" fill="url(#avatarFace)"/>
+          <g class="avatar-earbud">
+            <circle cx="42" cy="117" r="2.6" fill="#e8c15a"/>
+            <path d="M42 119.5 L42 127" stroke="#e8c15a" stroke-width="1.2"/>
+            <circle cx="42" cy="129.5" r="2.8" fill="#7fb3e0"/>
+          </g>
+          <g class="avatar-earbud">
+            <circle cx="158" cy="117" r="2.6" fill="#e8c15a"/>
+            <path d="M158 119.5 L158 127" stroke="#e8c15a" stroke-width="1.2"/>
+            <circle cx="158" cy="129.5" r="2.8" fill="#7fb3e0"/>
+          </g>
+          <path d="M100 40 C144 40 156 74 152 106 C150 138 128 165 100 165 C72 165 50 138 48 106 C44 74 56 40 100 40 Z" fill="url(#avatarFace)" stroke="url(#avatarStroke)" stroke-width="2.5"/>
+          <ellipse cx="78" cy="64" rx="18" ry="9" fill="#ffffff" opacity=".3"/>
+          <path d="M54 96 Q47 116 53 136" fill="none" stroke="url(#avatarHair)" stroke-width="4.5" stroke-linecap="round"/>
+          <path d="M146 96 Q153 116 147 136" fill="none" stroke="url(#avatarHair)" stroke-width="4.5" stroke-linecap="round"/>
+          <path d="M34 96 Q25 44 100 36 Q175 44 166 96 Q161 58 127 50 Q140 72 129 86 Q124 55 94 53 Q73 55 71 83 Q60 70 67 51 Q39 57 34 96 Z" fill="url(#avatarHair)"/>
+          <path d="M94 53 Q118 56 127 76 Q110 60 91 60 Z" fill="#5c4a3f" opacity=".5"/>
+          <path d="M48 62 Q68 42 96 40" fill="none" stroke="#6b5647" stroke-width="1.6" stroke-linecap="round" opacity=".55"/>
+          <path d="M106 40 Q134 42 152 64" fill="none" stroke="#6b5647" stroke-width="1.6" stroke-linecap="round" opacity=".55"/>
+          <path d="M58 82 Q64 60 80 52" fill="none" stroke="#7a6552" stroke-width="1.3" stroke-linecap="round" opacity=".4"/>
+          <path d="M142 82 Q136 60 120 52" fill="none" stroke="#7a6552" stroke-width="1.3" stroke-linecap="round" opacity=".4"/>
+          <path d="M62 87 Q73 79 86 86" fill="none" stroke="#2a211c" stroke-width="2.3" stroke-linecap="round"/>
+          <path d="M114 86 Q127 79 138 87" fill="none" stroke="#2a211c" stroke-width="2.3" stroke-linecap="round"/>
+          <ellipse cx="76" cy="97" rx="15" ry="7" fill="#d9a5c9" opacity=".18"/>
+          <ellipse cx="124" cy="97" rx="15" ry="7" fill="#d9a5c9" opacity=".18"/>
+          <path d="M63 95.5 Q76 88 90 95" fill="none" stroke="#c9926f" stroke-width="1" opacity=".55"/>
+          <g class="avatar-eye avatar-eye-l">
+            <path d="M62 100 Q68.5 92.5 77 93.5 Q85.5 92.5 90 98.5 Q81 107 74 107 Q66.5 107 62 100 Z" fill="#fff"/>
+            <circle cx="77" cy="100.5" r="6.4" fill="#4a86c9"/>
+            <circle cx="77" cy="100.5" r="3.1" fill="#16273a"/>
+            <circle cx="79.3" cy="97.5" r="2.1" fill="#fff"/>
+            <circle cx="75" cy="103" r="1" fill="#fff" opacity=".8"/>
+            <path d="M62 98 L56 94" stroke="#1c140d" stroke-width="1.4" stroke-linecap="round"/>
+            <path d="M62.5 101 L56.5 101.5" stroke="#1c140d" stroke-width="1.4" stroke-linecap="round"/>
+            <path d="M64 104 L59 106.5" stroke="#1c140d" stroke-width="1.2" stroke-linecap="round"/>
+          </g>
+          <g class="avatar-eye avatar-eye-r">
+            <path d="M138 100 Q131.5 92.5 123 93.5 Q114.5 92.5 110 98.5 Q119 107 126 107 Q133.5 107 138 100 Z" fill="#fff"/>
+            <circle cx="123" cy="100.5" r="6.4" fill="#4a86c9"/>
+            <circle cx="123" cy="100.5" r="3.1" fill="#16273a"/>
+            <circle cx="125.3" cy="97.5" r="2.1" fill="#fff"/>
+            <circle cx="121" cy="103" r="1" fill="#fff" opacity=".8"/>
+            <path d="M138 98 L144 94" stroke="#1c140d" stroke-width="1.4" stroke-linecap="round"/>
+            <path d="M137.5 101 L143.5 101.5" stroke="#1c140d" stroke-width="1.4" stroke-linecap="round"/>
+            <path d="M136 104 L141 106.5" stroke="#1c140d" stroke-width="1.2" stroke-linecap="round"/>
+          </g>
+          <path d="M98 109 Q95.5 121 100 125 Q103.5 125 102.5 121.5" fill="none" stroke="#e0a679" stroke-width="1.8" stroke-linecap="round"/>
+          <ellipse cx="59" cy="126" rx="12" ry="6.5" fill="#ff8fb8" opacity=".4"/>
+          <ellipse cx="141" cy="126" rx="12" ry="6.5" fill="#ff8fb8" opacity=".4"/>
+          <path d="M87 144 Q100 141.5 113 144" fill="none" stroke="#b8586a" stroke-width="1" opacity=".5"/>
+          <rect id="avatarMouth" x="83" y="145" width="34" height="7.5" rx="3.8" fill="#d9707e"/>
+          <ellipse cx="92" cy="146" rx="3" ry="1.3" fill="#fff" opacity=".4"/>
+          <g transform="translate(100,26)">
+            <path d="M0 0 L-22 -12 Q-28 0 -22 12 L0 0 Z" fill="#3a5fb0"/>
+            <path d="M0 0 L22 -12 Q28 0 22 12 L0 0 Z" fill="#4a72c9"/>
+            <circle cx="0" cy="0" r="4.5" fill="#2a4a8f"/>
+          </g>
+        </g>`,
+    },
+  };
+
+  function applyAvatarStyle(key) {
+    const cfg = AVATAR_STYLES[key] || AVATAR_STYLES.ghost;
+    key = AVATAR_STYLES[key] ? key : 'ghost';
+    state.avatarStyle = key;
+    localStorage.setItem('lb_avatar_style', key);
+    const svg = $('#aiAvatar');
+    if (!svg) return;
+    svg.setAttribute('viewBox', cfg.viewBox);
+    svg.innerHTML = cfg.markup;
+    svg.style.height = cfg.height + 'px';
+    const head = svg.querySelector('.avatar-head');
+    if (head) head.style.transformOrigin = cfg.transformOrigin;
+    $all('.avatar-style-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.style === key));
+  }
+
+  $all('.avatar-style-btn').forEach(btn => {
+    btn.addEventListener('click', () => applyAvatarStyle(btn.dataset.style));
+  });
+
+  applyAvatarStyle(localStorage.getItem('lb_avatar_style') || 'ghost');
+
   // ---------- AI 头像：嘴型随语音张合，配合轻微摆动的"说话姿势" ----------
   // 优先用 SpeechSynthesisUtterance 的 boundary 事件（按实际读到哪个词触发），
   // 让嘴型张合真正跟读音节奏对上，而不是固定间隔瞎动；如果当前浏览器不触发
@@ -745,9 +1012,11 @@
   function setMouthShape(open) {
     const mouth = $('#avatarMouth');
     if (!mouth) return;
-    mouth.setAttribute('height', open ? '16' : '4');
-    mouth.setAttribute('y', open ? '120' : '126');
-    mouth.setAttribute('rx', open ? '6' : '2');
+    const cfg = (AVATAR_STYLES[state.avatarStyle] || AVATAR_STYLES.ghost).mouth;
+    const shape = open ? cfg.open : cfg.closed;
+    mouth.setAttribute('height', shape.h);
+    mouth.setAttribute('y', shape.y);
+    mouth.setAttribute('rx', shape.rx);
   }
 
   function startFallbackMouthLoop() {
