@@ -661,6 +661,7 @@
     const preferredVoice = getPreferredVoice(utter.lang);
     if (preferredVoice) utter.voice = preferredVoice;
     let finished = false;
+    let boundaryFired = false;
     const finish = () => {
       if (finished) return; // 避免 onend/onerror 和兜底定时器重复触发
       finished = true;
@@ -668,7 +669,20 @@
       setAvatarTalking(false);
       if (onEnd) onEnd();
     };
-    utter.onstart = () => setAvatarTalking(true);
+    utter.onstart = () => {
+      setAvatarTalking(true);
+      // 给 boundary 事件一点时间触发；如果这个平台压根不支持/不触发它，就退回固定间隔动画，
+      // 保证嘴型至少还在动，而不是整段话说完嘴巴都不张合
+      setTimeout(() => { if (!boundaryFired && !finished) startFallbackMouthLoop(); }, 400);
+    };
+    utter.onboundary = (event) => {
+      if (event.name && event.name !== 'word') return; // 只用词级别的边界，句子级的太粗
+      boundaryFired = true;
+      clearInterval(avatarMouthTimer); // 边界事件已经在正常触发，不需要兜底动画了
+      setMouthShape(true);
+      clearTimeout(mouthCloseTimer);
+      mouthCloseTimer = setTimeout(() => setMouthShape(false), 130);
+    };
     utter.onend = finish;
     utter.onerror = finish;
     window.speechSynthesis.speak(utter);
@@ -680,32 +694,44 @@
   }
 
   // ---------- AI 头像：嘴型随语音张合，配合轻微摆动的"说话姿势" ----------
+  // 优先用 SpeechSynthesisUtterance 的 boundary 事件（按实际读到哪个词触发），
+  // 让嘴型张合真正跟读音节奏对上，而不是固定间隔瞎动；如果当前浏览器不触发
+  // boundary 事件（部分移动端不支持），自动退回到固定间隔的开合动画兜底。
   let avatarMouthTimer = null;
+  let mouthCloseTimer = null;
+
+  function setMouthShape(open) {
+    const mouth = $('#avatarMouth');
+    if (!mouth) return;
+    mouth.setAttribute('height', open ? '16' : '4');
+    mouth.setAttribute('y', open ? '120' : '126');
+    mouth.setAttribute('rx', open ? '6' : '2');
+  }
+
+  function startFallbackMouthLoop() {
+    clearInterval(avatarMouthTimer);
+    let open = false;
+    avatarMouthTimer = setInterval(() => {
+      open = !open;
+      setMouthShape(open);
+    }, 150);
+  }
 
   function setAvatarTalking(talking) {
     const avatar = $('#aiAvatar');
     if (!avatar) return; // 头像只在 AI 对话页存在，其他页面朗读（背单词等）不触发
-    const mouth = $('#avatarMouth');
     const status = $('#avatarStatus');
     clearInterval(avatarMouthTimer);
+    clearTimeout(mouthCloseTimer);
     if (talking) {
       avatar.classList.add('talking');
       avatar.classList.remove('idle');
       status.textContent = '正在说话...';
-      let open = false;
-      avatarMouthTimer = setInterval(() => {
-        open = !open;
-        mouth.setAttribute('height', open ? '14' : '5');
-        mouth.setAttribute('y', open ? '103' : '108');
-        mouth.setAttribute('rx', open ? '4' : '2.5');
-      }, 150);
     } else {
       avatar.classList.remove('talking');
       avatar.classList.add('idle');
       status.textContent = '待机中';
-      mouth.setAttribute('height', '5');
-      mouth.setAttribute('y', '108');
-      mouth.setAttribute('rx', '2.5');
+      setMouthShape(false);
     }
   }
 
