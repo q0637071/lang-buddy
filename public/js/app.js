@@ -162,8 +162,9 @@
   }
   function setAuthMode(mode) {
     state.authMode = mode;
-    $('#tabLogin').classList.toggle('active', mode === 'login');
-    $('#tabRegister').classList.toggle('active', mode === 'register');
+    // 登录和注册共用同一个"账号登录"标签页，靠表单底部的切换链接互相跳转，
+    // 不再单独占一个标签，减少重复入口
+    $('#tabLogin').classList.toggle('active', mode !== 'phone');
     $('#tabPhone').classList.toggle('active', mode === 'phone');
     $('#authForm').hidden = mode === 'phone';
     $('#phoneForm').hidden = mode !== 'phone';
@@ -173,13 +174,32 @@
     // 登录/注册用同一个密码输入框，autocomplete 提示要跟着切换，
     // 浏览器才会正确弹出"记住密码"（注册）或用已保存的密码自动填充（登录）
     $('#inputPassword').autocomplete = mode === 'register' ? 'new-password' : 'current-password';
+
+    const titleEl = $('#authTitle');
+    const subEl = $('#authSub');
+    const switchLine = $('#authSwitchLine');
+    if (mode === 'phone') {
+      titleEl.textContent = '手机号登录';
+      subEl.textContent = '未注册的手机号将自动创建新账号';
+    } else if (mode === 'register') {
+      titleEl.textContent = '创建账号';
+      subEl.textContent = '开始你的语言学习之旅';
+      switchLine.innerHTML = '已有账号？<a href="javascript:void(0)" id="linkAuthSwitch">去登录</a>';
+    } else {
+      titleEl.textContent = '欢迎回来';
+      subEl.textContent = '登录继续你的语言学习之旅';
+      switchLine.innerHTML = '还没有账号？<a href="javascript:void(0)" id="linkAuthSwitch">立即注册</a>';
+    }
   }
 
   $('#modalClose').addEventListener('click', closeAuthModal);
   $('#authModalOverlay').addEventListener('click', (e) => { if (e.target.id === 'authModalOverlay') closeAuthModal(); });
   $('#tabLogin').addEventListener('click', () => setAuthMode('login'));
-  $('#tabRegister').addEventListener('click', () => setAuthMode('register'));
   $('#tabPhone').addEventListener('click', () => setAuthMode('phone'));
+  // 切换链接是每次 setAuthMode 时用 innerHTML 重新生成的，用事件委托绑在稳定的父表单上
+  $('#authForm').addEventListener('click', (e) => {
+    if (e.target.id === 'linkAuthSwitch') setAuthMode(state.authMode === 'login' ? 'register' : 'login');
+  });
 
   $('#btnHeroLogin').addEventListener('click', () => openAuthModal('login'));
   $('#btnHeroRegister').addEventListener('click', () => openAuthModal('register'));

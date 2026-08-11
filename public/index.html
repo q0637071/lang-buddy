@@ -574,11 +574,15 @@
 
 <!-- 登录/注册弹窗 -->
 <div class="modal-overlay" id="authModalOverlay" hidden>
-  <div class="modal">
+  <div class="modal modal-auth">
     <button class="modal-close" id="modalClose">×</button>
+    <div class="auth-header">
+      <div class="auth-logo">L</div>
+      <h3 class="auth-title" id="authTitle">欢迎回来</h3>
+      <p class="auth-sub" id="authSub">登录继续你的语言学习之旅</p>
+    </div>
     <div class="modal-tabs">
-      <button class="modal-tab active" id="tabLogin" data-mode="login">登录</button>
-      <button class="modal-tab" id="tabRegister" data-mode="register">注册</button>
+      <button class="modal-tab active" id="tabLogin" data-mode="login">账号登录</button>
       <button class="modal-tab" id="tabPhone" data-mode="phone">手机号登录</button>
     </div>
     <form id="authForm">
@@ -596,6 +600,7 @@
       </div>
       <p class="form-error" id="authError"></p>
       <button type="submit" class="btn btn-primary btn-block" id="authSubmitBtn">登录</button>
+      <p class="auth-switch" id="authSwitchLine">还没有账号？<a href="javascript:void(0)" id="linkAuthSwitch">立即注册</a></p>
     </form>
 
     <form id="phoneForm" hidden>
