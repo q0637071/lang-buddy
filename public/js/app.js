@@ -377,6 +377,7 @@
   let recognizing = false;
   let voiceRetryTimer = null; // 语音对话模式里排队等待重试的定时器，结束通话时要一并清掉，避免"停不下来"
   let speakSafetyTimer = null; // 朗读的兜底超时：部分安卓机型 onend/onerror 从不触发，靠这个定时器强制续上
+  let recognitionSafetyTimer = null; // 听写的兜底超时：部分安卓机型（尤其OPPO/ColorOS）连不上语音识别服务时onresult/onerror都不触发，只能靠这个强制打断
 
   async function renderTutor() {
     $('#tutorPaywall').hidden = state.user.isMember;
@@ -622,6 +623,7 @@
       'no-speech': '没有检测到语音，请靠近麦克风再说一次',
       'audio-capture': '未检测到麦克风设备',
       'network': '语音识别服务连接失败（该功能依赖浏览器自带的在线语音识别，国内网络下常不稳定），建议改用打字输入',
+      'timeout': '长时间没有识别结果（部分安卓浏览器无法连接语音识别服务），建议改用打字输入',
     };
     return messages[error] || '语音识别出错，请重试';
   }
@@ -642,6 +644,33 @@
     }
   }
 
+  // 统一处理一轮"聆听"失败（不管是原生onerror报的错，还是我们自己判定的超时/静默失败）
+  function handleListenError(error) {
+    if (!state.voiceCallActive) return;
+    if (error === 'not-allowed' || error === 'audio-capture') {
+      toast(recognitionErrorMessage(error) + '，已退出语音对话模式');
+      stopVoiceCall();
+      return;
+    }
+    if (error === 'no-speech') {
+      state.voiceErrorStreak = 0;
+      setCallStatus('listening', '🎙️ 没听到声音，请再说一次');
+      voiceRetryTimer = setTimeout(() => { if (state.voiceCallActive) listenTurn(); }, 500);
+      return;
+    }
+    // network/timeout 等错误连续出现多次时（常见于部分安卓机型无法连接浏览器自带的在线语音识别服务），
+    // 不再无限重试刷屏报错，而是直接退出语音模式并给出明确提示，引导用户改用打字输入
+    state.voiceErrorStreak++;
+    if (state.voiceErrorStreak >= 3) {
+      toast(recognitionErrorMessage(error) + '，已退出语音对话模式');
+      state.voiceErrorStreak = 0;
+      stopVoiceCall();
+      return;
+    }
+    setCallStatus('error', '⚠️ ' + recognitionErrorMessage(error));
+    voiceRetryTimer = setTimeout(() => { if (state.voiceCallActive) listenTurn(); }, 1500);
+  }
+
   function listenTurn() {
     if (!state.voiceCallActive) return;
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -650,7 +679,14 @@
     recognition.lang = inputLangBcp47();
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
-    recognition.onresult = (event) => {
+
+    // 部分安卓机型（尤其OPPO/ColorOS，国内版通常没有Google服务、连不上浏览器自带的
+    // 在线语音识别后端）遇到这种情况时onresult/onerror都不触发，导致"正在聆听"卡死、
+    // AI永远等不到用户说话也就永远不会回复。settled防止兜底定时器和原生回调重复处理同一轮。
+    let settled = false;
+    const finish = (fn) => { if (settled) return; settled = true; clearTimeout(recognitionSafetyTimer); fn(); };
+
+    recognition.onresult = (event) => finish(() => {
       if (!state.voiceCallActive) return; // 用户已点击结束通话，忽略这次迟到的识别结果
       state.voiceErrorStreak = 0;
       const text = event.results[0][0].transcript.trim();
@@ -659,33 +695,23 @@
       } else {
         voiceRetryTimer = setTimeout(listenTurn, 600);
       }
-    };
-    recognition.onerror = (event) => {
-      if (!state.voiceCallActive) return;
-      if (event.error === 'not-allowed' || event.error === 'audio-capture') {
-        toast(recognitionErrorMessage(event.error) + '，已退出语音对话模式');
-        stopVoiceCall();
-        return;
-      }
-      if (event.error === 'no-speech') {
-        state.voiceErrorStreak = 0;
-        setCallStatus('listening', '🎙️ 没听到声音，请再说一次');
-        voiceRetryTimer = setTimeout(() => { if (state.voiceCallActive) listenTurn(); }, 500);
-        return;
-      }
-      // network 等错误连续出现多次时（常见于国内网络无法连接浏览器自带的在线语音识别服务），
-      // 不再无限重试刷屏报错，而是直接退出语音模式并给出明确提示，引导用户改用打字输入
-      state.voiceErrorStreak++;
-      if (state.voiceErrorStreak >= 3) {
-        toast(recognitionErrorMessage(event.error) + '，已退出语音对话模式');
-        state.voiceErrorStreak = 0;
-        stopVoiceCall();
-        return;
-      }
-      setCallStatus('error', '⚠️ ' + recognitionErrorMessage(event.error));
-      voiceRetryTimer = setTimeout(() => { if (state.voiceCallActive) listenTurn(); }, 1500);
-    };
-    recognition.start();
+    });
+    recognition.onerror = (event) => finish(() => handleListenError(event.error));
+    // 静默失败：没报错也没识别到内容，直接就结束了——当一次"没听清"处理，避免卡死
+    recognition.onend = () => finish(() => handleListenError('no-speech'));
+
+    try {
+      recognition.start();
+    } catch {
+      finish(() => handleListenError('timeout'));
+      return;
+    }
+
+    clearTimeout(recognitionSafetyTimer);
+    recognitionSafetyTimer = setTimeout(() => finish(() => {
+      try { recognition.abort(); } catch { try { recognition.stop(); } catch {} }
+      handleListenError('timeout');
+    }), 10000);
   }
 
   // 部分安卓机型（含OPPO ColorOS浏览器）的朗读接口要求先在一次真实的用户点击里"预热"一次，
@@ -723,6 +749,7 @@
     state.voiceCallActive = false;
     clearTimeout(voiceRetryTimer);
     clearTimeout(speakSafetyTimer);
+    clearTimeout(recognitionSafetyTimer);
     // 先立刻把界面和头像状态复原，不依赖 recognition/speechSynthesis 的回调是否真的触发
     // （部分安卓机型上这些回调不可靠，是"点了结束但停不下来"的根源）
     setAvatarTalking(false);
