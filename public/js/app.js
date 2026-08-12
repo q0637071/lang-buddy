@@ -9,6 +9,10 @@
     vocabIndex: 0,
     vocabStats: null,
     vocabLevel: '',
+    vocabMode: 'review',
+    vocabBrowseWords: [],
+    vocabSearch: '',
+    vocabStatusF: '',
     grammarLessons: [],
     currentGrammarId: null,
     authMode: 'login',
@@ -27,6 +31,7 @@
 
   const LEVEL_ZH = { beginner: '初级', intermediate: '中级', advanced: '高级' };
   const VOCAB_LEVEL_ZH = { cet4: '四级', cet6: '六级', kaoyan: '考研', toefl: '托福', gre: 'GRE' };
+  const VOCAB_STATUS_ZH = { new: '未学', learning: '学习中', known: '已掌握' };
   const LANG_BCP47 = { zh: 'zh-CN', en: 'en-US', ja: 'ja-JP', ko: 'ko-KR', fr: 'fr-FR', de: 'de-DE', es: 'es-ES' };
 
   // ---------- 工具函数 ----------
@@ -91,7 +96,12 @@
 
     if (name === 'dashboard') renderDashboard();
     if (name === 'tutor') renderTutor();
-    if (name === 'vocab') loadVocabQueue();
+    if (name === 'vocab') {
+      state.vocabMode = 'review';
+      $all('#vocabModeToggle .chip').forEach(c => c.classList.toggle('active', c.dataset.mode === 'review'));
+      $('#btnStartQuiz').hidden = false;
+      loadVocabQueue();
+    }
     if (name === 'grammar') renderGrammarList();
     if (name === 'colloquial') renderColloquial();
     if (name === 'mistakes') renderMistakes();
@@ -1192,13 +1202,29 @@
   });
 
   // ---------- 背单词 ----------
+  $('#vocabModeToggle').addEventListener('click', (e) => {
+    const btn = e.target.closest('.chip');
+    if (!btn) return;
+    $all('#vocabModeToggle .chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    state.vocabMode = btn.dataset.mode;
+    if (state.vocabMode === 'browse') {
+      $('#btnStartQuiz').hidden = true;
+      loadVocabBrowse();
+    } else {
+      $('#btnStartQuiz').hidden = false;
+      loadVocabQueue();
+    }
+  });
+
   $('#vocabLevelFilter').addEventListener('click', (e) => {
     const btn = e.target.closest('.chip');
     if (!btn) return;
     $all('#vocabLevelFilter .chip').forEach(c => c.classList.remove('active'));
     btn.classList.add('active');
     state.vocabLevel = btn.dataset.level;
-    loadVocabQueue();
+    if (state.vocabMode === 'browse') loadVocabBrowse();
+    else loadVocabQueue();
   });
 
   async function loadVocabQueue() {
@@ -1234,6 +1260,7 @@
     $('#flashcardReveal').hidden = true;
     $('#flashcardActions').hidden = true;
     $('#flashcardPreActions').hidden = false;
+    $('#flashcardRootHint').hidden = true;
 
     if (!queue.length || idx >= queue.length) {
       $('#flashcardArea').hidden = true;
@@ -1251,6 +1278,25 @@
     $('#flashcardExampleEn').textContent = w.example_en;
     $('#flashcardExampleZh').textContent = w.example_zh;
 
+    // 词根词缀作为回忆前的联想线索先展示，释义/例句要点"显示释义"才揭晓
+    if (w.root) {
+      $('#flashcardRootText').textContent = w.root;
+      $('#flashcardRootHint').hidden = false;
+    }
+    if (w.note) {
+      $('#flashcardNote').textContent = '💡 ' + w.note;
+      $('#flashcardNote').hidden = false;
+    } else {
+      $('#flashcardNote').hidden = true;
+    }
+
+    if (w.previews) {
+      $('#intervalAgain').textContent = w.previews.again || '';
+      $('#intervalHard').textContent = w.previews.hard || '';
+      $('#intervalGood').textContent = w.previews.good || '';
+      $('#intervalEasy').textContent = w.previews.easy || '';
+    }
+
     if (state.autoSpeak) speakVocabWord(w.word);
   }
 
@@ -1260,26 +1306,76 @@
     $('#flashcardPreActions').hidden = true;
   });
 
-  async function submitVocabReview(remembered, skip) {
+  async function submitVocabReview(rating, skip) {
     const w = state.vocabQueue[state.vocabIndex];
     if (!w) return;
     try {
-      await api('/vocab/review', { method: 'POST', body: { word: w.word, remembered, skip: !!skip } });
+      await api('/vocab/review', { method: 'POST', body: { word: w.word, rating, skip: !!skip } });
     } catch (err) {
       toast(err.message);
     }
     state.vocabIndex++;
     renderFlashcard();
   }
-  $('#btnKnew').addEventListener('click', () => submitVocabReview(true));
-  $('#btnForgot').addEventListener('click', () => submitVocabReview(false));
-  $('#btnSkipWord').addEventListener('click', () => submitVocabReview(true, true));
+  $('#btnAgain').addEventListener('click', () => submitVocabReview('again'));
+  $('#btnHard').addEventListener('click', () => submitVocabReview('hard'));
+  $('#btnGood').addEventListener('click', () => submitVocabReview('good'));
+  $('#btnEasy').addEventListener('click', () => submitVocabReview('easy'));
+  $('#btnSkipWord').addEventListener('click', () => submitVocabReview('easy', true));
+
+  // ---------- 浏览全部单词（不受复习到期限制） ----------
+  let vocabSearchTimer = null;
+  $('#vocabSearchInput').addEventListener('input', (e) => {
+    state.vocabSearch = e.target.value;
+    clearTimeout(vocabSearchTimer);
+    vocabSearchTimer = setTimeout(loadVocabBrowse, 300);
+  });
+  $('#vocabStatusFilter').addEventListener('change', (e) => {
+    state.vocabStatusF = e.target.value;
+    loadVocabBrowse();
+  });
+
+  async function loadVocabBrowse() {
+    setVocabMode('browse');
+    try {
+      const params = new URLSearchParams();
+      if (state.vocabLevel) params.set('level', state.vocabLevel);
+      if (state.vocabSearch.trim()) params.set('q', state.vocabSearch.trim());
+      if (state.vocabStatusF) params.set('status', state.vocabStatusF);
+      const data = await api('/vocab/list?' + params.toString());
+      state.vocabBrowseWords = data.words;
+      renderVocabBrowse();
+    } catch (err) {
+      toast(err.message);
+    }
+  }
+
+  function renderVocabBrowse() {
+    const words = state.vocabBrowseWords;
+    $('#vocabBrowseCount').textContent = `共 ${words.length} 个单词`;
+    if (!words.length) {
+      $('#vocabBrowseList').innerHTML = '<p class="empty-state">没有找到匹配的单词</p>';
+      return;
+    }
+    $('#vocabBrowseList').innerHTML = words.map(w => `
+      <div class="vocab-browse-item">
+        <div class="vocab-browse-main">
+          <span class="vocab-browse-word">${escapeHtml(w.word)}</span>
+          <span class="vocab-browse-pos">${escapeHtml(w.pos || '')}</span>
+          <span class="vocab-browse-status status-${w.status}">${VOCAB_STATUS_ZH[w.status] || w.status}</span>
+        </div>
+        <div class="vocab-browse-meaning">${escapeHtml(w.meaning_zh || '')}</div>
+        ${w.root ? `<div class="vocab-browse-root">🔑 ${escapeHtml(w.root)}</div>` : ''}
+      </div>
+    `).join('');
+  }
 
   // ---------- 单词测试（根据当前学习状态出题） ----------
   function setVocabMode(mode) {
-    // mode: 'review' | 'quiz' | 'quiz-result'
+    // mode: 'review' | 'browse' | 'quiz' | 'quiz-result'
     $('#flashcardArea').hidden = mode !== 'review';
     $('#vocabEmpty').hidden = true;
+    $('#vocabBrowseArea').hidden = mode !== 'browse';
     $('#quizArea').hidden = mode !== 'quiz';
     $('#quizResult').hidden = mode !== 'quiz-result';
   }
@@ -1324,7 +1420,7 @@
     buttons[selectedIdx].classList.add(correct ? 'correct' : 'wrong');
     if (!correct) buttons[q.correctIndex].classList.add('correct');
 
-    api('/vocab/review', { method: 'POST', body: { word: q.word, remembered: correct } }).catch(() => {});
+    api('/vocab/review', { method: 'POST', body: { word: q.word, rating: correct ? 'good' : 'again' } }).catch(() => {});
 
     setTimeout(() => {
       if (index + 1 < questions.length) {

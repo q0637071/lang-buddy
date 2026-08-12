@@ -729,11 +729,30 @@ function readVocab() {
   return JSON.parse(fs.readFileSync(VOCAB_PATH, 'utf-8'));
 }
 
+// 完整词库浏览（不受复习到期时间限制，配合搜索/状态筛选，解决"两千个单词我想都看到"的需求）
 app.get('/api/vocab/list', requireAuth, (req, res) => {
-  const vocab = readVocab();
-  const { level } = req.query;
-  const filtered = level ? vocab.filter(w => w.level === level) : vocab;
-  res.json({ words: filtered });
+  const db = loadDB();
+  const user = db.users[req.session.userId];
+  const progress = user.vocabProgress || {};
+  let vocab = readVocab();
+  const { level, q, status } = req.query;
+  if (level) vocab = vocab.filter(w => w.level === level);
+  if (q) {
+    const kw = String(q).trim().toLowerCase();
+    vocab = vocab.filter(w => w.word.toLowerCase().includes(kw) || (w.meaning_zh || '').includes(kw));
+  }
+
+  const withStatus = vocab.map(w => {
+    const p = progress[w.word];
+    let wordStatus;
+    if (!p) wordStatus = 'new';
+    else if ((p.reps || 0) >= LEARNING_STEPS_MIN.length && (p.interval || 0) >= 21) wordStatus = 'known';
+    else wordStatus = 'learning';
+    return { ...w, status: wordStatus };
+  });
+
+  const filtered = status ? withStatus.filter(w => w.status === status) : withStatus;
+  res.json({ words: filtered, total: filtered.length });
 });
 
 function computeStats(vocab, progress) {
@@ -741,7 +760,8 @@ function computeStats(vocab, progress) {
   vocab.forEach(w => {
     const p = progress[w.word];
     if (!p) newCount++;
-    else if (p.box >= EBBINGHAUS_INTERVALS_MIN.length - 1) known++;
+    // "已掌握"参考 Anki 对"成熟卡片"的标准：至少毕业出学习阶段，且间隔已经拉长到21天以上
+    else if ((p.reps || 0) >= LEARNING_STEPS_MIN.length && (p.interval || 0) >= 21) known++;
     else learning++;
   });
   return { total: vocab.length, known, learning, new: newCount };
@@ -818,7 +838,7 @@ app.get('/api/vocab/review', requireAuth, (req, res) => {
     const p = progress[w.word];
     return !p || p.due <= now;
   });
-  // 优先安排已学过但到期的词，再补充新词，最多20个一批
+  // 优先安排已学过但到期的词，再补充新词；从20提到50一批，减少"明明还有很多词到期却看不到"的情况
   due.sort((a, b) => {
     const pa = progress[a.word], pb = progress[b.word];
     if (pa && !pb) return -1;
@@ -826,31 +846,114 @@ app.get('/api/vocab/review', requireAuth, (req, res) => {
     return 0;
   });
 
-  res.json({ words: due.slice(0, 20), stats: computeStats(vocab, progress) });
+  const page = due.slice(0, 50).map(w => ({ ...w, previews: previewRatings(progress[w.word]) }));
+  res.json({ words: page, stats: computeStats(vocab, progress) });
 });
 
-// 艾宾浩斯遗忘曲线复习间隔：5分钟-30分钟-12小时-1天-2天-4天-7天-15天-30天
-const EBBINGHAUS_INTERVALS_MIN = [5, 30, 12 * 60, 24 * 60, 2 * 24 * 60, 4 * 24 * 60, 7 * 24 * 60, 15 * 24 * 60, 30 * 24 * 60];
+// ---- 复习按钮的"预计下次间隔"提示（不落库，只是模拟四种评价各自的结果供前端展示） ----
+function formatDueDelta(ms) {
+  const mins = ms / 60000;
+  if (mins < 60) return `${Math.max(1, Math.round(mins))}分钟`;
+  const days = ms / DAY_MS;
+  if (days < 1) return `${Math.round(ms / 3600000)}小时`;
+  if (days < 30) return `${Math.round(days)}天`;
+  return `${Math.round(days / 30)}个月`;
+}
+function previewRatings(prev) {
+  const out = {};
+  for (const rating of ['again', 'hard', 'good', 'easy']) {
+    out[rating] = formatDueDelta(scheduleReview(prev, rating).due - Date.now());
+  }
+  return out;
+}
+
+// ---- Anki 同款 SM-2 间隔重复算法 ----
+// 新词/答错后先经过"学习阶段"（按分钟计的短间隔，对应Anki默认的1分钟→10分钟两级学习步骤），
+// 连续两次"良好/简单"评价后"毕业"进入正式复习阶段（按天计，由难度系数ease动态调整间隔）。
+// 四档评价（again/hard/good/easy）对应Anki的"忘记/困难/良好/简单"，每档都会微调ease，
+// 这样"总是勉强想起来"的词间隔涨得慢，"一看就会"的词间隔涨得快，跟真人记忆曲线更贴近。
+const LEARNING_STEPS_MIN = [1, 10];
+const MIN_EASE = 1.3;
+const GRADUATING_INTERVAL_DAYS = 1;
+const EASY_INTERVAL_DAYS = 4;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function scheduleReview(prev, rating) {
+  const now = Date.now();
+  let ease = prev?.ease ?? 2.5;
+  let reps = prev?.reps ?? 0; // 0/1 = 还在学习阶段（对应 LEARNING_STEPS_MIN 下标）；>=2 = 已毕业进入正式复习
+  let interval = prev?.interval ?? 0; // 天，仅毕业后有意义
+  let lapses = prev?.lapses ?? 0;
+  const inLearning = reps < LEARNING_STEPS_MIN.length;
+  let dueMs;
+
+  if (rating === 'again') {
+    reps = 0;
+    interval = 0;
+    ease = Math.max(MIN_EASE, ease - 0.2);
+    lapses += 1;
+    dueMs = now + LEARNING_STEPS_MIN[0] * 60 * 1000;
+  } else if (rating === 'hard') {
+    ease = Math.max(MIN_EASE, ease - 0.15);
+    if (inLearning) {
+      dueMs = now + LEARNING_STEPS_MIN[reps] * 60 * 1000;
+    } else {
+      interval = Math.max(1, Math.round(interval * 1.2));
+      dueMs = now + interval * DAY_MS;
+    }
+  } else if (rating === 'good') {
+    if (inLearning) {
+      reps += 1;
+      if (reps < LEARNING_STEPS_MIN.length) {
+        dueMs = now + LEARNING_STEPS_MIN[reps] * 60 * 1000;
+      } else {
+        interval = GRADUATING_INTERVAL_DAYS;
+        dueMs = now + interval * DAY_MS;
+      }
+    } else {
+      interval = Math.max(1, Math.round(interval * ease));
+      reps += 1;
+      dueMs = now + interval * DAY_MS;
+    }
+  } else { // easy
+    ease = ease + 0.15;
+    interval = inLearning ? EASY_INTERVAL_DAYS : Math.max(EASY_INTERVAL_DAYS, Math.round(interval * ease * 1.3));
+    reps = Math.max(reps, LEARNING_STEPS_MIN.length) + 1;
+    dueMs = now + interval * DAY_MS;
+  }
+
+  return {
+    ease: Math.round(ease * 100) / 100,
+    interval,
+    reps,
+    lapses,
+    due: dueMs,
+    lastReview: now,
+  };
+}
 
 app.post('/api/vocab/review', requireAuth, (req, res) => {
-  const { word, remembered, skip } = req.body || {};
+  const { word, rating, skip } = req.body || {};
   if (!word) return res.status(400).json({ error: '缺少单词' });
+  if (!skip && !['again', 'hard', 'good', 'easy'].includes(rating)) {
+    return res.status(400).json({ error: '评价参数不合法' });
+  }
   const db = loadDB();
   const user = db.users[req.session.userId];
   if (!user.vocabProgress) user.vocabProgress = {};
-  // 从未复习过的新词用 -1 作为起点，这样第一次"记住"正好落在box 0（5分钟）档，而不是跳过它
-  const prev = user.vocabProgress[word] || { box: -1, due: Date.now() };
-  // 跳过（已掌握）：直接记为最高级别，不用像正常记忆曲线一样一档档爬；
-  // 记住了：进入下一个更长的复习间隔；忘记了：按艾宾浩斯曲线的做法从头开始重新记忆
-  const box = skip
-    ? EBBINGHAUS_INTERVALS_MIN.length - 1
-    : (remembered ? Math.min(prev.box + 1, EBBINGHAUS_INTERVALS_MIN.length - 1) : 0);
-  const minutes = EBBINGHAUS_INTERVALS_MIN[box];
-  const due = Date.now() + minutes * 60 * 1000;
-  user.vocabProgress[word] = { box, due, lastReview: Date.now() };
+  const prev = user.vocabProgress[word];
+
+  let next;
+  if (skip) {
+    // 跳过（已掌握）：直接记为成熟卡片，不用像正常复习一样一步步爬升
+    next = { ease: 2.5, interval: 30, reps: LEARNING_STEPS_MIN.length + 5, lapses: prev?.lapses || 0, due: Date.now() + 30 * DAY_MS, lastReview: Date.now() };
+  } else {
+    next = scheduleReview(prev, rating);
+  }
+  user.vocabProgress[word] = next;
   recordActivity(user);
   saveDB(db);
-  res.json({ progress: user.vocabProgress[word] });
+  res.json({ progress: next });
 });
 
 function shuffle(arr) {
@@ -876,7 +979,7 @@ app.get('/api/vocab/quiz', requireAuth, (req, res) => {
   const now = Date.now();
   const learning = vocab.filter(w => {
     const p = progress[w.word];
-    return p && p.box < EBBINGHAUS_INTERVALS_MIN.length - 1;
+    return p && !(p.reps >= LEARNING_STEPS_MIN.length && p.interval >= 21);
   });
   const due = vocab.filter(w => {
     const p = progress[w.word];

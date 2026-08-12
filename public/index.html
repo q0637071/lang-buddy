@@ -276,6 +276,12 @@
     <div class="container container-narrow">
       <h2 class="page-title">背单词</h2>
       <div class="vocab-stats" id="vocabStats"></div>
+
+      <div class="vocab-mode-toggle" id="vocabModeToggle">
+        <button type="button" class="chip active" data-mode="review">📇 复习卡片</button>
+        <button type="button" class="chip" data-mode="browse">📚 浏览全部单词</button>
+      </div>
+
       <div class="vocab-level-filter" id="vocabLevelFilter">
         <button class="chip active" data-level="">全部</button>
         <button class="chip" data-level="cet4">四级</button>
@@ -292,8 +298,13 @@
           <div class="flashcard-word" id="flashcardWord">-</div>
           <div class="flashcard-pos" id="flashcardPos"></div>
           <button class="btn btn-icon" id="btnSpeakWord" title="发音">🔊</button>
+          <div class="flashcard-root-hint" id="flashcardRootHint" hidden>
+            <span class="root-hint-label">🔑 词根线索</span>
+            <span class="root-hint-text" id="flashcardRootText"></span>
+          </div>
           <div class="flashcard-reveal" id="flashcardReveal" hidden>
             <div class="flashcard-meaning" id="flashcardMeaning"></div>
+            <div class="flashcard-note" id="flashcardNote" hidden></div>
             <div class="flashcard-example" id="flashcardExampleEn"></div>
             <div class="flashcard-example-zh" id="flashcardExampleZh"></div>
           </div>
@@ -302,13 +313,37 @@
             <button class="btn btn-ghost" id="btnSkipWord">⏭️ 已掌握，跳过</button>
           </div>
         </div>
-        <div class="flashcard-actions" id="flashcardActions" hidden>
-          <button class="btn btn-danger" id="btnForgot">😵 不认识</button>
-          <button class="btn btn-success" id="btnKnew">✅ 认识</button>
+        <div class="flashcard-actions flashcard-actions-anki" id="flashcardActions" hidden>
+          <button class="btn btn-anki btn-anki-again" id="btnAgain">
+            <span class="anki-label">😵 忘记</span><span class="anki-interval" id="intervalAgain"></span>
+          </button>
+          <button class="btn btn-anki btn-anki-hard" id="btnHard">
+            <span class="anki-label">😓 困难</span><span class="anki-interval" id="intervalHard"></span>
+          </button>
+          <button class="btn btn-anki btn-anki-good" id="btnGood">
+            <span class="anki-label">🙂 记得</span><span class="anki-interval" id="intervalGood"></span>
+          </button>
+          <button class="btn btn-anki btn-anki-easy" id="btnEasy">
+            <span class="anki-label">😎 简单</span><span class="anki-interval" id="intervalEasy"></span>
+          </button>
         </div>
       </div>
       <div id="vocabEmpty" class="empty-state" hidden>
         <p>🎉 今天的复习任务已完成！</p>
+      </div>
+
+      <div id="vocabBrowseArea" hidden>
+        <div class="vocab-browse-toolbar">
+          <input type="text" id="vocabSearchInput" placeholder="🔍 搜索单词或中文释义...">
+          <select id="vocabStatusFilter">
+            <option value="">全部状态</option>
+            <option value="new">未学</option>
+            <option value="learning">学习中</option>
+            <option value="known">已掌握</option>
+          </select>
+        </div>
+        <div class="vocab-browse-count" id="vocabBrowseCount"></div>
+        <div class="vocab-browse-list" id="vocabBrowseList"></div>
       </div>
 
       <div id="quizArea" hidden>
