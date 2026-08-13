@@ -5,6 +5,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
+const { MongoClient } = require('mongodb');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -31,17 +32,51 @@ const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
-function loadDB() {
-  if (!fs.existsSync(DB_PATH)) return { users: {} };
-  try {
-    return JSON.parse(fs.readFileSync(DB_PATH, 'utf-8'));
-  } catch {
-    return { users: {} };
+// ---- 用户数据持久化 ----
+// Render 免费套餐的容器磁盘是临时的：每次重新部署/重启都会用全新容器启动，本地文件
+// （包括这个db.json）不会保留，导致用户数据"每次部署就清零"。真正的解决办法是把数据存到
+// 独立于容器生命周期的地方——配置了 MONGODB_URI 就存 MongoDB（推荐，持久、不受部署影响）；
+// 没配置就退回本地文件（行为和以前完全一样，仅建议本地开发用，生产环境必须配置）。
+// 整个db.json常驻内存，loadDB/saveDB全程保持同步调用，业务代码完全不用改。
+let dbCache = null;
+let mongoCollection = null;
+let lastSavePromise = Promise.resolve();
+
+async function initDB() {
+  if (process.env.MONGODB_URI) {
+    const client = new MongoClient(process.env.MONGODB_URI);
+    await client.connect();
+    mongoCollection = client.db('langbuddy').collection('state');
+    const doc = await mongoCollection.findOne({ _id: 'db' });
+    dbCache = doc ? doc.data : { users: {} };
+    console.log('[DB] 已连接 MongoDB，用户数据将持久化保存，不受部署/重启影响');
+  } else {
+    dbCache = fs.existsSync(DB_PATH) ? JSON.parse(fs.readFileSync(DB_PATH, 'utf-8')) : { users: {} };
+    console.warn('[DB] 未配置 MONGODB_URI，使用本地文件存储——仅适合本地开发，部署到 Render 等平台后数据会在下次部署/重启时丢失！');
   }
 }
-function saveDB(db) {
-  fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2));
+
+function loadDB() {
+  return dbCache;
 }
+function saveDB(db) {
+  dbCache = db;
+  if (mongoCollection) {
+    lastSavePromise = mongoCollection.replaceOne({ _id: 'db' }, { _id: 'db', data: db }, { upsert: true })
+      .catch(err => console.error('[DB] 写入 MongoDB 失败:', err.message));
+  } else {
+    fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2));
+  }
+}
+
+// Render 部署新版本前会先给旧容器发 SIGTERM 再强制杀掉，这里等最近一次的写入真正落盘/落库后再退出，
+// 避免"最后一次操作的数据还没来得及写到 MongoDB，容器就被回收了"
+async function gracefulShutdown() {
+  try { await Promise.race([lastSavePromise, new Promise(r => setTimeout(r, 5000))]); } catch {}
+  process.exit(0);
+}
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
 
 app.set('trust proxy', 1);
 app.use(express.json());
@@ -1408,8 +1443,11 @@ app.use((err, req, res, next) => {
   res.status(400).json({ error: err.message || '上传失败' });
 });
 
-app.listen(PORT, () => {
+initDB().then(() => app.listen(PORT, () => {
   console.log(`\n✅ LangBuddy 语伴已启动`);
   console.log(`   本地访问: http://localhost:${PORT}`);
   console.log(`   使用模型: ${SF_MODEL}\n`);
+})).catch(err => {
+  console.error('❌ 启动失败，数据库连接出错:', err.message);
+  process.exit(1);
 });

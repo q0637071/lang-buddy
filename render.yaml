@@ -10,6 +10,8 @@ services:
         sync: false
       - key: OPENROUTER_API_KEY
         sync: false
+      - key: MONGODB_URI
+        sync: false
       - key: SESSION_SECRET
         generateValue: true
       - key: ADMIN_USERNAME
