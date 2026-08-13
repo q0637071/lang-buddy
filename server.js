@@ -493,6 +493,11 @@ app.post('/api/logout', (req, res) => {
   req.session.destroy(() => res.json({ ok: true }));
 });
 
+// 轻量诊断接口：不暴露任何敏感信息，只用来确认当前是不是接到了持久化数据库
+app.get('/api/health', (req, res) => {
+  res.json({ ok: true, dbMode: mongoCollection ? 'mongodb' : 'file' });
+});
+
 app.get('/api/me', (req, res) => {
   if (!req.session.userId) return res.json({ user: null });
   const db = loadDB();
