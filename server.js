@@ -1441,6 +1441,87 @@ app.get('/api/admin/users', requireAdmin, (req, res) => {
   res.json({ users });
 });
 
+// 管理员手动创建账号：常用于给测试/线下沟通好的用户直接开号，跳过手机验证门槛
+// （管理员已经人工核实过，不需要再走一遍防刷验证）
+app.post('/api/admin/users', requireAdmin, async (req, res) => {
+  const { username, password, nickname, isMember } = req.body || {};
+  if (!username || !password) return res.status(400).json({ error: '用户名和密码不能为空' });
+  if (typeof username !== 'string' || username.length < 3 || username.length > 30) {
+    return res.status(400).json({ error: '用户名长度需为3-30位' });
+  }
+  if (typeof password !== 'string' || password.length < 6) {
+    return res.status(400).json({ error: '密码至少需要6位' });
+  }
+  const db = loadDB();
+  if (db.users[username]) return res.status(400).json({ error: '用户名已被注册' });
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  db.users[username] = {
+    username,
+    nickname: (nickname && String(nickname).slice(0, 30)) || username,
+    passwordHash,
+    isMember: !!isMember,
+    memberSince: isMember ? Date.now() : null,
+    level: 'beginner',
+    targetLang: 'en',
+    createdAt: Date.now(),
+    vocabProgress: {},
+    mistakes: [],
+    activityLog: {},
+    chatCount: 0,
+    registrationIp: '-',
+    registrationRegion: '管理员创建',
+    phoneVerified: true,
+  };
+  saveDB(db);
+  res.json({ ok: true });
+});
+
+// 管理员修改用户会员状态：开通/取消会员
+app.post('/api/admin/users/:username/membership', requireAdmin, (req, res) => {
+  const { username } = req.params;
+  const { isMember } = req.body || {};
+  const db = loadDB();
+  const user = db.users[username];
+  if (!user) return res.status(404).json({ error: '用户不存在' });
+  user.isMember = !!isMember;
+  if (isMember && !user.memberSince) user.memberSince = Date.now();
+  saveDB(db);
+  res.json({ ok: true });
+});
+
+// 管理员重置用户密码：用户忘记密码时的人工支持手段
+app.post('/api/admin/users/:username/reset-password', requireAdmin, async (req, res) => {
+  const { username } = req.params;
+  const { newPassword } = req.body || {};
+  if (typeof newPassword !== 'string' || newPassword.length < 6) {
+    return res.status(400).json({ error: '密码至少需要6位' });
+  }
+  const db = loadDB();
+  const user = db.users[username];
+  if (!user) return res.status(404).json({ error: '用户不存在' });
+  user.passwordHash = await bcrypt.hash(newPassword, 10);
+  saveDB(db);
+  res.json({ ok: true });
+});
+
+// 管理员删除用户：管理员自己的账号不允许在这里删掉（避免误操作把自己权限删没了）
+app.delete('/api/admin/users/:username', requireAdmin, (req, res) => {
+  const { username } = req.params;
+  if (ADMIN_USERNAME && username === ADMIN_USERNAME) {
+    return res.status(400).json({ error: '不能删除管理员自己的账号' });
+  }
+  const db = loadDB();
+  const user = db.users[username];
+  if (!user) return res.status(404).json({ error: '用户不存在' });
+  (user.mistakes || []).forEach(m => {
+    if (m.imageFile) fs.unlink(path.join(UPLOADS_DIR, m.imageFile), () => {});
+  });
+  delete db.users[username];
+  saveDB(db);
+  res.json({ ok: true });
+});
+
 // multer / 上传相关错误统一转成 JSON 响应
 app.use((err, req, res, next) => {
   if (!err) return next();

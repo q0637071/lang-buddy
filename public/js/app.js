@@ -2074,7 +2074,9 @@
         <tr><td>${escapeHtml(r.region)}</td><td>${r.count}</td></tr>
       `).join('') || '<tr><td colspan="2">暂无数据</td></tr>';
 
-      $('#adminUsersBody').innerHTML = usersData.users.map(u => `
+      $('#adminUsersBody').innerHTML = usersData.users.map(u => {
+        const isSelf = u.username === state.user.username;
+        return `
         <tr>
           <td>${escapeHtml(u.username)}</td>
           <td>${escapeHtml(u.nickname)}</td>
@@ -2088,12 +2090,102 @@
           <td>${escapeHtml(u.registrationIp)}</td>
           <td>${escapeHtml(u.registrationRegion)}</td>
           <td>${new Date(u.createdAt).toLocaleDateString('zh-CN')}</td>
+          <td class="admin-actions">
+            <button type="button" class="btn-admin-action" data-action="toggle-member" data-username="${escapeHtml(u.username)}" data-ismember="${u.isMember ? '1' : ''}">${u.isMember ? '取消会员' : '设为会员'}</button>
+            <button type="button" class="btn-admin-action" data-action="reset-pw" data-username="${escapeHtml(u.username)}">重置密码</button>
+            ${isSelf ? '' : `<button type="button" class="btn-admin-action btn-admin-action-danger" data-action="delete" data-username="${escapeHtml(u.username)}">删除</button>`}
+          </td>
         </tr>
-      `).join('');
+      `;
+      }).join('');
     } catch (err) {
       toast(err.message);
     }
   }
+
+  $('#adminUsersBody').addEventListener('click', async (e) => {
+    const btn = e.target.closest('.btn-admin-action');
+    if (!btn) return;
+    const { action, username } = btn.dataset;
+    if (action === 'toggle-member') {
+      const nextIsMember = !btn.dataset.ismember;
+      try {
+        await api(`/admin/users/${encodeURIComponent(username)}/membership`, { method: 'POST', body: { isMember: nextIsMember } });
+        toast(nextIsMember ? '已开通会员' : '已取消会员');
+        renderAdmin();
+      } catch (err) {
+        toast(err.message);
+      }
+    } else if (action === 'reset-pw') {
+      $('#adminResetPwTarget').textContent = `为用户 ${username} 设置新密码`;
+      $('#adminResetPwForm').dataset.username = username;
+      $('#adminResetPwInput').value = '';
+      $('#adminResetPwError').textContent = '';
+      $('#adminResetPwOverlay').hidden = false;
+    } else if (action === 'delete') {
+      if (!confirm(`确定要删除用户 "${username}" 吗？该用户的所有学习数据将被永久删除，无法恢复。`)) return;
+      try {
+        await api(`/admin/users/${encodeURIComponent(username)}`, { method: 'DELETE' });
+        toast('用户已删除');
+        renderAdmin();
+      } catch (err) {
+        toast(err.message);
+      }
+    }
+  });
+
+  $('#btnAdminAddUser').addEventListener('click', () => {
+    $('#adminNewUsername').value = '';
+    $('#adminNewPassword').value = '';
+    $('#adminNewNickname').value = '';
+    $('#adminNewIsMember').checked = false;
+    $('#adminAddUserError').textContent = '';
+    $('#adminAddUserOverlay').hidden = false;
+  });
+  $('#adminAddUserClose').addEventListener('click', () => { $('#adminAddUserOverlay').hidden = true; });
+  $('#adminAddUserOverlay').addEventListener('click', (e) => { if (e.target.id === 'adminAddUserOverlay') $('#adminAddUserOverlay').hidden = true; });
+
+  $('#adminAddUserForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errEl = $('#adminAddUserError');
+    errEl.textContent = '';
+    try {
+      await api('/admin/users', {
+        method: 'POST',
+        body: {
+          username: $('#adminNewUsername').value.trim(),
+          password: $('#adminNewPassword').value,
+          nickname: $('#adminNewNickname').value.trim(),
+          isMember: $('#adminNewIsMember').checked,
+        },
+      });
+      $('#adminAddUserOverlay').hidden = true;
+      toast('用户创建成功');
+      renderAdmin();
+    } catch (err) {
+      errEl.textContent = err.message;
+    }
+  });
+
+  $('#adminResetPwClose').addEventListener('click', () => { $('#adminResetPwOverlay').hidden = true; });
+  $('#adminResetPwOverlay').addEventListener('click', (e) => { if (e.target.id === 'adminResetPwOverlay') $('#adminResetPwOverlay').hidden = true; });
+
+  $('#adminResetPwForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = e.target.dataset.username;
+    const errEl = $('#adminResetPwError');
+    errEl.textContent = '';
+    try {
+      await api(`/admin/users/${encodeURIComponent(username)}/reset-password`, {
+        method: 'POST',
+        body: { newPassword: $('#adminResetPwInput').value },
+      });
+      $('#adminResetPwOverlay').hidden = true;
+      toast(`已重置 ${username} 的密码`);
+    } catch (err) {
+      errEl.textContent = err.message;
+    }
+  });
 
   // ---------- 我的 / Profile ----------
   function renderProfile() {

@@ -613,12 +613,15 @@
         </table>
       </div>
 
-      <h3 class="section-title">用户列表</h3>
+      <div class="admin-users-header">
+        <h3 class="section-title">用户列表</h3>
+        <button type="button" class="btn btn-primary btn-sm" id="btnAdminAddUser">➕ 新增用户</button>
+      </div>
       <div class="admin-table-wrap">
         <table class="admin-table" id="adminUsersTable">
           <thead>
             <tr>
-              <th>用户名</th><th>昵称</th><th>会员</th><th>目标语言</th><th>已掌握词</th><th>学习中</th><th>错题数</th><th>AI对话</th><th>连续天数</th><th>注册IP</th><th>注册地区</th><th>注册时间</th>
+              <th>用户名</th><th>昵称</th><th>会员</th><th>目标语言</th><th>已掌握词</th><th>学习中</th><th>错题数</th><th>AI对话</th><th>连续天数</th><th>注册IP</th><th>注册地区</th><th>注册时间</th><th>操作</th>
             </tr>
           </thead>
           <tbody id="adminUsersBody"></tbody>
@@ -675,6 +678,57 @@
       <p class="form-hint" id="phoneCodeHint"></p>
       <p class="form-error" id="phoneError"></p>
       <button type="submit" class="btn btn-primary btn-block" id="phoneSubmitBtn">登录 / 注册</button>
+    </form>
+  </div>
+</div>
+
+<!-- 管理员：新增用户弹窗 -->
+<div class="modal-overlay" id="adminAddUserOverlay" hidden>
+  <div class="modal modal-auth">
+    <button class="modal-close" id="adminAddUserClose">×</button>
+    <div class="auth-header">
+      <div class="auth-logo">L</div>
+      <h3 class="auth-title">新增用户</h3>
+      <p class="auth-sub">管理员手动创建账号，跳过手机验证</p>
+    </div>
+    <form id="adminAddUserForm">
+      <div class="form-row">
+        <label>用户名</label>
+        <input type="text" id="adminNewUsername" maxlength="30" required placeholder="3-30位字符">
+      </div>
+      <div class="form-row">
+        <label>密码</label>
+        <input type="text" id="adminNewPassword" required placeholder="至少6位">
+      </div>
+      <div class="form-row">
+        <label>昵称（可选）</label>
+        <input type="text" id="adminNewNickname" maxlength="30" placeholder="不填则默认用用户名">
+      </div>
+      <div class="form-row form-row-checkbox">
+        <label><input type="checkbox" id="adminNewIsMember"> 直接开通会员</label>
+      </div>
+      <p class="form-error" id="adminAddUserError"></p>
+      <button type="submit" class="btn btn-primary btn-block">创建账号</button>
+    </form>
+  </div>
+</div>
+
+<!-- 管理员：重置密码弹窗 -->
+<div class="modal-overlay" id="adminResetPwOverlay" hidden>
+  <div class="modal modal-auth">
+    <button class="modal-close" id="adminResetPwClose">×</button>
+    <div class="auth-header">
+      <div class="auth-logo">L</div>
+      <h3 class="auth-title">重置密码</h3>
+      <p class="auth-sub" id="adminResetPwTarget"></p>
+    </div>
+    <form id="adminResetPwForm">
+      <div class="form-row">
+        <label>新密码</label>
+        <input type="text" id="adminResetPwInput" required placeholder="至少6位">
+      </div>
+      <p class="form-error" id="adminResetPwError"></p>
+      <button type="submit" class="btn btn-primary btn-block">确认重置</button>
     </form>
   </div>
 </div>

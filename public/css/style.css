@@ -371,6 +371,15 @@ p { line-height: 1.6; color: var(--text-muted); }
 .admin-table tr:hover td { background: #fafbff; }
 .admin-badge-yes { color: var(--success); font-weight: 700; }
 .admin-badge-no { color: var(--text-muted); }
+.admin-users-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.admin-users-header .section-title { margin: 0; }
+.admin-actions { display: flex; gap: 6px; white-space: nowrap; }
+.btn-admin-action { border: 1px solid var(--border); background: #fff; color: var(--text); border-radius: 8px; padding: 5px 10px; font-size: 12px; cursor: pointer; }
+.btn-admin-action:hover { border-color: var(--primary); color: var(--primary); }
+.btn-admin-action-danger { color: var(--danger); border-color: #fca5a5; }
+.btn-admin-action-danger:hover { background: #fee2e2; border-color: var(--danger); color: var(--danger); }
+.form-row-checkbox { flex-direction: row; align-items: center; gap: 8px; }
+.form-row-checkbox label { display: flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; }
 
 /* Profile */
 .profile-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 26px; box-shadow: var(--shadow-sm); }
