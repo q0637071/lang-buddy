@@ -115,23 +115,10 @@
   });
 
   // ---------- 登录状态渲染 ----------
+  // 未登录时唯一能看到的页面就是落地页，落地页顶部的大按钮（免费开始学习/已有账号登录）
+  // 已经覆盖了登录/注册两个入口，顶栏这里不用再重复放一遍同样功能的小按钮
   function rebuildAuthButtons() {
-    const authArea = $('#authArea');
-    authArea.innerHTML = '';
-    const loginBtn = document.createElement('button');
-    loginBtn.className = 'btn btn-ghost';
-    loginBtn.textContent = '登录';
-    loginBtn.id = 'btnShowLogin';
-    loginBtn.addEventListener('click', () => openAuthModal('login'));
-
-    const regBtn = document.createElement('button');
-    regBtn.className = 'btn btn-primary';
-    regBtn.textContent = '免费注册';
-    regBtn.id = 'btnShowRegister';
-    regBtn.addEventListener('click', () => openAuthModal('register'));
-
-    authArea.appendChild(loginBtn);
-    authArea.appendChild(regBtn);
+    $('#authArea').innerHTML = '';
   }
 
   function renderLoggedInTopbar() {
