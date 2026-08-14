@@ -811,6 +811,79 @@ app.get('/api/vocab/list', requireAuth, (req, res) => {
   res.json({ words: filtered, total: filtered.length });
 });
 
+// ---- 词根关联（用于"词根星球"可视化） ----
+// 纯语法后缀（-tion/-ing/-able 之类）对记忆没有联想价值，谁都能带，会把不相干的词硬凑到一起，
+// 这里全部排除，只保留真正有语义的词根/前缀（spect看、port搬、dict说……）
+const AFFIX_STOPLIST = new Set([
+  'ion', 'ation', 'ate', 'ity', 'ism', 'able', 'ible', 'ing', 'ment', 'ent', 'ant',
+  'ize', 'ise', 'ous', 'ive', 'ful', 'less', 'ness', 'ly', 'er', 'or', 'ist', 'al',
+  'ial', 'ic', 'ical', 'ary', 'ory', 'age', 'ance', 'ence', 'tion', 'sion', 'ship',
+  'hood', 'dom', 'ted', 'est', 'ify', 'fy', 'eous', 'ious', 'uous', 'ative', 'ual', 'ure',
+]);
+
+function parseRootParts(rootStr) {
+  if (!rootStr) return [];
+  return rootStr.split('+').map(part => {
+    const m = part.trim().match(/^([A-Za-z()\-]+)/);
+    if (!m) return null;
+    return m[1].replace(/[()\-]/g, '').toLowerCase();
+  }).filter(r => r && r.length >= 3 && !AFFIX_STOPLIST.has(r));
+}
+
+let rootIndexCache = null;
+function getRootIndex(vocab) {
+  if (rootIndexCache) return rootIndexCache;
+  const index = new Map();
+  vocab.forEach(w => {
+    parseRootParts(w.root).forEach(r => {
+      if (!index.has(r)) index.set(r, []);
+      index.get(r).push(w.word);
+    });
+  });
+  rootIndexCache = index;
+  return index;
+}
+
+app.get('/api/vocab/related', requireAuth, (req, res) => {
+  const { word } = req.query;
+  if (!word) return res.status(400).json({ error: '缺少单词' });
+  const vocab = readVocab();
+  const center = vocab.find(w => w.word.toLowerCase() === String(word).toLowerCase());
+  if (!center) return res.status(404).json({ error: '词库中没有这个单词' });
+
+  const rootIndex = getRootIndex(vocab);
+  const byWord = new Map(vocab.map(w => [w.word, w]));
+  const picked = new Map(); // word -> { ...entry, relation, via }
+
+  // 优先用"越少见越具体"的词根匹配：spect(看) 这种比 con- 这种泛前缀联想价值高得多
+  const roots = parseRootParts(center.root)
+    .map(r => ({ root: r, mates: rootIndex.get(r) || [] }))
+    .filter(x => x.mates.length > 1)
+    .sort((a, b) => a.mates.length - b.mates.length);
+
+  for (const { root, mates } of roots) {
+    for (const mate of mates) {
+      if (picked.size >= 18) break;
+      if (mate === center.word || picked.has(mate)) continue;
+      const entry = byWord.get(mate);
+      if (!entry) continue;
+      picked.set(mate, { ...entry, relation: 'root', via: root });
+    }
+  }
+
+  // 词根凑不够就用同主题分类补齐，保证球体不会太空
+  if (picked.size < 16 && center.category) {
+    for (const w of vocab) {
+      if (picked.size >= 16) break;
+      if (w.word === center.word || picked.has(w.word)) continue;
+      if (w.category !== center.category) continue;
+      picked.set(w.word, { ...w, relation: 'category', via: center.category });
+    }
+  }
+
+  res.json({ center, related: Array.from(picked.values()) });
+});
+
 function computeStats(vocab, progress) {
   let known = 0, learning = 0, newCount = 0;
   vocab.forEach(w => {

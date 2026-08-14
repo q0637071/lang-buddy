@@ -965,105 +965,59 @@
       markup: `
         <defs>
           <linearGradient id="avatarStroke" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#6FE0DB"/>
-            <stop offset="100%" stop-color="#0ABAB5"/>
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="100%" stop-color="#cfe6f7"/>
           </linearGradient>
           <radialGradient id="avatarFace" cx="35%" cy="20%" r="90%">
-            <stop offset="0%" stop-color="#fff2e0"/>
-            <stop offset="55%" stop-color="#f8d9b3"/>
-            <stop offset="100%" stop-color="#e9bd8c"/>
+            <stop offset="0%" stop-color="#9adcf3"/>
+            <stop offset="55%" stop-color="#57c2ea"/>
+            <stop offset="100%" stop-color="#2f97c9"/>
           </radialGradient>
           <linearGradient id="avatarHair" x1="10%" y1="0%" x2="90%" y2="100%">
-            <stop offset="0%" stop-color="#4a3c34"/>
-            <stop offset="45%" stop-color="#2a211c"/>
-            <stop offset="100%" stop-color="#120d0b"/>
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="45%" stop-color="#f2f8fc"/>
+            <stop offset="100%" stop-color="#dceaf4"/>
           </linearGradient>
           <linearGradient id="avatarShoulder" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#3DD9D2"/>
-            <stop offset="100%" stop-color="#0ABAB5"/>
+            <stop offset="0%" stop-color="#6fd4f2"/>
+            <stop offset="100%" stop-color="#2f97c9"/>
           </linearGradient>
           <radialGradient id="avatarGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="#3DD9D2" stop-opacity=".3"/>
-            <stop offset="100%" stop-color="#3DD9D2" stop-opacity="0"/>
+            <stop offset="0%" stop-color="#6fd4f2" stop-opacity=".3"/>
+            <stop offset="100%" stop-color="#6fd4f2" stop-opacity="0"/>
           </radialGradient>
         </defs>
         <circle class="avatar-glow" cx="100" cy="112" r="100" fill="url(#avatarGlow)"/>
         <text class="avatar-sparkle avatar-sparkle-1" x="18" y="56" font-size="13">✨</text>
         <text class="avatar-sparkle avatar-sparkle-2" x="168" y="46" font-size="10">✨</text>
         <path d="M14 220 C18 172 46 152 78 148 L122 148 C154 152 182 172 186 220 Z" fill="url(#avatarShoulder)"/>
-        <rect x="86" y="144" width="28" height="30" rx="12" fill="url(#avatarFace)"/>
-        <path d="M76 150 Q100 145 124 150 L120 173 Q100 178 80 173 Z" fill="#123f3d"/>
-        <path d="M76 150 Q100 145 124 150" fill="none" stroke="#e8c15a" stroke-width="2" stroke-linecap="round" opacity=".85"/>
-        <path d="M80 173 Q100 178 120 173" fill="none" stroke="#e8c15a" stroke-width="1.4" stroke-linecap="round" opacity=".6"/>
-        <circle cx="88" cy="161" r="1.6" fill="#e8c15a" opacity=".75"/>
-        <circle cx="112" cy="161" r="1.6" fill="#e8c15a" opacity=".75"/>
+        <path d="M76 150 Q100 145 124 150 L120 168 Q100 173 80 168 Z" fill="#eef7fc" opacity=".55"/>
         <g class="avatar-head">
-          <path d="M36 92 Q24 132 30 170 Q33 202 47 217 Q56 209 50 186 Q45 150 51 110 Z" fill="url(#avatarHair)"/>
-          <path d="M164 92 Q176 132 170 170 Q167 202 153 217 Q144 209 150 186 Q155 150 149 110 Z" fill="url(#avatarHair)"/>
-          <path d="M40 130 Q36 160 42 188" fill="none" stroke="#5c4a3f" stroke-width="1.3" stroke-linecap="round" opacity=".45"/>
-          <path d="M160 130 Q164 160 158 188" fill="none" stroke="#5c4a3f" stroke-width="1.3" stroke-linecap="round" opacity=".45"/>
-          <path d="M33 105 Q28 140 33 175" fill="none" stroke="#8a725f" stroke-width="1.1" stroke-linecap="round" opacity=".35"/>
-          <path d="M167 105 Q172 140 167 175" fill="none" stroke="#8a725f" stroke-width="1.1" stroke-linecap="round" opacity=".35"/>
-          <path d="M32 108 Q23 38 100 25 Q177 38 168 108 Q170 83 151 75 Q143 52 100 48 Q57 52 49 75 Q30 83 32 108 Z" fill="url(#avatarHair)"/>
-          <ellipse cx="90" cy="44" rx="36" ry="14" fill="#ffffff" opacity=".12"/>
-          <ellipse cx="42" cy="112" rx="8" ry="14" fill="url(#avatarFace)"/>
-          <ellipse cx="158" cy="112" rx="8" ry="14" fill="url(#avatarFace)"/>
-          <g class="avatar-earbud">
-            <circle cx="42" cy="117" r="2.6" fill="#e8c15a"/>
-            <path d="M42 119.5 L42 127" stroke="#e8c15a" stroke-width="1.2"/>
-            <circle cx="42" cy="129.5" r="2.8" fill="#7fb3e0"/>
-          </g>
-          <g class="avatar-earbud">
-            <circle cx="158" cy="117" r="2.6" fill="#e8c15a"/>
-            <path d="M158 119.5 L158 127" stroke="#e8c15a" stroke-width="1.2"/>
-            <circle cx="158" cy="129.5" r="2.8" fill="#7fb3e0"/>
-          </g>
-          <path d="M100 40 C144 40 156 74 152 106 C150 138 128 165 100 165 C72 165 50 138 48 106 C44 74 56 40 100 40 Z" fill="url(#avatarFace)" stroke="url(#avatarStroke)" stroke-width="2.5"/>
-          <ellipse cx="78" cy="64" rx="18" ry="9" fill="#ffffff" opacity=".3"/>
-          <path d="M54 96 Q47 116 53 136" fill="none" stroke="url(#avatarHair)" stroke-width="4.5" stroke-linecap="round"/>
-          <path d="M146 96 Q153 116 147 136" fill="none" stroke="url(#avatarHair)" stroke-width="4.5" stroke-linecap="round"/>
-          <path d="M34 96 Q25 44 100 36 Q175 44 166 96 Q161 58 127 50 Q140 72 129 86 Q124 55 94 53 Q73 55 71 83 Q60 70 67 51 Q39 57 34 96 Z" fill="url(#avatarHair)"/>
-          <path d="M94 53 Q118 56 127 76 Q110 60 91 60 Z" fill="#5c4a3f" opacity=".5"/>
-          <path d="M48 62 Q68 42 96 40" fill="none" stroke="#6b5647" stroke-width="1.6" stroke-linecap="round" opacity=".55"/>
-          <path d="M106 40 Q134 42 152 64" fill="none" stroke="#6b5647" stroke-width="1.6" stroke-linecap="round" opacity=".55"/>
-          <path d="M58 82 Q64 60 80 52" fill="none" stroke="#7a6552" stroke-width="1.3" stroke-linecap="round" opacity=".4"/>
-          <path d="M142 82 Q136 60 120 52" fill="none" stroke="#7a6552" stroke-width="1.3" stroke-linecap="round" opacity=".4"/>
-          <path d="M62 87 Q73 79 86 86" fill="none" stroke="#2a211c" stroke-width="2.3" stroke-linecap="round"/>
-          <path d="M114 86 Q127 79 138 87" fill="none" stroke="#2a211c" stroke-width="2.3" stroke-linecap="round"/>
-          <ellipse cx="76" cy="97" rx="15" ry="7" fill="#d9a5c9" opacity=".18"/>
-          <ellipse cx="124" cy="97" rx="15" ry="7" fill="#d9a5c9" opacity=".18"/>
-          <path d="M63 95.5 Q76 88 90 95" fill="none" stroke="#c9926f" stroke-width="1" opacity=".55"/>
+          <ellipse cx="42" cy="112" rx="9" ry="14" fill="url(#avatarFace)" stroke="url(#avatarStroke)" stroke-width="1.5"/>
+          <ellipse cx="158" cy="112" rx="9" ry="14" fill="url(#avatarFace)" stroke="url(#avatarStroke)" stroke-width="1.5"/>
+          <path d="M100 40 C148 40 162 76 156 110 C153 144 128 168 100 168 C72 168 47 144 44 110 C38 76 52 40 100 40 Z" fill="url(#avatarFace)" stroke="url(#avatarStroke)" stroke-width="2.5"/>
+          <ellipse cx="78" cy="62" rx="20" ry="10" fill="#ffffff" opacity=".22"/>
+          <path d="M36 70 Q24 26 88 10 Q104 6 116 10 Q168 20 166 62 Q168 74 156 76 Q152 52 122 42 Q140 62 130 80 Q120 54 96 48 Q108 68 98 82 Q88 54 66 50 Q76 70 64 80 Q52 58 44 74 Q38 72 36 70 Z" fill="url(#avatarHair)" stroke="#cfe0ec" stroke-width="1.3"/>
+          <path d="M35 71 Q100 52 165 71 Q163 84 100 88 Q37 84 35 71 Z" fill="#ffffff" stroke="#cfe0ec" stroke-width="1.2"/>
+          <ellipse cx="70" cy="76" rx="20" ry="5" fill="#ffffff" opacity=".55"/>
+          <path d="M63 87 Q76 80 89 87" fill="none" stroke="#2f7ea3" stroke-width="2.2" stroke-linecap="round" opacity=".55"/>
+          <path d="M111 87 Q124 80 137 87" fill="none" stroke="#2f7ea3" stroke-width="2.2" stroke-linecap="round" opacity=".55"/>
           <g class="avatar-eye avatar-eye-l">
-            <path d="M62 100 Q68.5 92.5 77 93.5 Q85.5 92.5 90 98.5 Q81 107 74 107 Q66.5 107 62 100 Z" fill="#fff"/>
-            <circle cx="77" cy="100.5" r="6.4" fill="#4a86c9"/>
-            <circle cx="77" cy="100.5" r="3.1" fill="#16273a"/>
-            <circle cx="79.3" cy="97.5" r="2.1" fill="#fff"/>
-            <circle cx="75" cy="103" r="1" fill="#fff" opacity=".8"/>
-            <path d="M62 98 L56 94" stroke="#1c140d" stroke-width="1.4" stroke-linecap="round"/>
-            <path d="M62.5 101 L56.5 101.5" stroke="#1c140d" stroke-width="1.4" stroke-linecap="round"/>
-            <path d="M64 104 L59 106.5" stroke="#1c140d" stroke-width="1.2" stroke-linecap="round"/>
+            <ellipse cx="79" cy="100" rx="11.5" ry="9.5" fill="#fff"/>
+            <circle cx="81" cy="101" r="5.6" fill="#25201a"/>
+            <circle cx="83.4" cy="98" r="2.1" fill="#fff"/>
           </g>
           <g class="avatar-eye avatar-eye-r">
-            <path d="M138 100 Q131.5 92.5 123 93.5 Q114.5 92.5 110 98.5 Q119 107 126 107 Q133.5 107 138 100 Z" fill="#fff"/>
-            <circle cx="123" cy="100.5" r="6.4" fill="#4a86c9"/>
-            <circle cx="123" cy="100.5" r="3.1" fill="#16273a"/>
-            <circle cx="125.3" cy="97.5" r="2.1" fill="#fff"/>
-            <circle cx="121" cy="103" r="1" fill="#fff" opacity=".8"/>
-            <path d="M138 98 L144 94" stroke="#1c140d" stroke-width="1.4" stroke-linecap="round"/>
-            <path d="M137.5 101 L143.5 101.5" stroke="#1c140d" stroke-width="1.4" stroke-linecap="round"/>
-            <path d="M136 104 L141 106.5" stroke="#1c140d" stroke-width="1.2" stroke-linecap="round"/>
+            <ellipse cx="121" cy="100" rx="11.5" ry="9.5" fill="#fff"/>
+            <circle cx="119" cy="101" r="5.6" fill="#25201a"/>
+            <circle cx="121.4" cy="98" r="2.1" fill="#fff"/>
           </g>
-          <path d="M98 109 Q95.5 121 100 125 Q103.5 125 102.5 121.5" fill="none" stroke="#e0a679" stroke-width="1.8" stroke-linecap="round"/>
-          <ellipse cx="59" cy="126" rx="12" ry="6.5" fill="#ff8fb8" opacity=".4"/>
-          <ellipse cx="141" cy="126" rx="12" ry="6.5" fill="#ff8fb8" opacity=".4"/>
-          <path d="M87 144 Q100 141.5 113 144" fill="none" stroke="#b8586a" stroke-width="1" opacity=".5"/>
-          <rect id="avatarMouth" x="83" y="145" width="34" height="7.5" rx="3.8" fill="#d9707e"/>
-          <ellipse cx="92" cy="146" rx="3" ry="1.3" fill="#fff" opacity=".4"/>
-          <g transform="translate(100,26)">
-            <path d="M0 0 L-22 -12 Q-28 0 -22 12 L0 0 Z" fill="#3a5fb0"/>
-            <path d="M0 0 L22 -12 Q28 0 22 12 L0 0 Z" fill="#4a72c9"/>
-            <circle cx="0" cy="0" r="4.5" fill="#2a4a8f"/>
-          </g>
+          <ellipse cx="100" cy="120" rx="11" ry="8.5" fill="url(#avatarFace)" stroke="#2f97c9" stroke-width="1.3"/>
+          <ellipse cx="96" cy="117" rx="3.2" ry="2.2" fill="#fff" opacity=".55"/>
+          <ellipse cx="58" cy="124" rx="11" ry="6" fill="#ff9ec4" opacity=".3"/>
+          <ellipse cx="142" cy="124" rx="11" ry="6" fill="#ff9ec4" opacity=".3"/>
+          <rect id="avatarMouth" x="82" y="146" width="36" height="7" rx="3.5" fill="#b74f63"/>
+          <ellipse cx="90" cy="147" rx="3" ry="1.3" fill="#fff" opacity=".4"/>
         </g>`,
     },
     western: {
@@ -1404,6 +1358,7 @@
         <div class="vocab-browse-main">
           <span class="vocab-browse-word">${escapeHtml(w.word)}</span>
           <span class="vocab-browse-pos">${escapeHtml(w.pos || '')}</span>
+          <button type="button" class="btn-orbit-mini" data-word="${escapeHtml(w.word)}" title="查看词根关联星球">🪐</button>
           <span class="vocab-browse-status status-${w.status}">${VOCAB_STATUS_ZH[w.status] || w.status}</span>
         </div>
         <div class="vocab-browse-meaning">${escapeHtml(w.meaning_zh || '')}</div>
@@ -1411,6 +1366,11 @@
       </div>
     `).join('');
   }
+
+  $('#vocabBrowseList').addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-orbit-mini');
+    if (btn) openOrbit(btn.dataset.word);
+  });
 
   // ---------- 单词测试（根据当前学习状态出题） ----------
   function setVocabMode(mode) {
@@ -1491,6 +1451,168 @@
     setVocabMode('review');
     loadVocabQueue();
     renderMetrics();
+  });
+
+  // ---------- 词根关联星球 ----------
+  // 把和当前单词共享词根/主题的词摆成一个可拖动旋转的球，靠"一族词一起记"来加深印象。
+  // 纯 CSS 3D（transform + preserve-3d）实现，不引第三方3D库，手机上也能跑得动。
+  const orbit = { rotX: -12, rotY: 0, dragging: false, lastX: 0, lastY: 0, spinTimer: null, moved: false };
+
+  async function openOrbit(word) {
+    if (!word) return;
+    try {
+      const data = await api('/vocab/related?word=' + encodeURIComponent(word));
+      if (!data.related.length) { toast('这个词暂时没有找到关联词'); return; }
+      renderOrbit(data);
+      $('#orbitOverlay').hidden = false;
+      startOrbitSpin();
+    } catch (err) {
+      toast(err.message);
+    }
+  }
+
+  function renderOrbit(data) {
+    const { center, related } = data;
+    $('#orbitTitle').textContent = center.word;
+    $('#orbitSub').textContent = center.root
+      ? `${center.root} · ${center.meaning_zh}`
+      : `${center.category || ''} · ${center.meaning_zh}`;
+    showOrbitDetail(center);
+
+    // 斐波那契球面分布：让所有词在球面上尽量均匀铺开，不会挤成一团
+    const n = related.length;
+    // 手机屏窄，球半径要跟着缩，否则两侧的词会被弹窗边缘裁掉
+    const stageWidth = $('#orbitStage').clientWidth || 480;
+    const radius = Math.min(140, Math.max(78, stageWidth * 0.3), 100 + n * 2.5);
+    const nodes = related.map((w, i) => {
+      const phi = Math.acos(1 - 2 * (i + 0.5) / n);
+      const theta = Math.PI * (1 + Math.sqrt(5)) * (i + 0.5);
+      const x = radius * Math.sin(phi) * Math.cos(theta);
+      const y = radius * Math.sin(phi) * Math.sin(theta);
+      const z = radius * Math.cos(phi);
+      return { w, x, y, z };
+    });
+
+    // 中心词固定不随球体旋转，单独放在舞台正中，避免被转过来的节点盖住看不清
+    $('#orbitCore').textContent = center.word;
+    $('#orbitSphere').innerHTML = `
+      ${nodes.map(({ w, x, y, z }) => `
+        <button type="button" class="orbit-node orbit-node-${w.relation}"
+          data-word="${escapeHtml(w.word)}"
+          style="transform: translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, ${z.toFixed(1)}px)">
+          <span class="orbit-node-inner">${escapeHtml(w.word)}</span>
+        </button>
+      `).join('')}
+    `;
+    // 关联词的完整信息挂在闭包里，点击时直接查，省一次请求
+    $('#orbitSphere').__nodes = new Map(related.map(w => [w.word, w]));
+    applyOrbitRotation();
+  }
+
+  function showOrbitDetail(w) {
+    const relationLabel = w.relation === 'root'
+      ? `🔑 同词根 ${escapeHtml(w.via)}`
+      : w.relation === 'category' ? `🏷️ 同主题 ${escapeHtml(w.via)}` : '⭐ 中心词';
+    $('#orbitDetail').innerHTML = `
+      <div class="orbit-detail-head">
+        <strong class="orbit-detail-word">${escapeHtml(w.word)}</strong>
+        <span class="orbit-detail-pos">${escapeHtml(w.pos || '')}</span>
+        <span class="orbit-detail-tag">${relationLabel}</span>
+        <button type="button" class="btn-icon-sm" id="orbitSpeak" title="发音">🔊</button>
+      </div>
+      <div class="orbit-detail-meaning">${escapeHtml(w.meaning_zh || '')}</div>
+      ${w.root ? `<div class="orbit-detail-root">🔑 ${escapeHtml(w.root)}</div>` : ''}
+      ${w.example_en ? `<div class="orbit-detail-example">${escapeHtml(w.example_en)}</div>` : ''}
+      ${w.example_zh ? `<div class="orbit-detail-example-zh">${escapeHtml(w.example_zh)}</div>` : ''}
+      <button type="button" class="btn btn-outline btn-sm" id="orbitRecenter" data-word="${escapeHtml(w.word)}">以「${escapeHtml(w.word)}」为中心展开</button>
+    `;
+  }
+
+  function applyOrbitRotation() {
+    const sphere = $('#orbitSphere');
+    if (!sphere) return;
+    sphere.style.transform = `rotateX(${orbit.rotX}deg) rotateY(${orbit.rotY}deg)`;
+    // 球体整体旋转会把文字也转歪，这里给每个节点反向旋转，保证任何角度文字都是正的
+    sphere.querySelectorAll('.orbit-node-inner').forEach(el => {
+      el.style.transform = `rotateY(${-orbit.rotY}deg) rotateX(${-orbit.rotX}deg)`;
+    });
+  }
+
+  function startOrbitSpin() {
+    clearInterval(orbit.spinTimer);
+    orbit.spinTimer = setInterval(() => {
+      if (orbit.dragging) return;
+      orbit.rotY += 0.22;
+      applyOrbitRotation();
+    }, 40);
+  }
+  function stopOrbitSpin() { clearInterval(orbit.spinTimer); }
+
+  function orbitPointerDown(clientX, clientY) {
+    orbit.dragging = true;
+    orbit.moved = false;
+    orbit.lastX = clientX;
+    orbit.lastY = clientY;
+  }
+  function orbitPointerMove(clientX, clientY) {
+    if (!orbit.dragging) return;
+    const dx = clientX - orbit.lastX;
+    const dy = clientY - orbit.lastY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) orbit.moved = true;
+    orbit.rotY += dx * 0.4;
+    orbit.rotX -= dy * 0.4;
+    orbit.rotX = Math.max(-80, Math.min(80, orbit.rotX)); // 限制上下翻转，避免转到"倒过来"很迷惑
+    orbit.lastX = clientX;
+    orbit.lastY = clientY;
+    applyOrbitRotation();
+  }
+  function orbitPointerUp() { orbit.dragging = false; }
+
+  const orbitStage = $('#orbitStage');
+  orbitStage.addEventListener('mousedown', (e) => { e.preventDefault(); orbitPointerDown(e.clientX, e.clientY); });
+  window.addEventListener('mousemove', (e) => orbitPointerMove(e.clientX, e.clientY));
+  window.addEventListener('mouseup', orbitPointerUp);
+  orbitStage.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    orbitPointerDown(t.clientX, t.clientY);
+  }, { passive: true });
+  orbitStage.addEventListener('touchmove', (e) => {
+    const t = e.touches[0];
+    orbitPointerMove(t.clientX, t.clientY);
+    if (orbit.dragging) e.preventDefault(); // 拖球时不要把整个页面也跟着滚
+  }, { passive: false });
+  orbitStage.addEventListener('touchend', orbitPointerUp);
+
+  orbitStage.addEventListener('click', (e) => {
+    const node = e.target.closest('.orbit-node');
+    if (!node || orbit.moved) return; // 刚才是在拖动球体，不算点击选词
+    const w = $('#orbitSphere').__nodes?.get(node.dataset.word);
+    if (!w) return;
+    $all('.orbit-node').forEach(n => n.classList.remove('active'));
+    node.classList.add('active');
+    showOrbitDetail(w);
+  });
+
+  $('#orbitDetail').addEventListener('click', (e) => {
+    if (e.target.id === 'orbitSpeak') {
+      const word = $('.orbit-detail-word')?.textContent;
+      if (word) speakVocabWord(word);
+    }
+    if (e.target.id === 'orbitRecenter') {
+      openOrbit(e.target.dataset.word);
+    }
+  });
+
+  function closeOrbit() {
+    $('#orbitOverlay').hidden = true;
+    stopOrbitSpin();
+  }
+  $('#orbitClose').addEventListener('click', closeOrbit);
+  $('#orbitOverlay').addEventListener('click', (e) => { if (e.target.id === 'orbitOverlay') closeOrbit(); });
+
+  $('#btnOpenOrbit').addEventListener('click', () => {
+    const w = state.vocabQueue[state.vocabIndex];
+    if (w) openOrbit(w.word);
   });
 
   // ---------- 语法 ----------

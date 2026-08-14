@@ -309,6 +309,7 @@
             <button class="btn btn-outline" id="btnRevealCard">显示释义</button>
             <button class="btn btn-ghost" id="btnSkipWord">⏭️ 已掌握，跳过</button>
           </div>
+          <button class="btn btn-ghost btn-sm btn-orbit-entry" id="btnOpenOrbit">🪐 看词根关联星球</button>
         </div>
         <div class="flashcard-actions flashcard-actions-anki" id="flashcardActions" hidden>
           <button class="btn btn-anki btn-anki-again" id="btnAgain">
@@ -739,6 +740,24 @@
       <p class="form-error" id="adminResetPwError"></p>
       <button type="submit" class="btn btn-primary btn-block">确认重置</button>
     </form>
+  </div>
+</div>
+
+<!-- 词根关联星球 -->
+<div class="modal-overlay orbit-overlay" id="orbitOverlay" hidden>
+  <div class="orbit-modal">
+    <button class="modal-close" id="orbitClose">×</button>
+    <div class="orbit-header">
+      <h3 class="orbit-title" id="orbitTitle">-</h3>
+      <p class="orbit-sub" id="orbitSub"></p>
+    </div>
+    <div class="orbit-stage" id="orbitStage">
+      <div class="orbit-sphere" id="orbitSphere"></div>
+      <div class="orbit-core" id="orbitCore"></div>
+    </div>
+    <div class="orbit-detail" id="orbitDetail">
+      <p class="orbit-hint">👆 拖动球体旋转，点击任意单词查看释义</p>
+    </div>
   </div>
 </div>
 

@@ -233,10 +233,47 @@ p { line-height: 1.6; color: var(--text-muted); }
 .vocab-browse-meaning { font-size: 13.5px; color: var(--text); margin-top: 3px; }
 .vocab-browse-root { font-size: 12.5px; color: var(--primary-dark); margin-top: 4px; }
 
+/* 词根关联星球 */
+.btn-orbit-entry { margin-top: 10px; }
+.btn-orbit-mini { border: none; background: none; cursor: pointer; font-size: 15px; padding: 0 2px; opacity: .55; }
+.btn-orbit-mini:hover { opacity: 1; }
+.orbit-overlay { align-items: center; }
+.orbit-modal { background: linear-gradient(165deg, #0d2b33 0%, #10404a 55%, #0a2129 100%); border-radius: var(--radius); width: min(560px, 94vw); padding: 22px 20px 18px; position: relative; box-shadow: 0 24px 60px rgba(0,0,0,.4); color: #eafcfb; }
+.orbit-modal .modal-close { color: #eafcfb; }
+.orbit-header { text-align: center; margin-bottom: 6px; }
+.orbit-title { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: .5px; }
+.orbit-sub { margin: 4px 0 0; font-size: 13px; color: #7fd8d2; }
+.orbit-stage { height: 360px; display: flex; align-items: center; justify-content: center; perspective: 900px; cursor: grab; touch-action: none; overflow: hidden; position: relative; }
+.orbit-stage:active { cursor: grabbing; }
+.orbit-sphere { position: relative; width: 0; height: 0; transform-style: preserve-3d; }
+.orbit-core { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background: radial-gradient(circle at 35% 30%, var(--accent), var(--primary-dark)); color: #fff; font-weight: 800; font-size: 14px; padding: 10px 18px; border-radius: 22px; white-space: nowrap; box-shadow: 0 0 30px rgba(10,186,181,.85); pointer-events: none; }
+.orbit-node { position: absolute; left: 0; top: 0; transform-style: preserve-3d; background: none; border: none; padding: 0; cursor: pointer; }
+.orbit-node-inner { display: block; transform-origin: center; white-space: nowrap; font-size: 12.5px; padding: 5px 11px; border-radius: 14px; background: rgba(255,255,255,.13); border: 1px solid rgba(125,230,224,.35); color: #d6fbf8; backdrop-filter: blur(2px); transition: background .15s ease, color .15s ease; }
+.orbit-node-root .orbit-node-inner { border-color: rgba(61,217,210,.75); color: #b6fdf8; }
+.orbit-node-category .orbit-node-inner { border-color: rgba(255,255,255,.22); color: #b9d4d8; }
+.orbit-node:hover .orbit-node-inner { background: rgba(61,217,210,.4); color: #fff; }
+.orbit-node.active .orbit-node-inner { background: var(--accent); color: #06282c; font-weight: 700; border-color: #fff; }
+.orbit-detail { background: rgba(255,255,255,.07); border-radius: 12px; padding: 12px 14px; min-height: 96px; }
+.orbit-hint { margin: 0; font-size: 13px; color: #8fd4ce; text-align: center; }
+.orbit-detail-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.orbit-detail-word { font-size: 17px; }
+.orbit-detail-pos { font-size: 12px; color: #8fd4ce; font-style: italic; }
+.orbit-detail-tag { font-size: 11.5px; background: rgba(61,217,210,.22); color: #a9f2ec; padding: 2px 9px; border-radius: 20px; }
+.btn-icon-sm { background: none; border: none; cursor: pointer; font-size: 15px; margin-left: auto; }
+.orbit-detail-meaning { font-size: 15px; font-weight: 600; margin-bottom: 5px; }
+.orbit-detail-root { font-size: 12.5px; color: #7fd8d2; margin-bottom: 5px; }
+.orbit-detail-example { font-size: 13px; color: #d3ecea; }
+.orbit-detail-example-zh { font-size: 12.5px; color: #9dbfbd; margin-bottom: 8px; }
+.orbit-detail .btn-outline { border-color: rgba(125,230,224,.5); color: #b6fdf8; background: transparent; }
+.orbit-detail .btn-outline:hover { background: rgba(61,217,210,.2); }
+
 @media (max-width: 600px) {
   .btn-anki { min-width: 62px; padding: 8px 4px; }
   .anki-label { font-size: 12px; }
   .vocab-browse-status { margin-left: 0; }
+  .orbit-stage { height: 280px; perspective: 700px; }
+  .orbit-node-inner { font-size: 11.5px; padding: 4px 9px; }
+  .orbit-modal { padding: 18px 14px 14px; }
 }
 
 .flashcard { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 40px 30px; text-align: center; position: relative; min-height: 260px; box-shadow: var(--shadow-md); }
