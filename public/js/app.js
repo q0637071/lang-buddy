@@ -170,6 +170,7 @@
     $('#phoneForm').reset();
     $('#phoneCodeHint').textContent = '';
     $('#phoneError').textContent = '';
+    $('#regPhoneCodeHint').textContent = '';
   }
   function setAuthMode(mode) {
     state.authMode = mode;
@@ -180,6 +181,11 @@
     $('#authForm').hidden = mode === 'phone';
     $('#phoneForm').hidden = mode !== 'phone';
     $('#rowNickname').hidden = mode !== 'register';
+    // 注册必须绑定手机号验证码，防止一人靠不同用户名注册无数个账号刷免费额度
+    $('#rowRegPhone').hidden = mode !== 'register';
+    $('#rowRegCode').hidden = mode !== 'register';
+    $('#inputRegPhone').required = mode === 'register';
+    $('#inputRegCode').required = mode === 'register';
     $('#authSubmitBtn').textContent = mode === 'login' ? '登录' : '注册并进入';
     $('#authError').textContent = '';
     // 登录/注册用同一个密码输入框，autocomplete 提示要跟着切换，
@@ -233,7 +239,11 @@
       if (state.authMode === 'login') {
         data = await api('/login', { method: 'POST', body: { username, password } });
       } else {
-        data = await api('/register', { method: 'POST', body: { username, password, nickname } });
+        const phone = $('#inputRegPhone').value.trim();
+        const code = $('#inputRegCode').value.trim();
+        if (!/^1[3-9]\d{9}$/.test(phone)) { errEl.textContent = '请输入正确的11位手机号'; return; }
+        if (!code) { errEl.textContent = '请输入验证码'; return; }
+        data = await api('/register', { method: 'POST', body: { username, password, nickname, phone, code } });
       }
       state.user = data.user;
       await completeLogin(data.user, state.authMode === 'login' ? '欢迎回来！' : '注册成功，欢迎加入 LangBuddy！');
@@ -252,18 +262,18 @@
   }
 
   // ---------- 手机验证码登录 ----------
-  let phoneCountdownTimer = null;
+  const phoneCountdownTimers = {};
 
-  function startPhoneCountdown() {
-    const btn = $('#btnSendCode');
+  function startPhoneCountdown(btnId) {
+    const btn = $('#' + btnId);
     let seconds = 60;
     btn.disabled = true;
     btn.textContent = `${seconds}秒后重发`;
-    clearInterval(phoneCountdownTimer);
-    phoneCountdownTimer = setInterval(() => {
+    clearInterval(phoneCountdownTimers[btnId]);
+    phoneCountdownTimers[btnId] = setInterval(() => {
       seconds--;
       if (seconds <= 0) {
-        clearInterval(phoneCountdownTimer);
+        clearInterval(phoneCountdownTimers[btnId]);
         btn.disabled = false;
         btn.textContent = '获取验证码';
       } else {
@@ -280,7 +290,25 @@
     if (!/^1[3-9]\d{9}$/.test(phone)) { errEl.textContent = '请输入正确的11位手机号'; return; }
     try {
       const data = await api('/auth/phone/send-code', { method: 'POST', body: { phone } });
-      startPhoneCountdown();
+      startPhoneCountdown('btnSendCode');
+      hintEl.textContent = data.devCode
+        ? `测试模式（未接入真实短信服务）：验证码是 ${data.devCode}`
+        : '验证码已发送，请查收短信';
+    } catch (err) {
+      errEl.textContent = err.message;
+    }
+  });
+
+  // 注册表单里的"获取验证码"，复用同一个发送验证码接口
+  $('#btnRegSendCode').addEventListener('click', async () => {
+    const phone = $('#inputRegPhone').value.trim();
+    const errEl = $('#authError');
+    const hintEl = $('#regPhoneCodeHint');
+    errEl.textContent = '';
+    if (!/^1[3-9]\d{9}$/.test(phone)) { errEl.textContent = '请输入正确的11位手机号'; return; }
+    try {
+      const data = await api('/auth/phone/send-code', { method: 'POST', body: { phone } });
+      startPhoneCountdown('btnRegSendCode');
       hintEl.textContent = data.devCode
         ? `测试模式（未接入真实短信服务）：验证码是 ${data.devCode}`
         : '验证码已发送，请查收短信';

@@ -307,8 +307,10 @@ async function callChatAPI(opts) {
 
 // ==================== 账号 & 会员 ====================
 
+// 注册必须同时提供手机号+验证码，杜绝"只填用户名密码"就能无限开小号防刷免费额度的漏洞——
+// 一个手机号只能注册一个账号，验证码复用 /api/auth/phone/send-code 发送的那套（一次性使用）
 app.post('/api/register', rateLimit(10), async (req, res) => {
-  const { username, password, nickname } = req.body || {};
+  const { username, password, nickname, phone, code } = req.body || {};
   if (!username || !password) return res.status(400).json({ error: '用户名和密码不能为空' });
   if (typeof username !== 'string' || username.length < 3 || username.length > 30) {
     return res.status(400).json({ error: '用户名长度需为3-30位' });
@@ -316,15 +318,29 @@ app.post('/api/register', rateLimit(10), async (req, res) => {
   if (typeof password !== 'string' || password.length < 6) {
     return res.status(400).json({ error: '密码至少需要6位' });
   }
+  if (!isValidPhone(phone)) return res.status(400).json({ error: '请输入正确的11位手机号' });
+  if (!code || !String(code).trim()) return res.status(400).json({ error: '请输入验证码' });
+
+  const record = phoneCodeStore.get(phone);
+  if (!record || record.code !== String(code).trim()) return res.status(400).json({ error: '验证码错误' });
+  if (Date.now() > record.expiresAt) {
+    phoneCodeStore.delete(phone);
+    return res.status(400).json({ error: '验证码已过期，请重新获取' });
+  }
+
   const db = loadDB();
   if (db.users[username]) return res.status(400).json({ error: '用户名已被注册' });
+  const phoneOwner = Object.values(db.users).find(u => u.phone === phone);
+  if (phoneOwner) return res.status(400).json({ error: '该手机号已注册过账号，请直接登录或换一个手机号' });
 
+  phoneCodeStore.delete(phone); // 验证码一次性使用
   const passwordHash = await bcrypt.hash(password, 10);
   const clientIp = normalizeIp(req.ip);
   db.users[username] = {
     username,
     nickname: (nickname && String(nickname).slice(0, 30)) || username,
     passwordHash,
+    phone,
     isMember: false,
     memberSince: null,
     level: 'beginner',
@@ -336,7 +352,7 @@ app.post('/api/register', rateLimit(10), async (req, res) => {
     chatCount: 0,
     registrationIp: clientIp,
     registrationRegion: '查询中...',
-    phoneVerified: false,
+    phoneVerified: true,
   };
   saveDB(db);
   req.session.userId = username;
