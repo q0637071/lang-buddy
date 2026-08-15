@@ -173,9 +173,17 @@ const ALLOWED_APP_ORIGINS = new Set([
   'http://localhost',       // Android Capacitor
   'https://localhost',
 ]);
+// 本地开发时（没配 MONGODB_URI 就认为是本地环境）额外放行任意 localhost 端口，
+// 方便用模拟环境把App指向本地服务器调试；线上不会走到这个分支
+const IS_LOCAL_DEV = !process.env.MONGODB_URI;
+function isAllowedOrigin(origin) {
+  if (ALLOWED_APP_ORIGINS.has(origin)) return true;
+  return IS_LOCAL_DEV && /^https?:\/\/localhost(:\d+)?$/.test(origin);
+}
+
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (origin && ALLOWED_APP_ORIGINS.has(origin)) {
+  if (origin && isAllowedOrigin(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');

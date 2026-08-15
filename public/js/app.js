@@ -58,7 +58,10 @@
     } catch {}
     return location.protocol === 'capacitor:' || location.protocol === 'ionic:';
   })();
-  const API_BASE = IS_NATIVE_APP ? 'https://langbuddy.org/api' : '/api';
+  // App 里默认打到线上；调试时可以在 index.html 之前设 window.LANGBUDDY_API_BASE 指向本地服务器
+  const API_BASE = IS_NATIVE_APP
+    ? (window.LANGBUDDY_API_BASE || 'https://langbuddy.org/api')
+    : '/api';
   const TOKEN_KEY = 'lb_auth_token';
 
   function getAuthToken() { return safeGetItem(TOKEN_KEY); }
