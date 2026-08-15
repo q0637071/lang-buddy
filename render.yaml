@@ -12,6 +12,12 @@ services:
         sync: false
       - key: MONGODB_URI
         sync: false
+      - key: ZPAY_PID
+        sync: false
+      - key: ZPAY_KEY
+        sync: false
+      - key: SITE_URL
+        value: https://langbuddy.org
       - key: SESSION_SECRET
         generateValue: true
       - key: ADMIN_USERNAME

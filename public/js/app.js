@@ -350,16 +350,66 @@
 
   $('#btnDashUpgrade').addEventListener('click', upgradeMembership);
 
+  // 打开套餐选择弹窗；未接入支付时后端会直接返回 demo:true 免费开通，行为跟以前一样
   async function upgradeMembership() {
     try {
-      const data = await api('/membership/upgrade', { method: 'POST' });
-      state.user = data.user;
-      toast('🎉 会员开通成功！');
-      showView(currentViewName());
+      const data = await api('/membership/plans');
+      renderPayPlans(data);
+      $('#payOverlay').hidden = false;
     } catch (err) {
       toast(err.message);
     }
   }
+
+  function renderPayPlans(data) {
+    state.payPlans = data.plans;
+    state.payEnabled = data.payEnabled;
+    $('#payPlanList').innerHTML = data.plans.map((p, i) => `
+      <button type="button" class="pay-plan${i === 0 ? ' active' : ''}" data-plan="${escapeHtml(p.id)}">
+        <span class="pay-plan-name">${escapeHtml(p.name.replace('LangBuddy ', ''))}</span>
+        <span class="pay-plan-price">¥${escapeHtml(p.price)}</span>
+        <span class="pay-plan-days">${p.days} 天</span>
+      </button>
+    `).join('');
+    $('#payMethods').hidden = !data.payEnabled;
+    $('#payDemoHint').hidden = data.payEnabled;
+    $('#paySubmitBtn').textContent = data.payEnabled ? '去支付' : '免费开通（演示版）';
+  }
+
+  $('#payPlanList').addEventListener('click', (e) => {
+    const btn = e.target.closest('.pay-plan');
+    if (!btn) return;
+    $all('#payPlanList .pay-plan').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+  $('#payMethods').addEventListener('click', (e) => {
+    const btn = e.target.closest('.pay-method');
+    if (!btn) return;
+    $all('#payMethods .pay-method').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+  $('#payClose').addEventListener('click', () => { $('#payOverlay').hidden = true; });
+  $('#payOverlay').addEventListener('click', (e) => { if (e.target.id === 'payOverlay') $('#payOverlay').hidden = true; });
+
+  $('#paySubmitBtn').addEventListener('click', async () => {
+    const plan = $('#payPlanList .pay-plan.active')?.dataset.plan;
+    const payType = $('#payMethods .pay-method.active')?.dataset.method || 'alipay';
+    if (!plan) { toast('请选择套餐'); return; }
+    try {
+      const data = await api('/membership/create-order', { method: 'POST', body: { plan, payType } });
+      if (data.demo) {
+        state.user = data.user;
+        $('#payOverlay').hidden = true;
+        toast('🎉 会员开通成功！');
+        showView(currentViewName());
+        return;
+      }
+      // 跳到收银台付款；付款完成后用户会被带回本站，这里同时开始轮询确认到账
+      window.location.href = data.payUrl;
+    } catch (err) {
+      toast(err.message);
+    }
+  });
 
   function currentViewName() {
     return VIEWS.find(v => !$('#view-' + v).hidden) || 'dashboard';
@@ -2332,7 +2382,12 @@
     const box = $('#profileMemberBox');
     if (state.user.isMember) {
       const date = new Date(state.user.memberSince).toLocaleDateString('zh-CN');
-      box.innerHTML = `✅ 会员已开通（${date}起）`;
+      const until = state.user.memberUntil
+        ? `，有效期至 ${new Date(state.user.memberUntil).toLocaleDateString('zh-CN')}`
+        : '';
+      box.innerHTML = `✅ 会员已开通（${date}起${until}）
+        <button class="btn btn-outline btn-sm" id="btnProfileRenew" style="margin-left:10px;">续费</button>`;
+      $('#btnProfileRenew').addEventListener('click', upgradeMembership);
     } else {
       box.innerHTML = `尚未开通会员 <button class="btn btn-primary btn-sm" id="btnProfileUpgrade" style="margin-left:10px;">立即开通</button>`;
       $('#btnProfileUpgrade').addEventListener('click', upgradeMembership);
@@ -2426,6 +2481,27 @@
     toast('已退出登录');
   });
 
+  // 支付完成跳回本站后确认到账：支付平台的异步回调可能比用户跳回来晚几秒，
+  // 这里重新拉一次账号状态，没生效就隔两秒再试几次，避免用户看到"付了钱还不是会员"
+  async function confirmPaymentAfterReturn() {
+    if (!new URLSearchParams(location.search).has('pay')) return;
+    history.replaceState(null, '', location.pathname); // 清掉URL上的参数，刷新时不再重复触发
+    for (let i = 0; i < 6; i++) {
+      try {
+        const data = await api('/me');
+        if (data.user?.isMember) {
+          state.user = data.user;
+          updateTopbar();
+          showView(currentViewName());
+          toast('🎉 支付成功，会员已开通！');
+          return;
+        }
+      } catch {}
+      await new Promise(r => setTimeout(r, 2000));
+    }
+    toast('支付结果确认中，如已付款请稍后刷新页面');
+  }
+
   // ---------- 启动 ----------
   async function init() {
     try {
@@ -2435,6 +2511,7 @@
         updateTopbar();
         await loadLanguages();
         showView('dashboard');
+        confirmPaymentAfterReturn();
         return;
       }
     } catch {}

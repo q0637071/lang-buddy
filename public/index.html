@@ -743,6 +743,25 @@
   </div>
 </div>
 
+<!-- 开通会员 / 支付 -->
+<div class="modal-overlay" id="payOverlay" hidden>
+  <div class="modal modal-auth">
+    <button class="modal-close" id="payClose">×</button>
+    <div class="auth-header">
+      <div class="auth-logo">L</div>
+      <h3 class="auth-title">开通会员</h3>
+      <p class="auth-sub">解锁 AI 1对1 对话、作文批改、错题解析全部功能</p>
+    </div>
+    <div class="pay-plan-list" id="payPlanList"></div>
+    <div class="pay-methods" id="payMethods" hidden>
+      <button type="button" class="pay-method active" data-method="alipay">💙 支付宝</button>
+      <button type="button" class="pay-method" data-method="wxpay">💚 微信支付</button>
+    </div>
+    <p class="form-hint" id="payDemoHint" hidden>当前为演示版，暂未接入真实支付，可免费开通体验。</p>
+    <button type="button" class="btn btn-primary btn-block" id="paySubmitBtn">去支付</button>
+  </div>
+</div>
+
 <!-- 词根关联星球 -->
 <div class="modal-overlay orbit-overlay" id="orbitOverlay" hidden>
   <div class="orbit-modal">

@@ -166,11 +166,19 @@ function requireAuth(req, res, next) {
   if (!req.session.userId) return res.status(401).json({ error: '请先登录' });
   next();
 }
+// 会员是否仍在有效期内。memberUntil 为空表示永久会员（管理员手动开通的、以及历史数据），
+// 有值就按到期时间判断，过期后自动按非会员处理，不需要额外的定时任务去"降级"
+function isActiveMember(user) {
+  if (!user || !user.isMember) return false;
+  if (!user.memberUntil) return true;
+  return user.memberUntil > Date.now();
+}
+
 function requireMember(req, res, next) {
   const db = loadDB();
   const user = db.users[req.session.userId];
   if (!req.session.userId || !user) return res.status(401).json({ error: '请先登录' });
-  if (!user.isMember) return res.status(403).json({ error: '此功能需要会员权限，请先开通会员', needMembership: true });
+  if (!isActiveMember(user)) return res.status(403).json({ error: '此功能需要会员权限，请先开通会员', needMembership: true });
   next();
 }
 
@@ -182,7 +190,7 @@ function allowMemberOrFreeQuota(feature, quota) {
     const db = loadDB();
     const user = db.users[req.session.userId];
     if (!user) return res.status(401).json({ error: '请先登录' });
-    if (user.isMember) return next();
+    if (isActiveMember(user)) return next();
     // 防止有人靠无限注册小号白嫖每日免费额度：只有验证过手机号的账号才给免费额度，
     // 用户名密码注册的账号默认没验证过，需要去"我的"页面绑定手机号才能解锁
     if (!user.phoneVerified) {
@@ -232,8 +240,10 @@ function publicUser(user) {
   return {
     username: user.username,
     nickname: user.nickname,
-    isMember: user.isMember,
+    // 前端只认这一个字段来判断"现在是不是会员"，过期的会员这里就是 false，不用前端自己算时间
+    isMember: isActiveMember(user),
     memberSince: user.memberSince,
+    memberUntil: user.memberUntil || null,
     level: user.level,
     targetLang: user.targetLang,
     createdAt: user.createdAt,
@@ -538,14 +548,153 @@ app.post('/api/profile', requireAuth, (req, res) => {
   res.json({ user: publicUser(user) });
 });
 
-// 演示版会员开通：不接入真实支付，直接标记为会员
-app.post('/api/membership/upgrade', requireAuth, (req, res) => {
+// ==================== 会员支付（ZPay 聚合支付，支持微信/支付宝） ====================
+// 没配置 ZPAY_PID/ZPAY_KEY 时自动退回"演示版免费开通"，方便本地开发和未接支付前试用。
+// 配好环境变量后自动切换成真实支付，代码不用改。
+
+const ZPAY_PID = process.env.ZPAY_PID || '';
+const ZPAY_KEY = process.env.ZPAY_KEY || '';
+const ZPAY_GATEWAY = process.env.ZPAY_GATEWAY || 'https://zpayz.cn';
+// 回调地址必须是外网能访问到的完整域名，本地开发时支付回调是收不到的
+const SITE_URL = process.env.SITE_URL || 'https://langbuddy.org';
+const payEnabled = () => !!(ZPAY_PID && ZPAY_KEY);
+
+const MEMBER_PLANS = {
+  monthly: { name: 'LangBuddy 会员·包月', days: 30, price: '29.00' },
+  yearly: { name: 'LangBuddy 会员·包年', days: 365, price: '199.00' },
+};
+
+// ZPay(易支付协议)签名：参数按key的ASCII升序排列，跳过sign/sign_type和空值，
+// 拼成 a=1&b=2 后直接拼上商户密钥再做MD5，结果转小写
+function zpaySign(params) {
+  const str = Object.keys(params)
+    .filter(k => k !== 'sign' && k !== 'sign_type' && params[k] !== '' && params[k] != null)
+    .sort()
+    .map(k => `${k}=${params[k]}`)
+    .join('&');
+  return crypto.createHash('md5').update(str + ZPAY_KEY).digest('hex');
+}
+
+function newOrderNo() {
+  return Date.now() + String(Math.floor(Math.random() * 100000)).padStart(5, '0');
+}
+
+// 给用户加会员时长：还没过期就在原到期时间上顺延，过期了/新开通就从现在算起
+function grantMembership(user, days) {
+  const now = Date.now();
+  const base = (user.memberUntil && user.memberUntil > now) ? user.memberUntil : now;
+  user.isMember = true;
+  if (!user.memberSince) user.memberSince = now;
+  user.memberUntil = base + days * 24 * 60 * 60 * 1000;
+}
+
+app.get('/api/membership/plans', (req, res) => {
+  res.json({
+    payEnabled: payEnabled(),
+    plans: Object.entries(MEMBER_PLANS).map(([id, p]) => ({ id, name: p.name, days: p.days, price: p.price })),
+  });
+});
+
+// 创建订单：返回一个跳转URL，前端直接把用户送到收银台完成微信/支付宝付款
+app.post('/api/membership/create-order', requireAuth, rateLimit(10), (req, res) => {
+  const { plan, payType } = req.body || {};
+  const conf = MEMBER_PLANS[plan];
+  if (!conf) return res.status(400).json({ error: '套餐不存在' });
+  if (!['alipay', 'wxpay'].includes(payType)) return res.status(400).json({ error: '请选择支付方式' });
+
   const db = loadDB();
   const user = db.users[req.session.userId];
-  user.isMember = true;
-  user.memberSince = Date.now();
+
+  // 未接入支付时保持原来的"演示版免费开通"行为，方便本地和演示环境继续用
+  if (!payEnabled()) {
+    grantMembership(user, conf.days);
+    saveDB(db);
+    return res.json({ demo: true, user: publicUser(user) });
+  }
+
+  const outTradeNo = newOrderNo();
+  if (!db.orders) db.orders = {};
+  db.orders[outTradeNo] = {
+    outTradeNo,
+    username: user.username,
+    plan,
+    days: conf.days,
+    money: conf.price,
+    payType,
+    status: 'pending',
+    createdAt: Date.now(),
+  };
   saveDB(db);
-  res.json({ user: publicUser(user) });
+
+  const params = {
+    pid: ZPAY_PID,
+    type: payType,
+    out_trade_no: outTradeNo,
+    notify_url: `${SITE_URL}/api/membership/notify`,
+    return_url: `${SITE_URL}/api/membership/return`,
+    name: conf.name,
+    money: conf.price,
+    sitename: 'LangBuddy 语伴',
+  };
+  params.sign = zpaySign(params);
+  params.sign_type = 'MD5';
+
+  const payUrl = `${ZPAY_GATEWAY}/submit.php?` +
+    Object.keys(params).map(k => `${k}=${encodeURIComponent(params[k])}`).join('&');
+  res.json({ payUrl, outTradeNo });
+});
+
+// 支付平台异步回调：这是真正给用户开通会员的地方（前端跳转回来那条路不可信，可能被伪造）
+function handlePayNotify(req, res) {
+  const data = { ...req.query, ...req.body };
+  if (!payEnabled()) return res.send('fail');
+
+  const expect = zpaySign(data);
+  if (expect !== data.sign) {
+    console.warn('[ZPay] 回调签名校验失败', data.out_trade_no);
+    return res.send('fail');
+  }
+  if (data.trade_status !== 'TRADE_SUCCESS') return res.send('success'); // 非成功状态直接确认收到，不处理
+
+  const db = loadDB();
+  const order = db.orders?.[data.out_trade_no];
+  if (!order) {
+    console.warn('[ZPay] 回调里的订单号不存在', data.out_trade_no);
+    return res.send('fail');
+  }
+  // 平台可能重复推送同一笔通知，已处理过的直接确认，避免重复加时长
+  if (order.status === 'paid') return res.send('success');
+  // 金额必须和下单时一致，防止有人改价格
+  if (String(data.money) !== String(order.money)) {
+    console.warn('[ZPay] 回调金额与订单不符', data.out_trade_no, data.money, order.money);
+    return res.send('fail');
+  }
+
+  const user = db.users[order.username];
+  if (!user) return res.send('fail');
+
+  grantMembership(user, order.days);
+  order.status = 'paid';
+  order.paidAt = Date.now();
+  order.tradeNo = data.trade_no || '';
+  saveDB(db);
+  console.log(`[ZPay] 支付成功 ${order.username} ${order.plan} ¥${order.money}`);
+  res.send('success');
+}
+app.get('/api/membership/notify', handlePayNotify);
+app.post('/api/membership/notify', handlePayNotify);
+
+// 用户付完款后浏览器跳回来的地址：只负责把人送回网站，不在这里开通会员
+app.get('/api/membership/return', (req, res) => {
+  res.redirect('/?pay=done');
+});
+
+// 前端轮询这个接口确认到账（异步回调可能比用户跳回来稍慢几秒）
+app.get('/api/membership/order-status', requireAuth, (req, res) => {
+  const db = loadDB();
+  const order = db.orders?.[req.query.outTradeNo];
+  if (!order || order.username !== req.session.userId) return res.status(404).json({ error: '订单不存在' });
+  res.json({ status: order.status, user: publicUser(db.users[req.session.userId]) });
 });
 
 app.get('/api/meta/languages', (req, res) => {
@@ -1155,7 +1304,7 @@ app.get('/api/metrics', requireAuth, (req, res) => {
     chatCount: user.chatCount || 0,
     streakDays: computeStreak(user.activityLog),
     activeDays: Object.keys(user.activityLog || {}).length,
-    isMember: user.isMember,
+    isMember: isActiveMember(user),
   });
 });
 
@@ -1485,7 +1634,7 @@ app.get('/api/admin/overview', requireAdmin, (req, res) => {
   users.forEach(u => {
     totalMistakes += (u.mistakes || []).length;
     totalChats += u.chatCount || 0;
-    if (u.isMember) totalMembers++;
+    if (isActiveMember(u)) totalMembers++;
     const stats = computeStats(vocab, u.vocabProgress || {});
     totalVocabMastered += stats.known;
     if (u.createdAt && dateKey(new Date(u.createdAt)) === todayKey) newUsersToday++;
@@ -1518,8 +1667,9 @@ app.get('/api/admin/users', requireAdmin, (req, res) => {
     return {
       username: u.username,
       nickname: u.nickname,
-      isMember: u.isMember,
+      isMember: isActiveMember(u),
       memberSince: u.memberSince,
+      memberUntil: u.memberUntil || null,
       createdAt: u.createdAt,
       level: u.level,
       targetLang: u.targetLang,
@@ -1579,7 +1729,10 @@ app.post('/api/admin/users/:username/membership', requireAdmin, (req, res) => {
   const user = db.users[username];
   if (!user) return res.status(404).json({ error: '用户不存在' });
   user.isMember = !!isMember;
-  if (isMember && !user.memberSince) user.memberSince = Date.now();
+  if (isMember) {
+    if (!user.memberSince) user.memberSince = Date.now();
+    user.memberUntil = null; // 管理员手动开通视为不限期，避免被已过期的旧到期时间立刻judge成非会员
+  }
   saveDB(db);
   res.json({ ok: true });
 });

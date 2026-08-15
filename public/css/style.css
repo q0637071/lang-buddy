@@ -233,6 +233,18 @@ p { line-height: 1.6; color: var(--text-muted); }
 .vocab-browse-meaning { font-size: 13.5px; color: var(--text); margin-top: 3px; }
 .vocab-browse-root { font-size: 12.5px; color: var(--primary-dark); margin-top: 4px; }
 
+/* 开通会员 / 支付 */
+.pay-plan-list { display: flex; gap: 10px; margin-bottom: 14px; }
+.pay-plan { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 14px 8px; border: 2px solid var(--border); border-radius: 12px; background: #fff; cursor: pointer; transition: border-color .15s ease, background .15s ease; }
+.pay-plan:hover { border-color: var(--accent); }
+.pay-plan.active { border-color: var(--primary); background: var(--primary-light); }
+.pay-plan-name { font-size: 13.5px; font-weight: 700; color: var(--text); }
+.pay-plan-price { font-size: 21px; font-weight: 800; color: var(--primary); }
+.pay-plan-days { font-size: 11.5px; color: var(--text-muted); }
+.pay-methods { display: flex; gap: 10px; margin-bottom: 14px; }
+.pay-method { flex: 1; padding: 11px; border: 2px solid var(--border); border-radius: 10px; background: #fff; cursor: pointer; font-size: 14px; font-weight: 600; }
+.pay-method.active { border-color: var(--primary); background: var(--primary-light); color: var(--primary-dark); }
+
 /* 词根关联星球 */
 .btn-orbit-entry { margin-top: 10px; }
 .btn-orbit-mini { border: none; background: none; cursor: pointer; font-size: 15px; padding: 0 2px; opacity: .55; }
