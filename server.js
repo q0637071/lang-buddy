@@ -435,8 +435,13 @@ app.post('/api/auth/phone/verify', rateLimit(15), async (req, res) => {
   phoneCodeStore.delete(phone); // 验证码一次性使用
 
   const db = loadDB();
-  const isNewUser = !db.users[phone];
   const clientIp = normalizeIp(req.ip);
+  // 一个手机号只能对应一个账号：必须按 phone 字段找主人，不能只看"用户名是否等于手机号"——
+  // 否则手机号已经绑在别的用户名（如 alice）上时会查不到，又给同一个手机号建出第二个账号
+  const owner = Object.values(db.users).find(u => u.phone === phone);
+  const isNewUser = !owner;
+  const userId = owner ? owner.username : phone;
+
   if (isNewUser) {
     db.users[phone] = {
       username: phone,
@@ -458,8 +463,8 @@ app.post('/api/auth/phone/verify', rateLimit(15), async (req, res) => {
     };
     saveDB(db);
   }
-  req.session.userId = phone;
-  res.json({ user: publicUser(db.users[phone]) });
+  req.session.userId = userId;
+  res.json({ user: publicUser(db.users[userId]) });
   if (isNewUser) fillRegistrationRegion(phone, clientIp);
 });
 
