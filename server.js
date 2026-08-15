@@ -12,15 +12,22 @@ const PORT = process.env.PORT || 3001;
 
 // Groq API 配置（免费，主力）
 const SF_API_KEY = process.env.SF_API_KEY;
-const SF_BASE_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const SF_BASE_URL = process.env.SF_BASE_URL || 'https://api.groq.com/openai/v1/chat/completions';
 const SF_MODEL = 'llama-3.3-70b-versatile';
 const VISION_MODEL = process.env.VISION_MODEL || 'qwen/qwen3.6-27b';
 
 // OpenRouter 配置（备用，免费模型）：Groq 触发限流/报错时自动无缝切换过来救急，
 // 每次请求都会重新优先尝试 Groq，Groq 恢复后自动切回，不需要额外的"探测恢复"逻辑
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const OPENROUTER_BASE_URL = process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1/chat/completions';
 const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'nvidia/nemotron-3-super-120b-a12b:free';
+
+// 国内大模型兜底配置：国内厂商（智谱/阿里百炼/DeepSeek/硅基流动等）基本都兼容 OpenAI 协议，
+// 所以只要换 baseUrl + key + model 三个环境变量就能切换厂商，不用改代码。
+// 默认指向智谱 GLM-4-Flash（免费模型），只要配上 DOMESTIC_API_KEY 就会自动启用这一级兜底。
+const DOMESTIC_API_KEY = process.env.DOMESTIC_API_KEY;
+const DOMESTIC_BASE_URL = process.env.DOMESTIC_BASE_URL || 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+const DOMESTIC_MODEL = process.env.DOMESTIC_MODEL || 'glm-4-flash';
 
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_PATH = path.join(DATA_DIR, 'db.json');
@@ -300,19 +307,35 @@ async function callTextModel(baseUrl, apiKey, model, { messages, maxTokens, temp
   return data.choices?.[0]?.message?.content || '';
 }
 
-// 统一的文本AI调用入口：优先用 Groq，触发限流/报错时（如果配置了 OPENROUTER_API_KEY）
-// 自动无缝切换到 OpenRouter 的免费模型救急；每次调用都重新优先尝试 Groq，
-// Groq 恢复后下一次调用会自动切回，不需要额外的"探测恢复"逻辑
+// 统一的文本AI调用入口：三级兜底，前一级限流就自动降到下一级，用户端无感知。
+//   1) Groq（主力，速度最快，但免费额度有限：约12000 tokens/分钟、100000 tokens/天）
+//   2) OpenRouter 免费模型（第一备用）
+//   3) 国内大模型（第二备用，兼容OpenAI协议，配了 DOMESTIC_API_KEY 才启用）
+// 每次调用都重新从第一级开始试，Groq 恢复后自动切回，不需要额外的"探测恢复"逻辑。
+const AI_PROVIDERS = [
+  { name: 'Groq', url: () => SF_BASE_URL, key: () => SF_API_KEY, model: () => SF_MODEL },
+  { name: 'OpenRouter', url: () => OPENROUTER_BASE_URL, key: () => OPENROUTER_API_KEY, model: () => OPENROUTER_MODEL },
+  { name: '国内大模型', url: () => DOMESTIC_BASE_URL, key: () => DOMESTIC_API_KEY, model: () => DOMESTIC_MODEL },
+];
+
 async function callChatAPI(opts) {
-  try {
-    return await callTextModel(SF_BASE_URL, SF_API_KEY, SF_MODEL, opts);
-  } catch (e) {
-    if (isRateLimitError(e) && OPENROUTER_API_KEY) {
-      console.warn('Groq 触发限流，自动切换到 OpenRouter 备用模型:', e.message);
-      return await callTextModel(OPENROUTER_BASE_URL, OPENROUTER_API_KEY, OPENROUTER_MODEL, opts);
+  const available = AI_PROVIDERS.filter(p => p.key());
+  if (!available.length) throw new Error('AI 服务未配置，请联系管理员');
+
+  let lastError = null;
+  for (let i = 0; i < available.length; i++) {
+    const p = available[i];
+    try {
+      return await callTextModel(p.url(), p.key(), p.model(), opts);
+    } catch (e) {
+      lastError = e;
+      const isLast = i === available.length - 1;
+      // 只有限流才降级到下一家；其他错误（比如参数写错了）降级也救不了，直接抛出去
+      if (!isRateLimitError(e) || isLast) throw e;
+      console.warn(`${p.name} 触发限流，自动切换到 ${available[i + 1].name}:`, e.message);
     }
-    throw e;
   }
+  throw lastError;
 }
 
 // ==================== 账号 & 会员 ====================

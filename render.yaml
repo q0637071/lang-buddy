@@ -12,6 +12,8 @@ services:
         sync: false
       - key: MONGODB_URI
         sync: false
+      - key: DOMESTIC_API_KEY
+        sync: false
       - key: ZPAY_PID
         sync: false
       - key: ZPAY_KEY
