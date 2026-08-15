@@ -24,3 +24,5 @@ services:
         generateValue: true
       - key: ADMIN_USERNAME
         value: admin
+      - key: SUPER_ADMIN_USERNAME
+        value: administrator

@@ -2257,12 +2257,26 @@
       $('#adminNewToday').textContent = overview.newUsersToday;
       $('#adminNewWeek').textContent = overview.newUsersThisWeek;
 
+      // 公网IP/归属地只有超级管理员能看，普通管理员的接口响应里根本没有这些字段
+      const canSeeIp = !!usersData.canSeeIp;
+      const isSuper = !!state.user.isSuperAdmin;
+      $('#adminRegionSection').hidden = !canSeeIp;
+      $all('.admin-col-ip').forEach(el => { el.hidden = !canSeeIp; });
+      $('#btnAdminAddUser').hidden = !isSuper;
+      $('#adminRoleHint').textContent = isSuper
+        ? '当前身份：超级管理员（可查看注册IP/归属地，可新增、删除用户和重置密码）'
+        : '当前身份：普通管理员（可查看用户与统计、开通/取消会员；IP归属地等敏感信息仅超级管理员可见）';
+
       $('#adminRegionBody').innerHTML = (overview.regionBreakdown || []).map(r => `
         <tr><td>${escapeHtml(r.region)}</td><td>${r.count}</td></tr>
       `).join('') || '<tr><td colspan="2">暂无数据</td></tr>';
 
       $('#adminUsersBody').innerHTML = usersData.users.map(u => {
         const isSelf = u.username === state.user.username;
+        const ipCells = canSeeIp ? `
+          <td class="admin-col-ip">${escapeHtml(u.registrationIp || '-')}</td>
+          <td class="admin-col-ip">${escapeHtml([u.regProvince, u.regCity, u.regDistrict].filter(Boolean).join(' ') || u.registrationRegion || '未知')}${u.regProxy ? ' <span class="admin-proxy-flag">代理</span>' : ''}</td>
+          <td class="admin-col-ip">${escapeHtml(u.regIsp || '-')}</td>` : '';
         return `
         <tr>
           <td>${escapeHtml(u.username)}</td>
@@ -2274,13 +2288,12 @@
           <td>${u.mistakesTotal}</td>
           <td>${u.chatCount}</td>
           <td>${u.streakDays}</td>
-          <td>${escapeHtml(u.registrationIp)}</td>
-          <td>${escapeHtml(u.registrationRegion)}</td>
+          ${ipCells}
           <td>${new Date(u.createdAt).toLocaleDateString('zh-CN')}</td>
           <td class="admin-actions">
             <button type="button" class="btn-admin-action" data-action="toggle-member" data-username="${escapeHtml(u.username)}" data-ismember="${u.isMember ? '1' : ''}">${u.isMember ? '取消会员' : '设为会员'}</button>
-            <button type="button" class="btn-admin-action" data-action="reset-pw" data-username="${escapeHtml(u.username)}">重置密码</button>
-            ${isSelf ? '' : `<button type="button" class="btn-admin-action btn-admin-action-danger" data-action="delete" data-username="${escapeHtml(u.username)}">删除</button>`}
+            ${isSuper ? `<button type="button" class="btn-admin-action" data-action="reset-pw" data-username="${escapeHtml(u.username)}">重置密码</button>` : ''}
+            ${isSuper && !isSelf ? `<button type="button" class="btn-admin-action btn-admin-action-danger" data-action="delete" data-username="${escapeHtml(u.username)}">删除</button>` : ''}
           </td>
         </tr>
       `;

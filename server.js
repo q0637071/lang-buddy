@@ -233,12 +233,32 @@ function allowMemberOrFreeQuota(feature, quota) {
   };
 }
 
+// 两级管理员：
+//   ADMIN_USERNAME（普通管理员）——只能看用户列表和统计、给用户开通/取消会员
+//   SUPER_ADMIN_USERNAME（超级管理员）——拥有全部权限，额外能看注册公网IP和归属地，
+//   以及新增用户、删除用户、重置密码这些敏感操作
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || '';
+const SUPER_ADMIN_USERNAME = process.env.SUPER_ADMIN_USERNAME || 'administrator';
 
+function isSuperAdminName(username) {
+  return !!SUPER_ADMIN_USERNAME && username === SUPER_ADMIN_USERNAME;
+}
+function isAdminName(username) {
+  return isSuperAdminName(username) || (!!ADMIN_USERNAME && username === ADMIN_USERNAME);
+}
+
+// 普通管理员及以上都能过
 function requireAdmin(req, res, next) {
   if (!req.session.userId) return res.status(401).json({ error: '请先登录' });
-  if (!ADMIN_USERNAME || req.session.userId !== ADMIN_USERNAME) {
-    return res.status(403).json({ error: '无权限访问' });
+  if (!isAdminName(req.session.userId)) return res.status(403).json({ error: '无权限访问' });
+  next();
+}
+
+// 只有超级管理员能过
+function requireSuperAdmin(req, res, next) {
+  if (!req.session.userId) return res.status(401).json({ error: '请先登录' });
+  if (!isSuperAdminName(req.session.userId)) {
+    return res.status(403).json({ error: '该操作仅超级管理员可用' });
   }
   next();
 }
@@ -254,7 +274,8 @@ function publicUser(user) {
     level: user.level,
     targetLang: user.targetLang,
     createdAt: user.createdAt,
-    isAdmin: !!ADMIN_USERNAME && user.username === ADMIN_USERNAME,
+    isAdmin: isAdminName(user.username),
+    isSuperAdmin: isSuperAdminName(user.username),
     phone: user.phone || null,
     phoneVerified: !!user.phoneVerified,
   };
@@ -368,7 +389,7 @@ app.post('/api/register', rateLimit(10), async (req, res) => {
 
   phoneCodeStore.delete(phone); // 验证码一次性使用
   const passwordHash = await bcrypt.hash(password, 10);
-  const clientIp = normalizeIp(req.ip);
+  const clientIp = getClientIp(req);
   db.users[username] = {
     username,
     nickname: (nickname && String(nickname).slice(0, 30)) || username,
@@ -468,7 +489,7 @@ app.post('/api/auth/phone/verify', rateLimit(15), async (req, res) => {
   phoneCodeStore.delete(phone); // 验证码一次性使用
 
   const db = loadDB();
-  const clientIp = normalizeIp(req.ip);
+  const clientIp = getClientIp(req);
   // 一个手机号只能对应一个账号：必须按 phone 字段找主人，不能只看"用户名是否等于手机号"——
   // 否则手机号已经绑在别的用户名（如 alice）上时会查不到，又给同一个手机号建出第二个账号
   const owner = Object.values(db.users).find(u => u.phone === phone);
@@ -610,6 +631,20 @@ function grantMembership(user, days) {
   if (!user.memberSince) user.memberSince = now;
   user.memberUntil = base + days * 24 * 60 * 60 * 1000;
 }
+
+// 旧版前端（浏览器缓存了改版前的 app.js）还会调这个接口。直接删掉会返回404的HTML页面，
+// 前端按JSON解析失败只能提示"请求失败"，用户完全不知道发生了什么。这里保留做兼容：
+// 未接支付时沿用原来的免费开通行为；已接支付后不能白送，明确提示刷新页面拿新版前端。
+app.post('/api/membership/upgrade', requireAuth, (req, res) => {
+  if (payEnabled()) {
+    return res.status(409).json({ error: '页面版本过旧，请刷新页面（Ctrl+Shift+R）后重新开通' });
+  }
+  const db = loadDB();
+  const user = db.users[req.session.userId];
+  grantMembership(user, MEMBER_PLANS.monthly.days);
+  saveDB(db);
+  res.json({ user: publicUser(user) });
+});
 
 app.get('/api/membership/plans', (req, res) => {
   res.json({
@@ -1105,29 +1140,64 @@ function isPrivateIp(ip) {
   return clean === '::1' || clean === '127.0.0.1' || /^10\./.test(clean) ||
     /^192\.168\./.test(clean) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(clean);
 }
-// 用免费的 ip-api.com 查归属地（无需 key，个人/小流量用途够用），查询失败不影响注册本身
+// 取用户真实公网IP。站点前面挂了 Cloudflare（橙云代理），链路是 用户->Cloudflare->Render->应用，
+// 这时 Express 的 req.ip 拿到的往往是中转节点的IP而不是用户的。Cloudflare 会把真实访客IP
+// 放在 CF-Connecting-IP 头里，所以优先读它；其次读 X-Real-IP；再退回 X-Forwarded-For 的第一段
+// （最左边才是原始客户端，右边都是各级代理）；最后才用 req.ip 兜底。
+function getClientIp(req) {
+  const cf = req.headers['cf-connecting-ip'];
+  if (cf) return normalizeIp(cf);
+  const real = req.headers['x-real-ip'];
+  if (real) return normalizeIp(real);
+  const xff = req.headers['x-forwarded-for'];
+  if (xff) return normalizeIp(String(xff).split(',')[0].trim());
+  return normalizeIp(req.ip);
+}
+
+// 用免费的 ip-api.com 查归属地（无需 key，个人/小流量用途够用），查询失败不影响注册本身。
+// 返回结构化字段，方便后台按省/市分别统计，同时带上运营商和"是否代理/VPN"用于识别异常注册。
 async function lookupIpRegion(ip) {
-  if (isPrivateIp(ip)) return '本地/内网';
+  const clean = normalizeIp(ip);
+  if (isPrivateIp(clean)) {
+    return { text: '本地/内网', country: '', province: '', city: '', district: '', isp: '', proxy: false };
+  }
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 3000);
-    const resp = await fetch(`http://ip-api.com/json/${encodeURIComponent(normalizeIp(ip))}?fields=status,country,regionName,city&lang=zh-CN`, { signal: controller.signal });
+    const fields = 'status,country,regionName,city,district,isp,proxy,mobile';
+    const resp = await fetch(
+      `http://ip-api.com/json/${encodeURIComponent(clean)}?fields=${fields}&lang=zh-CN`,
+      { signal: controller.signal }
+    );
     clearTimeout(timer);
-    const data = await resp.json();
-    if (data.status !== 'success') return '未知';
-    return [data.country, data.regionName, data.city].filter(Boolean).join(' ') || '未知';
+    const d = await resp.json();
+    if (d.status !== 'success') {
+      return { text: '未知', country: '', province: '', city: '', district: '', isp: '', proxy: false };
+    }
+    return {
+      text: [d.country, d.regionName, d.city, d.district].filter(Boolean).join(' ') || '未知',
+      country: d.country || '',
+      province: d.regionName || '',
+      city: d.city || '',
+      district: d.district || '',
+      isp: d.isp || '',
+      proxy: !!d.proxy,
+      mobile: !!d.mobile,
+    };
   } catch {
-    return '未知';
+    return { text: '未知', country: '', province: '', city: '', district: '', isp: '', proxy: false };
   }
 }
+
 // 注册成功后异步查归属地，不阻塞注册响应；查到了再补写回用户记录
 function fillRegistrationRegion(username, ip) {
-  lookupIpRegion(ip).then(region => {
+  lookupIpRegion(ip).then(geo => {
     const db = loadDB();
-    if (db.users[username]) {
-      db.users[username].registrationRegion = region;
-      saveDB(db);
-    }
+    const u = db.users[username];
+    if (!u) return;
+    u.registrationRegion = geo.text;
+    u.registrationGeo = geo;
+    saveDB(db);
   }).catch(() => {});
 }
 
@@ -1669,6 +1739,7 @@ app.get('/api/admin/overview', requireAdmin, (req, res) => {
     .map(([region, count]) => ({ region, count }))
     .sort((a, b) => b.count - a.count);
 
+  const canSeeIp = isSuperAdminName(req.session.userId);
   res.json({
     totalUsers: users.length,
     totalMembers,
@@ -1678,16 +1749,21 @@ app.get('/api/admin/overview', requireAdmin, (req, res) => {
     vocabBankSize: vocab.length,
     newUsersToday,
     newUsersThisWeek,
-    regionBreakdown,
+    canSeeIp,
+    // 地区分布同样只给超级管理员看
+    regionBreakdown: canSeeIp ? regionBreakdown : [],
   });
 });
 
 app.get('/api/admin/users', requireAdmin, (req, res) => {
   const db = loadDB();
   const vocab = readVocab();
+  // 公网IP和归属地属于敏感信息，只有超级管理员能看到；普通管理员拿到的响应里根本没有这些字段，
+  // 不是靠前端隐藏（前端隐藏拦不住直接调接口的人）
+  const canSeeIp = isSuperAdminName(req.session.userId);
   const users = Object.values(db.users || {}).map(u => {
     const vocabStats = computeStats(vocab, u.vocabProgress || {});
-    return {
+    const row = {
       username: u.username,
       nickname: u.nickname,
       isMember: isActiveMember(u),
@@ -1701,16 +1777,25 @@ app.get('/api/admin/users', requireAdmin, (req, res) => {
       mistakesTotal: (u.mistakes || []).length,
       chatCount: u.chatCount || 0,
       streakDays: computeStreak(u.activityLog),
-      registrationIp: u.registrationIp || '-',
-      registrationRegion: u.registrationRegion || '未知',
     };
+    if (canSeeIp) {
+      const geo = u.registrationGeo || {};
+      row.registrationIp = u.registrationIp || '-';
+      row.registrationRegion = u.registrationRegion || '未知';
+      row.regProvince = geo.province || '';
+      row.regCity = geo.city || '';
+      row.regDistrict = geo.district || '';
+      row.regIsp = geo.isp || '';
+      row.regProxy = !!geo.proxy;
+    }
+    return row;
   }).sort((a, b) => b.createdAt - a.createdAt);
-  res.json({ users });
+  res.json({ users, canSeeIp });
 });
 
 // 管理员手动创建账号：常用于给测试/线下沟通好的用户直接开号，跳过手机验证门槛
 // （管理员已经人工核实过，不需要再走一遍防刷验证）
-app.post('/api/admin/users', requireAdmin, async (req, res) => {
+app.post('/api/admin/users', requireSuperAdmin, async (req, res) => {
   const { username, password, nickname, isMember } = req.body || {};
   if (!username || !password) return res.status(400).json({ error: '用户名和密码不能为空' });
   if (typeof username !== 'string' || username.length < 3 || username.length > 30) {
@@ -1761,7 +1846,7 @@ app.post('/api/admin/users/:username/membership', requireAdmin, (req, res) => {
 });
 
 // 管理员重置用户密码：用户忘记密码时的人工支持手段
-app.post('/api/admin/users/:username/reset-password', requireAdmin, async (req, res) => {
+app.post('/api/admin/users/:username/reset-password', requireSuperAdmin, async (req, res) => {
   const { username } = req.params;
   const { newPassword } = req.body || {};
   if (typeof newPassword !== 'string' || newPassword.length < 6) {
@@ -1776,10 +1861,11 @@ app.post('/api/admin/users/:username/reset-password', requireAdmin, async (req, 
 });
 
 // 管理员删除用户：管理员自己的账号不允许在这里删掉（避免误操作把自己权限删没了）
-app.delete('/api/admin/users/:username', requireAdmin, (req, res) => {
+app.delete('/api/admin/users/:username', requireSuperAdmin, (req, res) => {
   const { username } = req.params;
-  if (ADMIN_USERNAME && username === ADMIN_USERNAME) {
-    return res.status(400).json({ error: '不能删除管理员自己的账号' });
+  // 两个管理员账号都不允许被删掉，避免误操作把后台权限彻底删没了
+  if (isAdminName(username)) {
+    return res.status(400).json({ error: '不能删除管理员账号' });
   }
   const db = loadDB();
   const user = db.users[username];
@@ -1790,6 +1876,12 @@ app.delete('/api/admin/users/:username', requireAdmin, (req, res) => {
   delete db.users[username];
   saveDB(db);
   res.json({ ok: true });
+});
+
+// 没匹配到任何接口的 /api 请求统一返回 JSON。默认的404是HTML页面，前端按JSON解析会直接抛异常，
+// 用户只能看到含糊的"请求失败"——旧版缓存前端调用已下线接口时就是这种情况，这里给出明确提示。
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: '接口不存在，可能是页面版本过旧，请刷新页面（Ctrl+Shift+R）后重试' });
 });
 
 // multer / 上传相关错误统一转成 JSON 响应
