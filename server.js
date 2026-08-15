@@ -112,23 +112,34 @@ function parseCookies(header) {
   return out;
 }
 
+function makeAuthToken(username) {
+  return `${username}.${signValue(username)}`;
+}
+// 校验签名并取出用户名，签名不对就返回空
+function verifyAuthToken(token) {
+  if (!token) return null;
+  const sepIdx = token.lastIndexOf('.');
+  if (sepIdx <= 0) return null;
+  const name = token.slice(0, sepIdx);
+  const sig = token.slice(sepIdx + 1);
+  return sig === signValue(name) ? name : null;
+}
+
 function cookieSession(req, res, next) {
+  // 网页端走 cookie；App（Capacitor）里 WebView 的源是 capacitor://localhost，
+  // 调线上API属于跨站，httpOnly+SameSite=Lax 的 cookie 浏览器不会发送，
+  // 所以同时支持 Authorization: Bearer <token>，token 内容和 cookie 里是同一个签名串。
   const cookies = parseCookies(req.headers.cookie);
-  const token = cookies[AUTH_COOKIE];
-  let userId;
-  if (token) {
-    const sepIdx = token.lastIndexOf('.');
-    if (sepIdx > 0) {
-      const name = token.slice(0, sepIdx);
-      const sig = token.slice(sepIdx + 1);
-      if (sig === signValue(name)) userId = name;
-    }
-  }
+  const bearer = /^Bearer\s+(.+)$/i.exec(req.headers.authorization || '')?.[1];
+  let userId = verifyAuthToken(bearer) || verifyAuthToken(cookies[AUTH_COOKIE]) || undefined;
+
   req.session = {
     get userId() { return userId; },
     set userId(v) {
       userId = v;
-      res.cookie(AUTH_COOKIE, `${v}.${signValue(v)}`, {
+      // 同时下发 cookie（网页端用）和把 token 挂到 res.locals（登录类接口会放进响应体给App用）
+      res.locals.authToken = makeAuthToken(v);
+      res.cookie(AUTH_COOKIE, res.locals.authToken, {
         httpOnly: true,
         maxAge: AUTH_MAX_AGE,
         sameSite: 'lax',
@@ -141,8 +152,39 @@ function cookieSession(req, res, next) {
       cb();
     },
   };
+
+  // 登录/注册类接口的响应体里自动附带 token，App 存下来后续请求带在请求头里。
+  // 网页端用不上这个字段，无视即可。
+  const origJson = res.json.bind(res);
+  res.json = (body) => {
+    if (res.locals.authToken && body && typeof body === 'object' && !Array.isArray(body) && body.user) {
+      body.token = res.locals.authToken;
+    }
+    return origJson(body);
+  };
   next();
 }
+
+// App 的 WebView 源和网站不同域，必须显式放行，否则浏览器会拦掉所有请求。
+// 只放行已知的几个源，不用 * （带 credentials 时 * 也不合法）
+const ALLOWED_APP_ORIGINS = new Set([
+  'capacitor://localhost',  // iOS Capacitor
+  'ionic://localhost',
+  'http://localhost',       // Android Capacitor
+  'https://localhost',
+]);
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && ALLOWED_APP_ORIGINS.has(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+    res.setHeader('Vary', 'Origin');
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+  }
+  next();
+});
 
 app.use(cookieSession);
 // 静态资源默认不带 Cache-Control，部分手机浏览器会激进地长期复用旧缓存，

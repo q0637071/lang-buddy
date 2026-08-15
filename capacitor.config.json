@@ -1,0 +1,18 @@
+{
+  "appId": "org.langbuddy.app",
+  "appName": "LangBuddy 语伴",
+  "webDir": "public",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 800,
+      "backgroundColor": "#0ABAB5",
+      "showSpinner": false
+    }
+  }
+}

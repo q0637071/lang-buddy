@@ -48,10 +48,34 @@
     try { localStorage.setItem(key, value); } catch { /* 存不进去就算了，不影响当次使用 */ }
   }
 
+  // 打包成App（Capacitor）后，页面是从本地加载的，源是 capacitor://localhost 或 http://localhost，
+  // 得把请求打到线上域名；同时这种跨站场景下浏览器不会发送 cookie，所以改用 token 认证。
+  // 网页端正常访问时 location.origin 就是自己的域名，走原来的同源+cookie 逻辑，行为完全不变。
+  // 优先用 Capacitor 注入的全局判断（最可靠），拿不到再退回看协议
+  const IS_NATIVE_APP = (() => {
+    try {
+      if (window.Capacitor?.isNativePlatform?.()) return true;
+    } catch {}
+    return location.protocol === 'capacitor:' || location.protocol === 'ionic:';
+  })();
+  const API_BASE = IS_NATIVE_APP ? 'https://langbuddy.org/api' : '/api';
+  const TOKEN_KEY = 'lb_auth_token';
+
+  function getAuthToken() { return safeGetItem(TOKEN_KEY); }
+  function setAuthToken(t) {
+    if (t) safeSetItem(TOKEN_KEY, t);
+  }
+  function clearAuthToken() {
+    try { localStorage.removeItem(TOKEN_KEY); } catch {}
+  }
+
   async function api(path, options = {}) {
-    const res = await fetch('/api' + path, {
+    const headers = { 'Content-Type': 'application/json' };
+    const token = getAuthToken();
+    if (token) headers.Authorization = 'Bearer ' + token;
+    const res = await fetch(API_BASE + path, {
       method: options.method || 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       credentials: 'include',
       body: options.body ? JSON.stringify(options.body) : undefined,
     });
@@ -62,6 +86,8 @@
       err.needPhoneVerify = data.needPhoneVerify;
       throw err;
     }
+    // 登录/注册类接口会在响应里带回 token，存下来供 App 后续请求使用
+    if (data.token) setAuthToken(data.token);
     return data;
   }
 
@@ -2484,6 +2510,7 @@
 
   $('#btnLogout').addEventListener('click', async () => {
     await api('/logout', { method: 'POST' });
+    clearAuthToken(); // App 端靠 token 认证，退出时必须一并清掉，否则下次打开还是登录态
     state.user = null;
     state.chatHistory = [];
     state.chatHistoryLoaded = false;
