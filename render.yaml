@@ -14,6 +14,14 @@ services:
         sync: false
       - key: DOMESTIC_API_KEY
         sync: false
+      - key: QQ_APP_ID
+        sync: false
+      - key: QQ_APP_KEY
+        sync: false
+      - key: WECHAT_APP_ID
+        sync: false
+      - key: WECHAT_APP_SECRET
+        sync: false
       - key: ZPAY_PID
         sync: false
       - key: ZPAY_KEY

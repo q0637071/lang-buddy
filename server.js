@@ -597,21 +597,186 @@ app.post('/api/profile/bind-phone', requireAuth, rateLimit(15), (req, res) => {
   res.json({ user: publicUser(user) });
 });
 
-// ==================== 微信授权登录（占位，尚未接入） ====================
-// 网站场景的微信登录必须在微信开放平台（open.weixin.qq.com）注册"网站应用"，
-// 且该平台要求开发者主体是企业并完成认证，个人开发者无法申请这个能力。
-// 需要 WECHAT_APP_ID / WECHAT_APP_SECRET 环境变量，并实现：
-//   1. GET /api/auth/wechat/login-url  生成跳转到微信授权页的 URL（带 state 防CSRF）
-//   2. GET /api/auth/wechat/callback   微信跳回后用 code 换 access_token + openid，
-//      再用 openid 作为用户唯一标识查找/创建账号并登录
-const WECHAT_APP_ID = process.env.WECHAT_APP_ID || '';
+// ==================== 第三方授权登录（微信 / QQ） ====================
+// 两家都是标准 OAuth2 授权码流程，差别只在接口地址和字段名，这里抽象成同一套配置。
+//
+// 申请门槛（配置前必须先拿到资质）：
+//   微信：open.weixin.qq.com 注册"网站应用"，要求开发者主体是【企业】并完成认证
+//         （认证费300元/年），个人主体申请不了。
+//   QQ  ：connect.qq.com（QQ互联），【个人开发者可以申请】，需要备案域名。
+// 没配对应的 APP_ID/SECRET 时，前端会自动隐藏该入口，不影响其他登录方式。
+const OAUTH_PROVIDERS = {
+  wechat: {
+    name: '微信',
+    appId: process.env.WECHAT_APP_ID || '',
+    appSecret: process.env.WECHAT_APP_SECRET || '',
+    authUrl: 'https://open.weixin.qq.com/connect/qrconnect',
+    scope: 'snsapi_login',
+  },
+  qq: {
+    name: 'QQ',
+    appId: process.env.QQ_APP_ID || '',
+    appSecret: process.env.QQ_APP_KEY || '',
+    // 接口域名做成可配置，正式环境用默认值，本地可以指向 mock 服务做端到端测试
+    apiBase: process.env.QQ_API_BASE || 'https://graph.qq.com',
+    get authUrl() { return `${this.apiBase}/oauth2.0/authorize`; },
+    scope: 'get_user_info',
+  },
+};
+const oauthEnabled = (p) => !!(OAUTH_PROVIDERS[p]?.appId && OAUTH_PROVIDERS[p]?.appSecret);
+const oauthRedirectUri = (p) => `${SITE_URL}/api/auth/${p}/callback`;
 
-app.get('/api/auth/wechat/login-url', (req, res) => {
-  if (!WECHAT_APP_ID) {
-    return res.status(501).json({ error: '微信登录尚未配置，需要企业主体在微信开放平台申请网站应用后接入' });
+// state 用来防 CSRF：发起授权时生成并记住，回调时必须能对上。
+// 存内存即可——它只需要活几分钟，服务重启导致的失效只会让用户重点一次登录。
+const oauthStateStore = new Map();
+function issueOAuthState(provider) {
+  const state = crypto.randomBytes(16).toString('hex');
+  oauthStateStore.set(state, { provider, createdAt: Date.now() });
+  // 顺手清理过期的，避免内存无限增长
+  const now = Date.now();
+  for (const [k, v] of oauthStateStore) {
+    if (now - v.createdAt > 10 * 60 * 1000) oauthStateStore.delete(k);
   }
-  // TODO: WECHAT_APP_ID 配置好之后，在这里拼接真实的微信授权跳转链接并返回
-  res.status(501).json({ error: '微信登录尚未实现' });
+  return state;
+}
+function consumeOAuthState(state, provider) {
+  const rec = oauthStateStore.get(state);
+  if (!rec || rec.provider !== provider) return false;
+  oauthStateStore.delete(state); // 一次性使用
+  return Date.now() - rec.createdAt <= 10 * 60 * 1000;
+}
+
+// 前端据此决定显示哪些第三方登录按钮
+app.get('/api/auth/oauth/available', (req, res) => {
+  res.json({
+    wechat: oauthEnabled('wechat'),
+    qq: oauthEnabled('qq'),
+  });
+});
+
+app.get('/api/auth/:provider/login-url', (req, res) => {
+  const { provider } = req.params;
+  const conf = OAUTH_PROVIDERS[provider];
+  if (!conf) return res.status(404).json({ error: '不支持的登录方式' });
+  if (!oauthEnabled(provider)) {
+    return res.status(501).json({
+      error: provider === 'wechat'
+        ? '微信登录尚未开通（需企业主体在微信开放平台申请网站应用）'
+        : 'QQ登录尚未开通（需在QQ互联申请并通过审核）',
+    });
+  }
+  const state = issueOAuthState(provider);
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id: conf.appId,
+    redirect_uri: oauthRedirectUri(provider),
+    scope: conf.scope,
+    state,
+  });
+  // 微信的参数名是 appid 而不是 client_id，且要求URL末尾带 #wechat_redirect
+  let url = `${conf.authUrl}?${params.toString()}`;
+  if (provider === 'wechat') {
+    params.delete('client_id');
+    params.set('appid', conf.appId);
+    url = `${conf.authUrl}?${params.toString()}#wechat_redirect`;
+  }
+  res.json({ url });
+});
+
+// QQ 的部分接口返回的是 callback(...) 形式的 JSONP，这里统一剥出 JSON
+function parseQQResponse(text) {
+  const m = text.match(/callback\(\s*([\s\S]*?)\s*\)/);
+  if (m) return JSON.parse(m[1]);
+  try { return JSON.parse(text); } catch { return null; }
+}
+
+// 用授权码换取该用户在本平台的唯一标识（openid）和昵称
+async function fetchOAuthProfile(provider, code) {
+  const conf = OAUTH_PROVIDERS[provider];
+  if (provider === 'wechat') {
+    const tokenResp = await fetch(`https://api.weixin.qq.com/sns/oauth2/access_token?appid=${conf.appId}&secret=${conf.appSecret}&code=${encodeURIComponent(code)}&grant_type=authorization_code`);
+    const token = await tokenResp.json();
+    if (!token.openid) throw new Error(token.errmsg || '微信授权失败');
+    const infoResp = await fetch(`https://api.weixin.qq.com/sns/userinfo?access_token=${token.access_token}&openid=${token.openid}`);
+    const info = await infoResp.json();
+    return {
+      // 有 unionid 优先用它：同一主体下多个应用能识别为同一个人
+      openid: token.unionid || token.openid,
+      nickname: info.nickname || '微信用户',
+    };
+  }
+
+  // QQ
+  const base = conf.apiBase;
+  const tokenResp = await fetch(`${base}/oauth2.0/token?grant_type=authorization_code&client_id=${conf.appId}&client_secret=${conf.appSecret}&code=${encodeURIComponent(code)}&redirect_uri=${encodeURIComponent(oauthRedirectUri('qq'))}&fmt=json`);
+  const token = await tokenResp.json();
+  if (!token.access_token) throw new Error(token.error_description || 'QQ授权失败');
+  const meResp = await fetch(`${base}/oauth2.0/me?access_token=${token.access_token}&fmt=json`);
+  const me = parseQQResponse(await meResp.text());
+  if (!me?.openid) throw new Error('未能获取QQ用户标识');
+  const infoResp = await fetch(`${base}/user/get_user_info?access_token=${token.access_token}&oauth_consumer_key=${conf.appId}&openid=${me.openid}`);
+  const info = await infoResp.json();
+  return { openid: me.openid, nickname: info.nickname || 'QQ用户' };
+}
+
+// 保证用户名唯一：昵称可能重复或含奇怪字符，这里生成一个稳定可读的账号名
+function makeOAuthUsername(db, provider, nickname) {
+  const base = String(nickname || '').replace(/[^\w一-龥]/g, '').slice(0, 12) || `${provider}用户`;
+  let name = base;
+  let i = 1;
+  while (db.users[name]) name = `${base}${++i}`;
+  return name;
+}
+
+app.get('/api/auth/:provider/callback', async (req, res) => {
+  const { provider } = req.params;
+  const { code, state } = req.query;
+  if (!OAUTH_PROVIDERS[provider] || !oauthEnabled(provider)) {
+    return res.redirect('/?login_error=' + encodeURIComponent('该登录方式未开通'));
+  }
+  if (!code || !consumeOAuthState(state, provider)) {
+    return res.redirect('/?login_error=' + encodeURIComponent('授权已过期，请重新登录'));
+  }
+  try {
+    const profile = await fetchOAuthProfile(provider, code);
+    const db = loadDB();
+    const key = `${provider}:${profile.openid}`;
+
+    // 已经用这个第三方账号登录过就直接进，否则建一个新账号
+    let username = Object.keys(db.users).find(u => db.users[u].oauthKey === key);
+    if (!username) {
+      username = makeOAuthUsername(db, provider, profile.nickname);
+      db.users[username] = {
+        username,
+        nickname: profile.nickname,
+        passwordHash: null, // 第三方登录的账号没有密码，只能走第三方入口登录
+        oauthKey: key,
+        oauthProvider: provider,
+        isMember: false,
+        memberSince: null,
+        memberUntil: null,
+        level: 'beginner',
+        targetLang: 'en',
+        createdAt: Date.now(),
+        vocabProgress: {},
+        mistakes: [],
+        activityLog: {},
+        chatCount: 0,
+        registrationIp: getClientIp(req),
+        registrationRegion: '查询中...',
+        // 第三方登录没有手机号，免费额度仍需绑定手机后才发放（防刷策略保持一致）
+        phoneVerified: false,
+      };
+      saveDB(db);
+      fillRegistrationRegion(username, getClientIp(req));
+    }
+    req.session.userId = username;
+    // 带上 token，App(Capacitor) 端从URL里取出来存本地即可完成登录
+    res.redirect('/?login_token=' + encodeURIComponent(makeAuthToken(username)));
+  } catch (e) {
+    console.error(`[OAuth ${provider}] 登录失败:`, e.message);
+    res.redirect('/?login_error=' + encodeURIComponent('第三方登录失败，请重试或改用其他方式'));
+  }
 });
 
 app.post('/api/logout', (req, res) => {

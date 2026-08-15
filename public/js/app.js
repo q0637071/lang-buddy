@@ -179,7 +179,33 @@
     $('#authModalOverlay').hidden = false;
     $('#authError').textContent = '';
     setAuthMode(mode);
+    renderOAuthButtons();
   }
+
+  // 只显示后端真正配好了密钥的第三方登录入口，没配的直接不显示，
+  // 避免用户点了才发现"暂未开通"
+  let oauthChecked = false;
+  async function renderOAuthButtons() {
+    if (oauthChecked) return;
+    oauthChecked = true;
+    try {
+      const a = await api('/auth/oauth/available');
+      $('#btnLoginWechat').hidden = !a.wechat;
+      $('#btnLoginQQ').hidden = !a.qq;
+      $('#oauthBlock').hidden = !(a.wechat || a.qq);
+    } catch { /* 拿不到就保持隐藏 */ }
+  }
+
+  async function startOAuthLogin(provider) {
+    try {
+      const data = await api(`/auth/${provider}/login-url`);
+      window.location.href = data.url;
+    } catch (err) {
+      toast(err.message);
+    }
+  }
+  $('#btnLoginWechat').addEventListener('click', () => startOAuthLogin('wechat'));
+  $('#btnLoginQQ').addEventListener('click', () => startOAuthLogin('qq'));
   function closeAuthModal() {
     $('#authModalOverlay').hidden = true;
     $('#authForm').reset();
@@ -2545,8 +2571,21 @@
     toast('支付结果确认中，如已付款请稍后刷新页面');
   }
 
+  // 第三方登录跳回本站后的处理：网页端靠 cookie 已经登录了，
+  // App(Capacitor) 端拿不到 cookie，所以后端把 token 放在 URL 上，这里取出来存下
+  function handleOAuthReturn() {
+    const q = new URLSearchParams(location.search);
+    const err = q.get('login_error');
+    const token = q.get('login_token');
+    if (!err && !token) return;
+    history.replaceState(null, '', location.pathname); // 清掉URL上的敏感参数
+    if (token) setAuthToken(token);
+    if (err) setTimeout(() => toast(err), 300);
+  }
+
   // ---------- 启动 ----------
   async function init() {
+    handleOAuthReturn();
     try {
       const data = await api('/me');
       if (data.user) {

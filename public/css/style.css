@@ -233,6 +233,19 @@ p { line-height: 1.6; color: var(--text-muted); }
 .vocab-browse-meaning { font-size: 13.5px; color: var(--text); margin-top: 3px; }
 .vocab-browse-root { font-size: 12.5px; color: var(--primary-dark); margin-top: 4px; }
 
+/* 第三方登录（微信 / QQ） */
+.oauth-block { margin-top: 20px; }
+.oauth-divider { position: relative; text-align: center; margin-bottom: 14px; }
+.oauth-divider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: var(--border); }
+.oauth-divider span { position: relative; background: #fff; padding: 0 12px; font-size: 12.5px; color: var(--text-muted); }
+.oauth-buttons { display: flex; gap: 12px; justify-content: center; }
+.oauth-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 11px; border: 1px solid var(--border); border-radius: 12px; background: #fff; font-size: 14px; font-weight: 600; color: var(--text); cursor: pointer; transition: border-color .15s ease, background .15s ease; }
+.oauth-btn:hover { background: #fafbff; }
+.oauth-wechat { color: #07C160; }
+.oauth-wechat:hover { border-color: #07C160; }
+.oauth-qq { color: #12B7F5; }
+.oauth-qq:hover { border-color: #12B7F5; }
+
 /* 开通会员 / 支付 */
 .pay-plan-list { display: flex; gap: 10px; margin-bottom: 14px; }
 .pay-plan { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 14px 8px; border: 2px solid var(--border); border-radius: 12px; background: #fff; cursor: pointer; transition: border-color .15s ease, background .15s ease; }
