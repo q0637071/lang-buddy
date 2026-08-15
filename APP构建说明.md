@@ -7,26 +7,31 @@
 
 ## 一、安卓（可以在 Windows 上完整开发和出包）
 
-### 1. 装 Android Studio（一次性，约 1GB）
+### 环境（已经配置好了，这里只是记录）
 
-下载：https://developer.android.com/studio
+- Android Studio + Android SDK：已装在 `C:\Users\q0637\AppData\Local\Android\Sdk`
+- **JDK 21**：已解压到 `C:\Users\q0637\jdk21\jdk-21.0.12+8`
 
-安装时保持默认选项即可，它会自动装好 **JDK** 和 **Android SDK**（这两个是编译必需的）。
-装完打开一次 Android Studio，让它把 SDK 组件下载完整。
+  为什么不用 Android Studio 自带的 JDK：它带的是 JDK 25，而当前 Gradle 8.14
+  最高只支持 Java 24，直接用会报 `Unsupported class file major version 69`。
+  所以单独装了一个官方推荐的 JDK 21。
 
-### 2. 出一个可安装的测试包（APK）
+### 出安装包（一条命令）
 
 ```bash
-npm run app:sync
 npm run app:apk
 ```
 
-生成的安装包在：
+这条命令会自动把最新网页同步进安卓工程、找到正确的 JDK、然后编译，
+最后打印出安装包路径：
+
 `android/app/build/outputs/apk/debug/app-debug.apk`
 
 把这个文件传到安卓手机上点击安装即可（手机需要允许"安装未知来源应用"）。
 
-### 3. 用模拟器或真机调试
+**以后每次改完网页代码，就跑这一条命令重新出包，不需要额外做别的。**
+
+### 用模拟器或真机调试
 
 ```bash
 npm run app:open
@@ -34,13 +39,9 @@ npm run app:open
 
 会打开 Android Studio，点绿色三角运行按钮，选模拟器或插着的真机。
 
-### 4. 每次改完网页代码后
-
-```bash
-npm run app:sync
-```
-
-这一步把 `public/` 里最新的网页同步进安卓工程，然后重新运行/出包。
+注意：如果在 Android Studio 里直接点运行报 JDK 版本错误，去
+`File > Settings > Build, Execution, Deployment > Build Tools > Gradle`，
+把 Gradle JDK 改成 `C:\Users\q0637\jdk21\jdk-21.0.12+8`。
 
 ---
 
@@ -101,7 +102,8 @@ App 内如果卖会员，苹果要求虚拟商品走 App 内购（抽成 15-30%�
 - [x] Capacitor 工程初始化、安卓平台已添加
 - [x] 应用名 "LangBuddy 语伴"、包名 org.langbuddy.app
 - [x] 相机/麦克风/相册权限已在 AndroidManifest 声明
-- [ ] 安装 Android Studio 后出第一个 APK（需要你操作）
+- [x] 环境配好（Android Studio + SDK + JDK 21），`npm run app:apk` 一条命令出包，已验证成功
+- [ ] 装到真机上跑一遍，确认登录/背单词/AI对话都正常
 - [ ] 应用图标和启动图替换成自己的设计
 - [ ] 语音识别原生插件（如果需要 App 内也能语音输入）
 - [ ] iOS 云端构建配置

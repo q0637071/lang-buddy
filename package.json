@@ -8,7 +8,8 @@
     "dev": "node server.js",
     "app:sync": "cap sync android",
     "app:open": "cap open android",
-    "app:apk": "cd android && gradlew.bat assembleDebug"
+    "app:apk": "cap sync android && node scripts/build-apk.js",
+    "app:apk:release": "cap sync android && node scripts/build-apk.js release"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
