@@ -76,12 +76,31 @@
     const headers = { 'Content-Type': 'application/json' };
     const token = getAuthToken();
     if (token) headers.Authorization = 'Bearer ' + token;
-    const res = await fetch(API_BASE + path, {
-      method: options.method || 'GET',
-      headers,
-      credentials: 'include',
-      body: options.body ? JSON.stringify(options.body) : undefined,
-    });
+
+    // 必须有超时：手机网络一抖动，fetch 可能永远挂着既不成功也不失败，
+    // 界面就会卡在"发送中"再无任何反馈（用户感受就是"点了没反应"）。
+    // AI 生成本身比较慢，所以给的时间比普通接口宽裕。
+    const timeoutMs = options.timeoutMs || 45000;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    let res;
+    try {
+      res = await fetch(API_BASE + path, {
+        method: options.method || 'GET',
+        headers,
+        credentials: 'include',
+        body: options.body ? JSON.stringify(options.body) : undefined,
+        signal: controller.signal,
+      });
+    } catch (e) {
+      clearTimeout(timer);
+      if (e.name === 'AbortError') throw new Error('网络较慢，请求超时了，请重试');
+      throw new Error('网络连接失败，请检查网络后重试');
+    } finally {
+      clearTimeout(timer);
+    }
+
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       const err = new Error(data.error || '请求失败');
@@ -639,9 +658,37 @@
     win.scrollTop = win.scrollHeight;
   }
 
+  // 打字对话时的"AI 正在输入"气泡。之前只有语音模式有状态提示，
+  // 打字模式发出去后界面完全不动，AI 慢几秒用户就以为卡死了。
+  function showTypingBubble() {
+    const win = $('#chatWindow');
+    if (document.getElementById('chatTyping')) return;
+    const div = document.createElement('div');
+    div.className = 'msg msg-ai msg-typing';
+    div.id = 'chatTyping';
+    div.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+    win.appendChild(div);
+    win.scrollTop = win.scrollHeight;
+  }
+  function hideTypingBubble() {
+    document.getElementById('chatTyping')?.remove();
+  }
+
+  // 出错时除了 toast，还在对话流里留一条提示。toast 两秒就消失了，
+  // 用户如果正好没看到，就只会觉得"发出去石沉大海"
+  function appendChatError(text) {
+    const win = $('#chatWindow');
+    const div = document.createElement('div');
+    div.className = 'msg msg-ai msg-error';
+    div.textContent = '⚠️ ' + text;
+    win.appendChild(div);
+    win.scrollTop = win.scrollHeight;
+  }
+
   async function sendChatMessage(message) {
     appendMsg('user', message);
     $('#chatSendBtn').disabled = true;
+    showTypingBubble();
     if (state.voiceCallActive) setCallStatus('thinking', '💭 AI 正在思考...');
     try {
       const data = await api('/chat', {
@@ -653,21 +700,26 @@
           replyLang: state.chatReplyLang,
         },
       });
+      hideTypingBubble();
       appendMsg('ai', data.reply, {
         onSpeakEnd: () => { if (state.voiceCallActive) listenTurn(); },
       });
       if (state.voiceCallActive) setCallStatus('speaking', '🔊 AI 正在说话...');
     } catch (err) {
+      hideTypingBubble();
       if (err.needMembership) {
         toast('需要开通会员才能继续对话');
+        appendChatError('今日免费体验时长已用完，开通会员可无限畅聊');
         stopVoiceCall();
         renderTutor();
       } else if (err.needPhoneVerify) {
         toast(err.message);
+        appendChatError(err.message);
         stopVoiceCall();
         showView('profile');
       } else {
         toast(err.message);
+        appendChatError(err.message + '（可以直接再发一次试试）');
         if (state.voiceCallActive) setCallStatus('error', '⚠️ 出错了，点击麦克风图标重试');
       }
     } finally {
