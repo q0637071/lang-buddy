@@ -2000,7 +2000,14 @@
     }
   });
 
-  $('#btnPickImage').addEventListener('click', () => $('#mistakeFileInput').click());
+  // 「选择图片」按钮在上传区里面，点它会先触发按钮自己的处理器、再冒泡到外层上传区，
+  // 于是同一次点击里 fileInput.click() 被调了两次。手机浏览器对文件选择框有严格的
+  // 用户手势校验，第二次合成点击不再被认为可信，导致选择框弹出后立刻关闭甚至不弹——
+  // 表现就是"点了没反应"。这里阻止冒泡，保证一次点击只触发一次。
+  $('#btnPickImage').addEventListener('click', (e) => {
+    e.stopPropagation();
+    $('#mistakeFileInput').click();
+  });
   $('#mistakeUploadDrop').addEventListener('click', () => {
     if (!state.mistakeFile) $('#mistakeFileInput').click();
   });
@@ -2079,11 +2086,33 @@
     const formData = new FormData();
     formData.append('image', file);
     if (examType) formData.append('examType', examType);
-    const res = await fetch('/api/mistakes/upload', {
-      method: 'POST',
-      credentials: 'include',
-      body: formData,
-    });
+
+    // 这里不能走 api()（那个会强制 JSON 请求头），但同样需要：
+    //   1. 用 API_BASE —— 打包成App后页面是本地加载的，写死 /api 会打到本地包里 404
+    //   2. 带上 token —— App 里跨站请求发不出 cookie，不带 token 就是未登录
+    //   3. 超时 —— 图片上传 + AI识图本来就慢，手机网络下 fetch 可能永远挂着不返回
+    const headers = {};
+    const token = getAuthToken();
+    if (token) headers.Authorization = 'Bearer ' + token;
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 90000); // 识图比纯文本慢，给足90秒
+    let res;
+    try {
+      res = await fetch(API_BASE + '/mistakes/upload', {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: formData,
+        signal: controller.signal,
+      });
+    } catch (e) {
+      if (e.name === 'AbortError') throw new Error('上传超时了，可能是图片较大或网络较慢，请重试');
+      throw new Error('网络连接失败，请检查网络后重试');
+    } finally {
+      clearTimeout(timer);
+    }
+
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       const err = new Error(data.error || '上传失败');
