@@ -9,7 +9,9 @@
     "app:sync": "cap sync android",
     "app:open": "cap open android",
     "app:apk": "cap sync android && node scripts/build-apk.js",
-    "app:apk:release": "cap sync android && node scripts/build-apk.js release"
+    "app:apk:release": "cap sync android && node scripts/build-apk.js release",
+    "ios:sync": "cap sync ios",
+    "ios:open": "cap sync ios && cap open ios"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -23,6 +25,7 @@
     "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^8.5.0",
     "@capacitor/core": "^8.5.0",
+    "@capacitor/ios": "^8.5.0",
     "sharp": "^0.35.3"
   }
 }

@@ -45,20 +45,66 @@ npm run app:open
 
 ---
 
-## 二、iOS（Windows 上写代码，云端出包）
+## 二、iOS（在 M1 MacBook 上开发）
 
-iOS 编译签名只能在 macOS 上做，Xcode 不支持 Windows。你那台十年前的 Mac 系统版本
-大概率也太旧（上架要求较新的 Xcode/SDK）。解决办法是**云端构建**，不需要自己有 Mac：
+iOS 工程已经在 Windows 这边生成好并提交到 git 了，Mac 上拉下来就能直接用。
+Capacitor 8 用的是 Swift Package Manager，**不需要装 CocoaPods**，省一大堆麻烦。
 
-- **Codemagic**（codemagic.io）——有免费额度，对 Capacitor 支持好，推荐先用这个
-- **Expo EAS Build**（expo.dev）
-- **GitHub Actions** 的 macOS runner（公开仓库免费额度较多）
+### 首次在 Mac 上准备
 
-流程：代码推到 GitHub → 云端 Mac 自动编译签名 → 下载 ipa 或直接传到 TestFlight。
+```bash
+# 1. 从 App Store 安装 Xcode（免费，约 10GB，装完先打开一次同意协议）
+# 2. 装 Node（如果还没有）：https://nodejs.org 下 LTS 版
+# 3. 拉代码
+git clone https://github.com/q0637071/lang-buddy.git
+cd lang-buddy
+npm install
+```
 
-前置条件：**Apple Developer Program 会员，$99/年**（不交这个连 TestFlight 内测都做不了）。
+### 打开 Xcode 开发调试
 
-准备做 iOS 时告诉我，我帮你配置 `capacitor.config.json` 的 iOS 部分和云端构建的配置文件。
+```bash
+npm run ios:open
+```
+
+这条命令会先同步最新网页代码，再自动用 Xcode 打开工程。然后在 Xcode 里：
+
+1. 左上角选一个模拟器（比如 iPhone 16）
+2. 点 ▶ 运行 —— **模拟器不需要任何付费账号**，可以立刻看到效果
+
+### 装到自己的 iPhone 上真机测试
+
+用**免费的 Apple ID** 就能装到自己手机上（不用 $99）：
+
+1. Xcode → Settings → Accounts → 加上你的 Apple ID
+2. 选中左侧 App 项目 → Signing & Capabilities → Team 选你的个人账号
+3. 手机用数据线连电脑，顶部设备选你的 iPhone → 点 ▶
+4. 首次运行手机会提示"不受信任的开发者"，去 设置 → 通用 → VPN与设备管理 里信任一下
+
+⚠️ 免费账号签的 App **7天后会过期**需要重新装，且不能给别人装。要长期用或给别人测，
+就得交 $99/年 的 Apple Developer Program。
+
+### 每次改完网页代码
+
+```bash
+npm run ios:sync
+```
+
+然后回 Xcode 重新点运行即可。
+
+### 上架 App Store 需要的
+
+| 项目 | 说明 |
+|---|---|
+| Apple Developer Program | **$99/年**，没有它连 TestFlight 内测都做不了 |
+| App 图标 | 1024×1024 无透明通道，用 @capacitor/assets 生成全套 |
+| 隐私政策网址 | 强制要求，必须是可公开访问的页面 |
+| 中国大陆上架 | 需要 **ICP 备案号**，审核比安卓严格得多 |
+
+⚠️ **重要**：App 内如果要卖会员，苹果强制走 App 内购（抽成 15-30%），
+直接接微信/支付宝会被拒审。我们接的 ZPay 在 iOS 端不能用于卖会员，
+这块等真要上架时需要单独处理（常见做法是 iOS 端引导到网页版购买，
+但苹果对"引导站外支付"也有限制，需要小心处理）。
 
 ---
 
@@ -114,6 +160,10 @@ App 内如果卖会员，苹果要求虚拟商品走 App 内购（抽成 15-30%�
   - 麦克风权限请求与语音识别服务调用 ✓
   - 无 JS 报错
 - [ ] 有真机时再验一遍（真机能测到真实麦克风、TTS语音包、中文输入法）
+- [x] iOS 工程已生成（Bundle ID 与安卓一致：org.langbuddy.app）
+- [x] iOS 隐私权限说明已写入 Info.plist（麦克风/语音识别/相机/相册）
+      —— 这几项缺失会导致请求权限时闪退且上架被拒
+- [ ] 在 M1 Mac 上跑一遍模拟器，确认各功能正常
 - [ ] 应用图标和启动图替换成自己的设计
 - [ ] 应用图标和启动图替换成自己的设计
 - [ ] 语音识别原生插件（如果需要 App 内也能语音输入）
