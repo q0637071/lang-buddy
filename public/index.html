@@ -622,7 +622,7 @@
         <table class="admin-table" id="adminUsersTable">
           <thead>
             <tr>
-              <th>用户名</th><th>昵称</th><th>会员</th><th>目标语言</th><th>已掌握词</th><th>学习中</th><th>错题数</th><th>AI对话</th><th>连续天数</th><th class="admin-col-ip">注册公网IP</th><th class="admin-col-ip">注册归属地</th><th class="admin-col-ip">运营商</th><th>注册时间</th><th>操作</th>
+              <th>用户名</th><th>昵称</th><th>会员</th><th>目标语言</th><th>已掌握词</th><th>学习中</th><th>错题数</th><th>AI对话</th><th>连续天数</th><th class="admin-col-ip">注册公网IP</th><th class="admin-col-ip">注册归属地</th><th class="admin-col-ip">运营商</th><th class="admin-col-ip">最近登录</th><th class="admin-col-ip">最近登出</th><th>注册时间</th><th>操作</th>
             </tr>
           </thead>
           <tbody id="adminUsersBody"></tbody>
@@ -742,6 +742,21 @@
       <p class="form-error" id="adminAddUserError"></p>
       <button type="submit" class="btn btn-primary btn-block">创建账号</button>
     </form>
+  </div>
+</div>
+
+<!-- 管理员：某用户的登录/登出记录 -->
+<div class="modal-overlay" id="authLogOverlay" hidden>
+  <div class="modal modal-authlog">
+    <button class="modal-close" id="authLogClose">×</button>
+    <h3 class="authlog-title" id="authLogTitle">登录记录</h3>
+    <p class="form-hint">只保留最近 50 条。Cookie 到期导致的自动掉线不会产生登出记录，所以登录条数通常多于登出。</p>
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead><tr><th>时间</th><th>动作</th><th>方式</th><th>IP</th></tr></thead>
+        <tbody id="authLogBody"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 

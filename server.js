@@ -313,6 +313,27 @@ function requireSuperAdmin(req, res, next) {
   next();
 }
 
+// ---- 登录/登出行为记录（仅超级管理员可查看）----
+// 每个用户只保留最近 50 条，避免长期使用后数据无限膨胀。
+// 注意：cookie 到期导致的"自动掉线"不会产生登出记录，因为那是客户端静默失效，
+// 服务端并不知情——所以登录记录数量通常会多于登出记录，这是正常的。
+const AUTH_LOG_LIMIT = 50;
+function recordAuthEvent(user, type, method, req) {
+  if (!user) return;
+  if (!Array.isArray(user.authLog)) user.authLog = [];
+  user.authLog.push({
+    type,                       // 'login' | 'logout'
+    method: method || '',       // password / phone / register / qq / wechat
+    at: Date.now(),
+    ip: getClientIp(req),
+  });
+  if (user.authLog.length > AUTH_LOG_LIMIT) {
+    user.authLog = user.authLog.slice(-AUTH_LOG_LIMIT);
+  }
+  if (type === 'login') user.lastLoginAt = Date.now();
+  else user.lastLogoutAt = Date.now();
+}
+
 function publicUser(user) {
   return {
     username: user.username,
@@ -458,6 +479,7 @@ app.post('/api/register', rateLimit(10), async (req, res) => {
     registrationRegion: '查询中...',
     phoneVerified: true,
   };
+  recordAuthEvent(db.users[username], 'login', 'register', req);
   saveDB(db);
   req.session.userId = username;
   res.json({ user: publicUser(db.users[username]) });
@@ -472,6 +494,8 @@ app.post('/api/login', rateLimit(20), async (req, res) => {
   if (!user || !user.passwordHash) return res.status(400).json({ error: '用户名或密码错误' });
   const ok = await bcrypt.compare(password || '', user.passwordHash);
   if (!ok) return res.status(400).json({ error: '用户名或密码错误' });
+  recordAuthEvent(user, 'login', 'password', req);
+  saveDB(db);
   req.session.userId = username;
   res.json({ user: publicUser(user) });
 });
@@ -565,8 +589,9 @@ app.post('/api/auth/phone/verify', rateLimit(15), async (req, res) => {
       registrationRegion: '查询中...',
       phoneVerified: true,
     };
-    saveDB(db);
   }
+  recordAuthEvent(db.users[userId], 'login', isNewUser ? 'register' : 'phone', req);
+  saveDB(db);
   req.session.userId = userId;
   res.json({ user: publicUser(db.users[userId]) });
   if (isNewUser) fillRegistrationRegion(phone, clientIp);
@@ -767,9 +792,10 @@ app.get('/api/auth/:provider/callback', async (req, res) => {
         // 第三方登录没有手机号，免费额度仍需绑定手机后才发放（防刷策略保持一致）
         phoneVerified: false,
       };
-      saveDB(db);
       fillRegistrationRegion(username, getClientIp(req));
     }
+    recordAuthEvent(db.users[username], 'login', provider, req);
+    saveDB(db);
     req.session.userId = username;
     // 带上 token，App(Capacitor) 端从URL里取出来存本地即可完成登录
     res.redirect('/?login_token=' + encodeURIComponent(makeAuthToken(username)));
@@ -780,6 +806,15 @@ app.get('/api/auth/:provider/callback', async (req, res) => {
 });
 
 app.post('/api/logout', (req, res) => {
+  // 先记录再销毁会话，否则拿不到是谁登出的
+  if (req.session.userId) {
+    const db = loadDB();
+    const user = db.users[req.session.userId];
+    if (user) {
+      recordAuthEvent(user, 'logout', '', req);
+      saveDB(db);
+    }
+  }
   req.session.destroy(() => res.json({ ok: true }));
 });
 
@@ -2002,10 +2037,26 @@ app.get('/api/admin/users', requireAdmin, (req, res) => {
       row.regDistrict = geo.district || '';
       row.regIsp = geo.isp || '';
       row.regProxy = !!geo.proxy;
+      // 登录/登出时间同属敏感信息，只给超级管理员
+      row.lastLoginAt = u.lastLoginAt || null;
+      row.lastLogoutAt = u.lastLogoutAt || null;
+      row.loginCount = (u.authLog || []).filter(e => e.type === 'login').length;
     }
     return row;
   }).sort((a, b) => b.createdAt - a.createdAt);
   res.json({ users, canSeeIp });
+});
+
+// 某个用户的完整登录/登出记录，只有超级管理员能看
+app.get('/api/admin/users/:username/auth-log', requireSuperAdmin, (req, res) => {
+  const db = loadDB();
+  const user = db.users[req.params.username];
+  if (!user) return res.status(404).json({ error: '用户不存在' });
+  res.json({
+    username: user.username,
+    // 最近的排前面，方便直接看最新动向
+    log: (user.authLog || []).slice().reverse(),
+  });
 });
 
 // 管理员手动创建账号：常用于给测试/线下沟通好的用户直接开号，跳过手机验证门槛

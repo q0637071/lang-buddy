@@ -2379,6 +2379,38 @@
   }
 
   // ---------- 管理后台 ----------
+  function fmtDateTime(ts) {
+    if (!ts) return '—';
+    const d = new Date(ts);
+    const p = (n) => String(n).padStart(2, '0');
+    return `${d.getMonth() + 1}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+
+  const AUTH_METHOD_ZH = {
+    password: '账号密码', phone: '手机验证码', register: '注册', qq: 'QQ', wechat: '微信',
+  };
+
+  async function openAuthLog(username) {
+    try {
+      const data = await api(`/admin/users/${encodeURIComponent(username)}/auth-log`);
+      $('#authLogTitle').textContent = `${username} 的登录记录`;
+      $('#authLogBody').innerHTML = data.log.length
+        ? data.log.map(e => `
+            <tr>
+              <td>${new Date(e.at).toLocaleString('zh-CN')}</td>
+              <td>${e.type === 'login' ? '<span class="admin-badge-yes">登录</span>' : '<span class="admin-badge-no">登出</span>'}</td>
+              <td>${escapeHtml(AUTH_METHOD_ZH[e.method] || e.method || '—')}</td>
+              <td>${escapeHtml(e.ip || '—')}</td>
+            </tr>`).join('')
+        : '<tr><td colspan="4">暂无记录（该功能上线后产生的登录才会被记录）</td></tr>';
+      $('#authLogOverlay').hidden = false;
+    } catch (err) {
+      toast(err.message);
+    }
+  }
+  $('#authLogClose').addEventListener('click', () => { $('#authLogOverlay').hidden = true; });
+  $('#authLogOverlay').addEventListener('click', (e) => { if (e.target.id === 'authLogOverlay') $('#authLogOverlay').hidden = true; });
+
   async function renderAdmin() {
     if (!state.user?.isAdmin) return;
     try {
@@ -2412,7 +2444,9 @@
         const ipCells = canSeeIp ? `
           <td class="admin-col-ip">${escapeHtml(u.registrationIp || '-')}</td>
           <td class="admin-col-ip">${escapeHtml([u.regProvince, u.regCity, u.regDistrict].filter(Boolean).join(' ') || u.registrationRegion || '未知')}${u.regProxy ? ' <span class="admin-proxy-flag">代理</span>' : ''}</td>
-          <td class="admin-col-ip">${escapeHtml(u.regIsp || '-')}</td>` : '';
+          <td class="admin-col-ip">${escapeHtml(u.regIsp || '-')}</td>
+          <td class="admin-col-ip">${fmtDateTime(u.lastLoginAt)}</td>
+          <td class="admin-col-ip">${fmtDateTime(u.lastLogoutAt)}</td>` : '';
         return `
         <tr>
           <td>${escapeHtml(u.username)}</td>
@@ -2428,6 +2462,7 @@
           <td>${new Date(u.createdAt).toLocaleDateString('zh-CN')}</td>
           <td class="admin-actions">
             <button type="button" class="btn-admin-action" data-action="toggle-member" data-username="${escapeHtml(u.username)}" data-ismember="${u.isMember ? '1' : ''}">${u.isMember ? '取消会员' : '设为会员'}</button>
+            ${isSuper ? `<button type="button" class="btn-admin-action" data-action="auth-log" data-username="${escapeHtml(u.username)}">登录记录</button>` : ''}
             ${isSuper ? `<button type="button" class="btn-admin-action" data-action="reset-pw" data-username="${escapeHtml(u.username)}">重置密码</button>` : ''}
             ${isSuper && !isSelf ? `<button type="button" class="btn-admin-action btn-admin-action-danger" data-action="delete" data-username="${escapeHtml(u.username)}">删除</button>` : ''}
           </td>
@@ -2452,6 +2487,8 @@
       } catch (err) {
         toast(err.message);
       }
+    } else if (action === 'auth-log') {
+      openAuthLog(username);
     } else if (action === 'reset-pw') {
       $('#adminResetPwTarget').textContent = `为用户 ${username} 设置新密码`;
       $('#adminResetPwForm').dataset.username = username;
