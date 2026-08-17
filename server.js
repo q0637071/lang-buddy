@@ -1705,7 +1705,8 @@ function readGrammar() {
 
 app.get('/api/grammar/list', requireAuth, (req, res) => {
   const grammar = readGrammar();
-  res.json({ lessons: grammar.map(g => ({ id: g.id, title: g.title, summary: g.summary })) });
+  // level 用于前端按 基础/进阶/高级 分组；老数据没有这个字段时统一归到基础
+  res.json({ lessons: grammar.map(g => ({ id: g.id, title: g.title, summary: g.summary, level: g.level || 'basic' })) });
 });
 
 app.get('/api/grammar/:id', requireAuth, (req, res) => {

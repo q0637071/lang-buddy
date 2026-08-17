@@ -1833,12 +1833,30 @@
     try {
       const data = await api('/grammar/list');
       state.grammarLessons = data.lessons;
-      $('#grammarList').innerHTML = data.lessons.map(l => `
-        <div class="grammar-item" data-id="${l.id}">
-          <h4>${escapeHtml(l.title)}</h4>
-          <p>${escapeHtml(l.summary)}</p>
-        </div>
-      `).join('');
+      // 课程变多后平铺一长列不好找，按难度分组并标上序号
+      const GROUPS = [
+        { key: 'basic', label: '基础', desc: '零基础到能说完整句子' },
+        { key: 'intermediate', label: '进阶', desc: '时态、语态、非谓语' },
+        { key: 'advanced', label: '高级', desc: '各类从句与复杂句式' },
+      ];
+      $('#grammarList').innerHTML = GROUPS.map(g => {
+        const items = data.lessons.filter(l => (l.level || 'basic') === g.key);
+        if (!items.length) return '';
+        return `
+          <div class="grammar-group">
+            <div class="grammar-group-head">
+              <span class="grammar-group-label grammar-level-${g.key}">${g.label}</span>
+              <span class="grammar-group-desc">${g.desc}</span>
+              <span class="grammar-group-count">${items.length} 课</span>
+            </div>
+            ${items.map((l, i) => `
+              <div class="grammar-item" data-id="${escapeHtml(l.id)}">
+                <h4><span class="grammar-item-no">${i + 1}</span>${escapeHtml(l.title)}</h4>
+                <p>${escapeHtml(l.summary)}</p>
+              </div>
+            `).join('')}
+          </div>`;
+      }).join('');
       $all('.grammar-item').forEach(el => {
         el.addEventListener('click', () => renderGrammarDetail(el.dataset.id));
       });
@@ -1865,6 +1883,17 @@
       $('#grammarExplanation').textContent = lesson.explanation;
       $('#grammarExamples').innerHTML = lesson.examples.map(ex => `
         <li>${escapeHtml(ex.en)}<br><span class="zh">${escapeHtml(ex.zh)}</span></li>
+      `).join('');
+
+      // 常见错误是新加的字段，老课程数据可能没有，没有就整块隐藏
+      const mistakes = lesson.mistakes || [];
+      $('#grammarMistakesBlock').hidden = mistakes.length === 0;
+      $('#grammarMistakes').innerHTML = mistakes.map(m => `
+        <div class="grammar-mistake">
+          <div class="gm-wrong">❌ ${escapeHtml(m.wrong)}</div>
+          <div class="gm-right">✅ ${escapeHtml(m.right)}</div>
+          <div class="gm-why">${escapeHtml(m.why)}</div>
+        </div>
       `).join('');
       $('#grammarPractice').innerHTML = lesson.practice.map((p, i) => `
         <div class="practice-item" data-idx="${i}">
