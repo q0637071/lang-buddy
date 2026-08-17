@@ -643,8 +643,6 @@
   $('#btnTutorUpgrade').addEventListener('click', upgradeMembership);
   $('#btnGrammarUpgrade').addEventListener('click', async () => { await upgradeMembership(); renderGrammarDetail(state.currentGrammarId); });
 
-  // AI 形象对应的小图标，和头像选择器上的按钮保持一致
-  const AI_AVATAR_EMOJI = { ghost: '🌟', robot: '🤖', human: '👧', western: '👱‍♀️' };
 
   // 生成聊天气泡旁边的小头像。用户没设头像就用昵称首字显示成彩色圆底，
   // 这样即使从没设置过也不会是空白的灰圈
@@ -652,7 +650,8 @@
     const el = document.createElement('div');
     el.className = 'msg-avatar ' + (role === 'user' ? 'msg-avatar-user' : 'msg-avatar-ai');
     if (role === 'ai') {
-      el.textContent = AI_AVATAR_EMOJI[state.avatarStyle] || '🌟';
+      // 用当前所选形象的缩小版，保证聊天里的小头像和上方大图是同一个形象
+      el.innerHTML = miniAvatarSvg(state.avatarStyle, 34) || '🌟';
       return el;
     }
     const av = state.user?.avatar;
@@ -1307,6 +1306,30 @@
     }
   }
 
+  // 把某个形象的 SVG 做成缩小版，用于选择器按钮和聊天气泡旁的小头像。
+  // 关键：必须给 id 加前缀做隔离。四个小图同时出现在页面上时，
+  // 原始 markup 里的 avatarSkin / avatarHair 等渐变 id 会重名，
+  // 浏览器只认第一个定义，结果所有头像都会串成同一套配色。
+  function miniAvatarSvg(key, size) {
+    const cfg = AVATAR_STYLES[key];
+    if (!cfg) return '';
+    const ns = 'm' + key + '_';
+    const markup = cfg.markup
+      .replace(/id="([\w-]+)"/g, (_, id) => `id="${ns}${id}"`)
+      .replace(/url\(#([\w-]+)\)/g, (_, id) => `url(#${ns}${id})`);
+    return `<svg class="mini-avatar-svg" viewBox="${cfg.viewBox}" width="${size}" height="${size}"
+                 preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">${markup}</svg>`;
+  }
+
+  // 选择器按钮直接显示各形象的缩小版，而不是另找 emoji 顶替——
+  // 之前用 emoji 导致"小图标和大图长得不是一个人"
+  function renderAvatarStyleButtons() {
+    $all('.avatar-style-btn').forEach(btn => {
+      const key = btn.dataset.style;
+      if (AVATAR_STYLES[key]) btn.innerHTML = miniAvatarSvg(key, 34);
+    });
+  }
+
   function applyAvatarStyle(key) {
     const cfg = AVATAR_STYLES[key] || AVATAR_STYLES.ghost;
     key = AVATAR_STYLES[key] ? key : 'ghost';
@@ -1328,6 +1351,7 @@
     btn.addEventListener('click', () => applyAvatarStyle(btn.dataset.style));
   });
 
+  renderAvatarStyleButtons();
   applyAvatarStyle(safeGetItem('lb_avatar_style') || 'ghost');
 
   // ---------- AI 头像：嘴型随语音张合，配合轻微摆动的"说话姿势" ----------
