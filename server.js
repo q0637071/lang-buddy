@@ -13,14 +13,18 @@ const PORT = process.env.PORT || 3001;
 // Groq API 配置（免费，主力）
 const SF_API_KEY = process.env.SF_API_KEY;
 const SF_BASE_URL = process.env.SF_BASE_URL || 'https://api.groq.com/openai/v1/chat/completions';
-const SF_MODEL = 'llama-3.3-70b-versatile';
+// 模型名做成可配置：厂商下线模型时（llama-3.3-70b-versatile 就被 Groq 下线过，
+// 直接返回404导致全站对话瘫痪）能在环境变量里立刻改，不用重新发版
+const SF_MODEL = process.env.SF_MODEL || 'openai/gpt-oss-120b';
 const VISION_MODEL = process.env.VISION_MODEL || 'qwen/qwen3.6-27b';
 
 // OpenRouter 配置（备用，免费模型）：Groq 触发限流/报错时自动无缝切换过来救急，
 // 每次请求都会重新优先尝试 Groq，Groq 恢复后自动切回，不需要额外的"探测恢复"逻辑
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_BASE_URL = process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1/chat/completions';
-const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'nvidia/nemotron-3-super-120b-a12b:free';
+// 备用模型要选"指令型"而不是"推理型"：nemotron 那类推理模型会把自己的思考过程
+// 当成回复吐出来（用户会看到一大段自言自语），gemma 是指令模型，回复干净
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'google/gemma-4-31b-it:free';
 
 // 国内大模型兜底配置：国内厂商（智谱/阿里百炼/DeepSeek/硅基流动等）基本都兼容 OpenAI 协议，
 // 所以只要换 baseUrl + key + model 三个环境变量就能切换厂商，不用改代码。
@@ -422,9 +426,14 @@ async function callChatAPI(opts) {
     } catch (e) {
       lastError = e;
       const isLast = i === available.length - 1;
-      // 只有限流才降级到下一家；其他错误（比如参数写错了）降级也救不了，直接抛出去
-      if (!isRateLimitError(e) || isLast) throw e;
-      console.warn(`${p.name} 触发限流，自动切换到 ${available[i + 1].name}:`, e.message);
+      if (isLast) throw e;
+      // 任何错误都降级到下一家，不只是限流。
+      // 教训：之前只在限流时降级，结果 Groq 下线了某个模型返回 404，
+      // 这个错误不匹配"限流"就被直接抛出，压根没去试明明是好的 OpenRouter，
+      // 导致全站对话瘫痪。上游厂商随时可能下线模型/改鉴权/挂掉，
+      // 只要还有备用通道就应该试，试不通再报错。
+      const reason = isRateLimitError(e) ? '触发限流' : `调用失败(${e.status || '?'})`;
+      console.warn(`${p.name} ${reason}，自动切换到 ${available[i + 1].name}:`, e.message);
     }
   }
   throw lastError;
@@ -1034,9 +1043,13 @@ ${sameLang
   : `3. 如果学生用${replyLangName}尝试表达但有错误，先温和纠正；如果学生只用${inputLangName}提问，就直接用${replyLangName}自然地回答或示范表达，必要时可用括号给出简短${inputLangName}提示。`}
 4. 回复简洁自然，像真实对话，每次不超过80个词，多用提问引导学生继续说下去。
 5. 不要长篇大论讲课，保持轻松的对话感。
-6. 极其重要：无论历史对话中出现过什么语言，你自己的每一句回复都必须整体用${replyLangName}书写（括号里的简短提示除外）。绝不能整句改用${inputLangName}回复。`;
+6. 极其重要：无论历史对话中出现过什么语言，你自己的每一句回复都必须整体用${replyLangName}书写（括号里的简短提示除外）。${sameLang ? '' : `绝不能整句改用${inputLangName}回复。`}`;
 
-  const languageReminder = `（提醒：接下来请只用${replyLangName}回复，不要用${inputLangName}回复整句话）`;
+  // 输入语言和回复语言相同时（比如都选英语），原来那句"不要用X回复整句话"会和
+  // "必须用X回复"直接矛盾，模型会困惑甚至把纠结过程输出出来。这种情况下不加这半句。
+  const languageReminder = sameLang
+    ? `（提醒：请用${replyLangName}回复）`
+    : `（提醒：接下来请只用${replyLangName}回复，不要用${inputLangName}回复整句话）`;
 
   const messages = [
     { role: 'system', content: systemPrompt },

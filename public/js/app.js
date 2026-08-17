@@ -565,6 +565,17 @@
   if (window.speechSynthesis) {
     loadVoiceList();
     window.speechSynthesis.onvoiceschanged = loadVoiceList;
+    // getVoices() 首次调用常常是空的，标准做法是等 onvoiceschanged。
+    // 但部分安卓浏览器（含国产机型）这个事件根本不触发，只靠它会永远停在空列表，
+    // 所以再补一个短时轮询兜底：拿到音色就停，最多试10次（约5秒）。
+    let voicePollLeft = 10;
+    const voicePoll = setInterval(() => {
+      if (availableVoices.length || --voicePollLeft <= 0) {
+        clearInterval(voicePoll);
+        return;
+      }
+      loadVoiceList();
+    }, 500);
   }
 
   function voicePrefKey(lang) { return 'lb_voice_' + lang; }
@@ -594,7 +605,10 @@
     if (naturalOnly.length) list = naturalOnly;
 
     if (!list.length) {
-      select.innerHTML = '<option value="">（当前设备没有可用的语音包）</option>';
+      // 拿不到音色列表 ≠ 不能朗读。很多国产安卓机自带 TTS 引擎但不向网页暴露音色清单，
+      // 这时不指定 voice 直接朗读依然是正常出声的。所以这里只说"用系统默认声音"，
+      // 不要写成"没有可用语音包"，那会让用户误以为功能坏了。
+      select.innerHTML = '<option value="">系统默认声音</option>';
       select.disabled = true;
       return;
     }
