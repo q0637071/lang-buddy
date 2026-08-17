@@ -1179,58 +1179,60 @@
     human: {
       viewBox: '0 0 200 220',
       height: 141,
-      transformOrigin: '100px 172px',
-      mouth: { closed: { h: 7, y: 146, rx: 3.5 }, open: { h: 20, y: 140, rx: 9 } },
+      transformOrigin: '100px 190px',
+      mouth: { closed: { h: 6, y: 156, rx: 3 }, open: { h: 17, y: 150, rx: 8 } },
       markup: `
-        <defs>
-          <linearGradient id="avatarShoulder" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#FF9EC4"/><stop offset="100%" stop-color="#F2718F"/>
-          </linearGradient>
-          <linearGradient id="avatarSkin" x1="20%" y1="0%" x2="80%" y2="100%">
-            <stop offset="0%" stop-color="#FFE0C4"/><stop offset="100%" stop-color="#F7C9A3"/>
-          </linearGradient>
-          <linearGradient id="avatarHair" x1="15%" y1="0%" x2="85%" y2="100%">
-            <stop offset="0%" stop-color="#5B4033"/><stop offset="100%" stop-color="#33241C"/>
-          </linearGradient>
-          <radialGradient id="avatarGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="#3DD9D2" stop-opacity=".28"/>
-            <stop offset="100%" stop-color="#3DD9D2" stop-opacity="0"/>
-          </radialGradient>
-        </defs>
-        <circle class="avatar-glow" cx="100" cy="112" r="100" fill="url(#avatarGlow)"/>
-        <text class="avatar-sparkle avatar-sparkle-1" x="20" y="58" font-size="13">✨</text>
-        <text class="avatar-sparkle avatar-sparkle-2" x="166" y="48" font-size="10">✨</text>
-        <!-- 肩膀 -->
-        <path d="M22 220 C26 182 56 164 100 164 C144 164 174 182 178 220 Z" fill="url(#avatarShoulder)"/>
-        <rect x="88" y="150" width="24" height="26" rx="11" fill="url(#avatarSkin)"/>
-        <g class="avatar-head">
-          <!-- 双马尾 -->
-          <ellipse cx="34" cy="120" rx="17" ry="26" fill="url(#avatarHair)"/>
-          <ellipse cx="166" cy="120" rx="17" ry="26" fill="url(#avatarHair)"/>
-          <!-- 后发 -->
-          <ellipse cx="100" cy="104" rx="66" ry="68" fill="url(#avatarHair)"/>
-          <!-- 脸 -->
-          <ellipse cx="100" cy="110" rx="55" ry="58" fill="url(#avatarSkin)"/>
-          <!-- 刘海 -->
-          <path d="M45 92 C48 56 70 40 100 40 C130 40 152 56 155 92 C150 74 132 66 118 72 C112 60 88 60 82 72 C68 66 50 74 45 92 Z" fill="url(#avatarHair)"/>
-          <!-- 耳朵 -->
-          <ellipse cx="46" cy="116" rx="8" ry="12" fill="url(#avatarSkin)"/>
-          <ellipse cx="154" cy="116" rx="8" ry="12" fill="url(#avatarSkin)"/>
-          <!-- 眼睛 -->
-          <g class="avatar-eye avatar-eye-l">
-            <ellipse cx="78" cy="112" rx="10" ry="12" fill="#2E2119"/>
-            <circle cx="81.5" cy="107.5" r="3.6" fill="#fff"/>
-          </g>
-          <g class="avatar-eye avatar-eye-r">
-            <ellipse cx="122" cy="112" rx="10" ry="12" fill="#2E2119"/>
-            <circle cx="125.5" cy="107.5" r="3.6" fill="#fff"/>
-          </g>
-          <!-- 腮红 -->
-          <ellipse cx="60" cy="132" rx="11" ry="6" fill="#FF9EB5" opacity=".55"/>
-          <ellipse cx="140" cy="132" rx="11" ry="6" fill="#FF9EB5" opacity=".55"/>
-          <!-- 嘴 -->
-          <rect id="avatarMouth" x="86" y="146" width="28" height="7" rx="3.5" fill="#D9556B"/>
-        </g>`,
+  <defs>
+    <radialGradient id="avatarSkin" cx="38%" cy="32%" r="72%">
+      <stop offset="0%" stop-color="#FFE7C9"/><stop offset="62%" stop-color="#FBD2A4"/><stop offset="100%" stop-color="#F0BC85"/>
+    </radialGradient>
+    <linearGradient id="avatarHair" x1="25%" y1="0%" x2="75%" y2="100%">
+      <stop offset="0%" stop-color="#6E4B34"/><stop offset="55%" stop-color="#4B3122"/><stop offset="100%" stop-color="#352016"/>
+    </linearGradient>
+    <radialGradient id="avatarGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#3DD9D2" stop-opacity=".26"/>
+      <stop offset="100%" stop-color="#3DD9D2" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle class="avatar-glow" cx="100" cy="110" r="100" fill="url(#avatarGlow)"/>
+  <text class="avatar-sparkle avatar-sparkle-1" x="14" y="50" font-size="13">✨</text>
+  <text class="avatar-sparkle avatar-sparkle-2" x="170" y="42" font-size="10">✨</text>
+  <g class="avatar-head">
+    <!-- 头发整体：一大块，两侧垂到脸颊下方且末端是圆的 -->
+    <path d="M100 22
+             C147 22 174 60 174 108
+             C174 140 170 166 164 184
+             C158 192 146 192 142 184
+             C138 168 138 148 138 136
+             L62 136
+             C62 148 62 168 58 184
+             C54 192 42 192 36 184
+             C30 166 26 140 26 108
+             C26 60 53 22 100 22 Z" fill="url(#avatarHair)"/>
+    <!-- 脸：比头发窄一圈，位置略靠下 -->
+    <ellipse cx="100" cy="122" rx="54" ry="58" fill="url(#avatarSkin)"/>
+    <!-- 齐刘海：下沿只用一条平滑的弧（之前分段画会出现两个凸起，像美人尖），
+         并且压得低一些，额头不要太高，整体更显小孩子气 -->
+    <path d="M42 108 C42 62 66 30 100 30 C134 30 158 62 158 108
+             C136 118 64 118 42 108 Z" fill="url(#avatarHair)"/>
+    <!-- 耳朵 -->
+    <ellipse cx="47" cy="126" rx="8" ry="12" fill="url(#avatarSkin)"/>
+    <ellipse cx="153" cy="126" rx="8" ry="12" fill="url(#avatarSkin)"/>
+    <!-- 眼睛 -->
+    <g class="avatar-eye avatar-eye-l">
+      <ellipse cx="79" cy="126" rx="8.5" ry="10" fill="#2B1D14"/>
+      <circle cx="81.8" cy="122.5" r="3" fill="#fff"/>
+    </g>
+    <g class="avatar-eye avatar-eye-r">
+      <ellipse cx="121" cy="126" rx="8.5" ry="10" fill="#2B1D14"/>
+      <circle cx="123.8" cy="122.5" r="3" fill="#fff"/>
+    </g>
+    <!-- 腮红 -->
+    <ellipse cx="62" cy="146" rx="12" ry="6.5" fill="#FF9EB5" opacity=".5"/>
+    <ellipse cx="138" cy="146" rx="12" ry="6.5" fill="#FF9EB5" opacity=".5"/>
+    <!-- 嘴 -->
+    <rect id="avatarMouth" x="89" y="156" width="22" height="6" rx="3" fill="#C4485E"/>
+  </g>`,
     },
     western: {
       viewBox: '0 0 200 220',
