@@ -353,8 +353,41 @@ function publicUser(user) {
     isSuperAdmin: isSuperAdminName(user.username),
     phone: user.phone || null,
     phoneVerified: !!user.phoneVerified,
+    avatar: user.avatar || null,
   };
 }
+
+// 头像存进数据库而不是磁盘：Render 的容器磁盘是临时的，存成文件的话每次部署
+// 所有人的头像都会消失。但整个库是一个 Mongo 文档（16MB上限），所以自定义头像
+// 必须足够小——前端会先压到 96×96 再上传，这里再兜底卡一道大小。
+const AVATAR_PRESETS = ['🦊', '🐼', '🐨', '🐯', '🦁', '🐸', '🐧', '🦉', '🐬', '🦄', '🌸', '⭐'];
+const MAX_AVATAR_BYTES = 24 * 1024; // base64 后约 24KB，对应 96×96 的 JPEG 绰绰有余
+
+app.post('/api/profile/avatar', requireAuth, (req, res) => {
+  const { type, value } = req.body || {};
+  if (type === 'preset') {
+    if (!AVATAR_PRESETS.includes(value)) return res.status(400).json({ error: '不支持的头像' });
+  } else if (type === 'image') {
+    if (typeof value !== 'string' || !/^data:image\/(jpeg|png|webp);base64,/.test(value)) {
+      return res.status(400).json({ error: '图片格式不支持' });
+    }
+    if (value.length > MAX_AVATAR_BYTES) {
+      return res.status(400).json({ error: '图片过大，请换一张' });
+    }
+  } else if (type !== 'none') {
+    return res.status(400).json({ error: '参数不合法' });
+  }
+
+  const db = loadDB();
+  const user = db.users[req.session.userId];
+  user.avatar = type === 'none' ? null : { type, value };
+  saveDB(db);
+  res.json({ user: publicUser(user) });
+});
+
+app.get('/api/profile/avatar-presets', (req, res) => {
+  res.json({ presets: AVATAR_PRESETS });
+});
 
 const LEVEL_ZH = { beginner: '初级', intermediate: '中级', advanced: '高级' };
 const LANG_NAME = { zh: '中文', en: '英语', ja: '日语', ko: '韩语', fr: '法语', de: '德语', es: '西班牙语' };

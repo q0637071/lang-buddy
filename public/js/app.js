@@ -174,7 +174,13 @@
     const authArea = $('#authArea');
     nav.hidden = false;
     $('#navAdmin').hidden = !state.user.isAdmin;
-    authArea.innerHTML = `<span style="font-size:14px;color:var(--text-muted);margin-right:4px;">👤 ${escapeHtml(state.user.nickname)}</span>`;
+    const av = state.user.avatar;
+    const avatarHtml = av?.type === 'image'
+      ? `<img class="topbar-avatar" src="${escapeHtml(av.value)}" alt="">`
+      : av?.type === 'preset'
+        ? `<span class="topbar-avatar">${escapeHtml(av.value)}</span>`
+        : `<span class="topbar-avatar topbar-avatar-letter">${escapeHtml((state.user.nickname || 'U').trim().charAt(0).toUpperCase())}</span>`;
+    authArea.innerHTML = `${avatarHtml}<span class="topbar-name">${escapeHtml(state.user.nickname)}</span>`;
   }
 
   function updateTopbar() {
@@ -637,19 +643,53 @@
   $('#btnTutorUpgrade').addEventListener('click', upgradeMembership);
   $('#btnGrammarUpgrade').addEventListener('click', async () => { await upgradeMembership(); renderGrammarDetail(state.currentGrammarId); });
 
+  // AI 形象对应的小图标，和头像选择器上的按钮保持一致
+  const AI_AVATAR_EMOJI = { ghost: '🌟', robot: '🤖', human: '👧', western: '👱‍♀️' };
+
+  // 生成聊天气泡旁边的小头像。用户没设头像就用昵称首字显示成彩色圆底，
+  // 这样即使从没设置过也不会是空白的灰圈
+  function buildAvatarEl(role) {
+    const el = document.createElement('div');
+    el.className = 'msg-avatar ' + (role === 'user' ? 'msg-avatar-user' : 'msg-avatar-ai');
+    if (role === 'ai') {
+      el.textContent = AI_AVATAR_EMOJI[state.avatarStyle] || '🌟';
+      return el;
+    }
+    const av = state.user?.avatar;
+    if (av?.type === 'image') {
+      const img = document.createElement('img');
+      img.src = av.value;
+      img.alt = '';
+      el.appendChild(img);
+    } else if (av?.type === 'preset') {
+      el.textContent = av.value;
+    } else {
+      el.textContent = (state.user?.nickname || 'U').trim().charAt(0).toUpperCase();
+      el.classList.add('msg-avatar-letter');
+    }
+    return el;
+  }
+
   function buildMsgEl(role, text) {
-    const div = document.createElement('div');
-    div.className = 'msg ' + (role === 'user' ? 'msg-user' : 'msg-ai');
-    div.textContent = text;
+    // 外层负责排版（头像 + 气泡左右分布），气泡本身还是原来那个 .msg
+    const row = document.createElement('div');
+    row.className = 'msg-row ' + (role === 'user' ? 'msg-row-user' : 'msg-row-ai');
+
+    const bubble = document.createElement('div');
+    bubble.className = 'msg ' + (role === 'user' ? 'msg-user' : 'msg-ai');
+    bubble.textContent = text;
     if (role === 'ai') {
       const speak = document.createElement('span');
       speak.className = 'msg-speak';
       speak.textContent = '🔊';
       speak.title = '朗读';
       speak.addEventListener('click', () => speakText(text));
-      div.appendChild(speak);
+      bubble.appendChild(speak);
     }
-    return div;
+
+    row.appendChild(buildAvatarEl(role));
+    row.appendChild(bubble);
+    return row;
   }
 
   function appendMsg(role, text, opts = {}) {
@@ -677,11 +717,15 @@
   function showTypingBubble() {
     const win = $('#chatWindow');
     if (document.getElementById('chatTyping')) return;
-    const div = document.createElement('div');
-    div.className = 'msg msg-ai msg-typing';
-    div.id = 'chatTyping';
-    div.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
-    win.appendChild(div);
+    const row = document.createElement('div');
+    row.className = 'msg-row msg-row-ai';
+    row.id = 'chatTyping';
+    const bubble = document.createElement('div');
+    bubble.className = 'msg msg-ai msg-typing';
+    bubble.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+    row.appendChild(buildAvatarEl('ai'));
+    row.appendChild(bubble);
+    win.appendChild(row);
     win.scrollTop = win.scrollHeight;
   }
   function hideTypingBubble() {
@@ -692,10 +736,14 @@
   // 用户如果正好没看到，就只会觉得"发出去石沉大海"
   function appendChatError(text) {
     const win = $('#chatWindow');
-    const div = document.createElement('div');
-    div.className = 'msg msg-ai msg-error';
-    div.textContent = '⚠️ ' + text;
-    win.appendChild(div);
+    const row = document.createElement('div');
+    row.className = 'msg-row msg-row-ai';
+    const bubble = document.createElement('div');
+    bubble.className = 'msg msg-ai msg-error';
+    bubble.textContent = '⚠️ ' + text;
+    row.appendChild(buildAvatarEl('ai'));
+    row.appendChild(bubble);
+    win.appendChild(row);
     win.scrollTop = win.scrollHeight;
   }
 
@@ -2575,10 +2623,95 @@
   });
 
   // ---------- 我的 / Profile ----------
+  // ---------- 我的头像 ----------
+  const AVATAR_PRESETS = ['🦊', '🐼', '🐨', '🐯', '🦁', '🐸', '🐧', '🦉', '🐬', '🦄', '🌸', '⭐'];
+
+  // 头像必须压得很小：整个数据库是一个 Mongo 文档（16MB上限），几KB一张才撑得住。
+  // 这里一律重新编码成 96×96 的 JPEG（而不是"够小就原样返回"），
+  // 否则一张 96×96 但体积很大的 PNG 会原样上传然后被服务端拒绝，用户会一头雾水。
+  // 同时按短边居中裁剪成正方形，避免非正方形头像被拉变形。
+  function toAvatarDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const S = 96;
+        const side = Math.min(img.width, img.height);
+        const sx = (img.width - side) / 2;
+        const sy = (img.height - side) / 2;
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = S;
+        canvas.getContext('2d').drawImage(img, sx, sy, side, side, 0, 0, S, S);
+        resolve(canvas.toDataURL('image/jpeg', 0.72));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('图片加载失败')); };
+      img.src = url;
+    });
+  }
+
+  function renderAvatarPicker() {
+    const av = state.user?.avatar;
+    const cur = $('#profileAvatarCurrent');
+    cur.innerHTML = '';
+    if (av?.type === 'image') {
+      const img = document.createElement('img');
+      img.src = av.value;
+      cur.appendChild(img);
+    } else if (av?.type === 'preset') {
+      cur.textContent = av.value;
+    } else {
+      cur.textContent = (state.user?.nickname || 'U').trim().charAt(0).toUpperCase();
+      cur.classList.add('is-letter');
+    }
+    if (av) cur.classList.remove('is-letter');
+
+    $('#avatarPresetGrid').innerHTML = AVATAR_PRESETS.map(p => `
+      <button type="button" class="avatar-preset${av?.type === 'preset' && av.value === p ? ' active' : ''}" data-preset="${p}">${p}</button>
+    `).join('');
+  }
+
+  async function saveAvatar(payload) {
+    try {
+      const data = await api('/profile/avatar', { method: 'POST', body: payload });
+      state.user = data.user;
+      renderAvatarPicker();
+      updateTopbar();
+      $('#avatarHint').textContent = '已保存';
+      setTimeout(() => { $('#avatarHint').textContent = ''; }, 2000);
+    } catch (err) {
+      $('#avatarHint').textContent = err.message;
+    }
+  }
+
+  $('#avatarPresetGrid').addEventListener('click', (e) => {
+    const btn = e.target.closest('.avatar-preset');
+    if (btn) saveAvatar({ type: 'preset', value: btn.dataset.preset });
+  });
+  $('#btnUploadAvatar').addEventListener('click', (e) => {
+    e.stopPropagation(); // 同错题本那个坑：避免冒泡导致文件框被触发两次
+    $('#avatarFileInput').click();
+  });
+  $('#btnClearAvatar').addEventListener('click', () => saveAvatar({ type: 'none' }));
+
+  $('#avatarFileInput').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    e.target.value = ''; // 允许连续选同一张图
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { $('#avatarHint').textContent = '请选择图片文件'; return; }
+    $('#avatarHint').textContent = '处理中...';
+    try {
+      await saveAvatar({ type: 'image', value: await toAvatarDataUrl(file) });
+    } catch (err) {
+      $('#avatarHint').textContent = err.message || '处理失败';
+    }
+  });
+
   function renderProfile() {
     $('#profileNickname').value = state.user.nickname;
     $('#profileLang').value = state.user.targetLang;
     $('#profileLevel').value = state.user.level;
+    renderAvatarPicker();
     const box = $('#profileMemberBox');
     if (state.user.isMember) {
       const date = new Date(state.user.memberSince).toLocaleDateString('zh-CN');

@@ -545,6 +545,19 @@
     <div class="container container-narrow">
       <h2 class="page-title">我的</h2>
       <div class="profile-card">
+        <div class="profile-avatar-section">
+          <div class="profile-avatar-current" id="profileAvatarCurrent"></div>
+          <div class="profile-avatar-right">
+            <label>我的头像</label>
+            <div class="avatar-preset-grid" id="avatarPresetGrid"></div>
+            <div class="avatar-actions">
+              <input type="file" id="avatarFileInput" accept="image/*" hidden>
+              <button type="button" class="btn btn-outline btn-sm" id="btnUploadAvatar">上传照片</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="btnClearAvatar">恢复默认</button>
+            </div>
+            <p class="form-hint" id="avatarHint"></p>
+          </div>
+        </div>
         <div class="profile-row">
           <label>昵称</label>
           <input type="text" id="profileNickname" maxlength="30">
