@@ -997,9 +997,36 @@
   $('#btnVoiceCall').addEventListener('click', startVoiceCall);
   $('#btnEndVoiceCall').addEventListener('click', stopVoiceCall);
 
+  // 微信/QQ 等 App 内置浏览器普遍没有 speechSynthesis，
+  // 只说"不支持"用户完全不知道该怎么办，这里给出可操作的指引
+  function speechUnavailableHint() {
+    const ua = navigator.userAgent || '';
+    if (/MicroMessenger/i.test(ua)) {
+      return '微信内置浏览器不支持朗读，请点右上角「···」→「在浏览器打开」';
+    }
+    if (/QQ\//i.test(ua) || /QQBrowser/i.test(ua)) {
+      return 'QQ内置浏览器不支持朗读，请点右上角菜单→用手机自带浏览器打开';
+    }
+    if (/Weibo/i.test(ua)) {
+      return '微博内置浏览器不支持朗读，请用手机自带浏览器打开本站';
+    }
+    return '当前浏览器不支持语音朗读，建议换用 Chrome 或手机自带浏览器';
+  }
+
+  // 常驻提示：toast 两秒就没了容易错过，在会用到朗读的页面上常显一条，
+  // 让用户点朗读之前就知道该怎么办
+  function renderTtsNotices() {
+    if (window.speechSynthesis) return;
+    const msg = '🔇 ' + speechUnavailableHint();
+    ['#ttsNoticeVocab', '#ttsNoticeTutor'].forEach(sel => {
+      const el = $(sel);
+      if (el) { el.textContent = msg; el.hidden = false; }
+    });
+  }
+
   function speakText(text, lang, onEnd) {
     if (!window.speechSynthesis) {
-      toast('当前浏览器不支持语音朗读');
+      toast(speechUnavailableHint());
       if (onEnd) onEnd();
       return;
     }
@@ -1352,6 +1379,7 @@
   });
 
   renderAvatarStyleButtons();
+  renderTtsNotices();
   applyAvatarStyle(safeGetItem('lb_avatar_style') || 'ghost');
 
   // ---------- AI 头像：嘴型随语音张合，配合轻微摆动的"说话姿势" ----------

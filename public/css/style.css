@@ -366,6 +366,9 @@ p { line-height: 1.6; color: var(--text-muted); }
 
 /* Grammar */
 .grammar-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+/* 浏览器不支持朗读时的常驻提示 */
+.tts-notice { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; border-radius: 10px; padding: 10px 14px; font-size: 13px; line-height: 1.6; margin-bottom: 14px; }
+
 /* 语法课程分组 */
 .grammar-group { margin-bottom: 26px; }
 .grammar-group-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
