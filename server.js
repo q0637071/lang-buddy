@@ -861,6 +861,63 @@ app.post('/api/logout', (req, res) => {
 });
 
 // 轻量诊断接口：不暴露任何敏感信息，只用来确认当前是不是接到了持久化数据库
+// ==================== 服务端语音合成（浏览器不支持朗读时的兜底） ====================
+// 微信/QQ 等 App 内置浏览器没有 speechSynthesis，这些用户在网页端完全听不到发音。
+// 前端会先用浏览器原生朗读（快且不耗额度），只有原生不可用时才调这个接口。
+const TTS_MODEL = process.env.TTS_MODEL || 'canopylabs/orpheus-v1-english';
+// 该模型仅接受这几个音色：autumn diana hannah austin daniel troy
+const TTS_VOICE = process.env.TTS_VOICE || 'hannah';
+const TTS_MAX_CHARS = 300;
+
+// 背单词场景同一个词会被反复点，缓存能省掉绝大部分重复合成。
+// 只放内存里：容器重启丢了也无所谓，重新合成即可。
+const ttsCache = new Map();
+const TTS_CACHE_MAX = 300;
+
+app.post('/api/tts', requireAuth, rateLimit(30), async (req, res) => {
+  const text = String(req.body?.text || '').trim();
+  if (!text) return res.status(400).json({ error: '缺少文本' });
+  if (text.length > TTS_MAX_CHARS) return res.status(400).json({ error: '文本过长' });
+  if (!SF_API_KEY) return res.status(501).json({ error: '服务端朗读未配置' });
+
+  const cacheKey = `${TTS_MODEL}|${TTS_VOICE}|${text}`;
+  const cached = ttsCache.get(cacheKey);
+  if (cached) {
+    res.setHeader('Content-Type', 'audio/wav');
+    return res.end(cached);
+  }
+
+  try {
+    const resp = await fetch('https://api.groq.com/openai/v1/audio/speech', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${SF_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: TTS_MODEL, input: text, voice: TTS_VOICE, response_format: 'wav' }),
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      const msg = err?.error?.message || `HTTP ${resp.status}`;
+      // 模型首次使用需要账号管理员在 Groq 控制台接受条款，这个错误要能一眼看懂
+      if (/terms acceptance/i.test(msg)) {
+        console.error('[TTS] 需要在 Groq 控制台接受模型条款:', msg);
+        return res.status(503).json({ error: '服务端朗读尚未启用（管理员需先接受模型条款）' });
+      }
+      console.error('[TTS] 合成失败:', msg);
+      return res.status(502).json({ error: '朗读服务暂时不可用，请稍后再试' });
+    }
+
+    const buf = Buffer.from(await resp.arrayBuffer());
+    // 简单的先进先出淘汰，避免内存无限增长
+    if (ttsCache.size >= TTS_CACHE_MAX) ttsCache.delete(ttsCache.keys().next().value);
+    ttsCache.set(cacheKey, buf);
+
+    res.setHeader('Content-Type', 'audio/wav');
+    res.end(buf);
+  } catch (e) {
+    console.error('[TTS] 异常:', e.message);
+    res.status(502).json({ error: '朗读服务暂时不可用，请稍后再试' });
+  }
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ ok: true, dbMode: mongoCollection ? 'mongodb' : 'file' });
 });

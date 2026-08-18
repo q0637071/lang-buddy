@@ -1015,19 +1015,69 @@
 
   // 常驻提示：toast 两秒就没了容易错过，在会用到朗读的页面上常显一条，
   // 让用户点朗读之前就知道该怎么办
-  function renderTtsNotices() {
-    if (window.speechSynthesis) return;
-    const msg = '🔇 ' + speechUnavailableHint();
+  function setTtsNotice(msg) {
     ['#ttsNoticeVocab', '#ttsNoticeTutor'].forEach(sel => {
       const el = $(sel);
-      if (el) { el.textContent = msg; el.hidden = false; }
+      if (el) { el.textContent = msg; el.hidden = !msg; }
     });
+  }
+  function renderTtsNotices() {
+    if (window.speechSynthesis) return;
+    // 没有原生朗读不等于不能听——会自动走服务端合成，只是首次稍慢，
+    // 所以这里不要吓唬用户说"不支持"
+    setTtsNotice('🔈 当前浏览器不支持原生朗读，已自动改用服务端语音（首次播放稍慢）');
+  }
+
+  // 浏览器不支持原生朗读时，改用服务端合成的音频播放。
+  // 只在这种情况下才走服务端——原生朗读又快又不耗额度，能用就用。
+  let ttsAudio = null;
+  let serverTtsBroken = false; // 服务端也不可用时不再重复请求，直接给指引
+  async function speakViaServer(text, onEnd) {
+    if (serverTtsBroken) { toast(speechUnavailableHint()); if (onEnd) onEnd(); return; }
+    try {
+      if (ttsAudio) { ttsAudio.pause(); ttsAudio = null; }
+      setAvatarTalking(true);
+      const headers = { 'Content-Type': 'application/json' };
+      const token = getAuthToken();
+      if (token) headers.Authorization = 'Bearer ' + token;
+      const resp = await fetch(API_BASE + '/tts', {
+        method: 'POST', headers, credentials: 'include',
+        body: JSON.stringify({ text }),
+      });
+      if (!resp.ok) {
+        const j = await resp.json().catch(() => ({}));
+        // 未启用/配置问题是持续性的，标记后不再反复请求，避免每点一次都等一次网络
+        if (resp.status === 501 || resp.status === 503) {
+          serverTtsBroken = true;
+          // 服务端这条路也断了，这时才该引导用户换浏览器
+          setTtsNotice('🔇 ' + speechUnavailableHint());
+        }
+        throw new Error(j.error || '朗读失败');
+      }
+      const url = URL.createObjectURL(await resp.blob());
+      ttsAudio = new Audio(url);
+      // 服务端音频拿不到词边界事件，用固定间隔让嘴型动起来
+      startFallbackMouthLoop();
+      const done = () => {
+        clearInterval(avatarMouthTimer);
+        setAvatarTalking(false);
+        URL.revokeObjectURL(url);
+        if (onEnd) onEnd();
+      };
+      ttsAudio.onended = done;
+      ttsAudio.onerror = done;
+      await ttsAudio.play();
+    } catch (e) {
+      setAvatarTalking(false);
+      clearInterval(avatarMouthTimer);
+      toast(e.message === '朗读失败' ? speechUnavailableHint() : e.message);
+      if (onEnd) onEnd();
+    }
   }
 
   function speakText(text, lang, onEnd) {
     if (!window.speechSynthesis) {
-      toast(speechUnavailableHint());
-      if (onEnd) onEnd();
+      speakViaServer(text, onEnd);
       return;
     }
     window.speechSynthesis.cancel();
