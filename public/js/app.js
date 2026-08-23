@@ -1926,17 +1926,28 @@
       from.value = safeGetItem('lb_tr_from') || 'en';
       to.value = safeGetItem('lb_tr_to') || 'zh';
     }
-    if (!window.speechSynthesis) {
-      const el = $('#ttsNoticeTranslate');
-      el.textContent = '🔈 当前浏览器不支持原生朗读，已自动改用服务端语音（首次播放稍慢）';
+    // 提示要把"听"和"说"两件事分开讲清楚，用户才知道自己该怎么操作
+    const lacks = [];
+    if (!hasNativeASR()) lacks.push('语音识别');
+    if (!window.speechSynthesis) lacks.push('朗读');
+    const el = $('#ttsNoticeTranslate');
+    if (lacks.length) {
+      el.textContent = `🔈 当前浏览器不支持${lacks.join('和')}，已自动改用服务端处理`
+        + (hasNativeASR() ? '（首次播放稍慢）' : '：点「开始录音」，对方说完后再点「停止并翻译」');
       el.hidden = false;
+    } else {
+      el.hidden = true;
     }
     updateTrMicUI();
   }
 
   function updateTrMicUI() {
     $('#btnTrMic').classList.toggle('listening', trListening);
-    $('#trMicLabel').textContent = trListening ? '停止收听' : '开始收听';
+    // 两种模式的操作方式不同，按钮文案要如实反映，否则用户不知道该怎么用
+    const recMode = !hasNativeASR();
+    $('#trMicLabel').textContent = trListening
+      ? (recMode ? '停止并翻译' : '停止收听')
+      : (recMode ? '开始录音' : '开始收听');
   }
 
   $('#trFromLang').addEventListener('change', () => {
@@ -1964,28 +1975,100 @@
     $('#btnTrClear').hidden = true;
   });
 
+  // 浏览器没有 SpeechRecognition 时（微信/QQ内置浏览器）改用"录一段音上传识别"。
+  // 这是唯一能让这些用户用上翻译的办法——原来只在状态栏改一行小字，
+  // 按钮毫无变化，用户看起来就是"点了没反应"。
+  const hasNativeASR = () => !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+  const canRecord = () => !!(navigator.mediaDevices?.getUserMedia && window.MediaRecorder);
+
+  let trMediaRecorder = null;
+  let trChunks = [];
+  let trStream = null;
+
   function startTranslateListening() {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) {
-      $('#trStatus').textContent = '⚠️ ' + speechUnavailableHint().replace('不支持朗读', '不支持语音识别');
+    unlockSpeechSynthesis();
+    if (hasNativeASR()) {
+      trListening = true;
+      trErrorStreak = 0;
+      updateTrMicUI();
+      listenTranslateTurn();
       return;
     }
-    unlockSpeechSynthesis();
+    if (canRecord()) {
+      startRecordingMode();
+      return;
+    }
+    // 两条路都走不通，必须明确告诉用户，不能静默失败
+    const msg = speechUnavailableHint().replace('不支持朗读', '不支持语音输入');
+    $('#trStatus').textContent = '⚠️ ' + msg;
+    toast(msg);
+  }
+
+  async function startRecordingMode() {
+    try {
+      trStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      const msg = '无法使用麦克风，请检查是否已授权';
+      $('#trStatus').textContent = '⚠️ ' + msg;
+      toast(msg);
+      return;
+    }
+    trChunks = [];
+    // 让浏览器自己挑支持的格式，写死 mime 在部分机型上会直接抛错
+    trMediaRecorder = new MediaRecorder(trStream);
+    trMediaRecorder.ondataavailable = (e) => { if (e.data.size) trChunks.push(e.data); };
+    trMediaRecorder.onstop = () => {
+      const blob = new Blob(trChunks, { type: trMediaRecorder.mimeType || 'audio/webm' });
+      trChunks = [];
+      if (trStream) { trStream.getTracks().forEach(t => t.stop()); trStream = null; }
+      if (blob.size > 1000) transcribeAndTranslate(blob);
+      else $('#trStatus').textContent = '没录到声音，再试一次';
+    };
+    trMediaRecorder.start();
     trListening = true;
-    trErrorStreak = 0;
     updateTrMicUI();
-    listenTranslateTurn();
+    $('#trStatus').textContent = '🔴 录音中…对方说完后点「停止并翻译」';
+  }
+
+  async function transcribeAndTranslate(blob) {
+    const from = $('#trFromLang').value;
+    $('#trStatus').textContent = '⏳ 识别中…';
+    try {
+      const form = new FormData();
+      form.append('audio', blob, 'speech.webm');
+      form.append('language', from);
+      const headers = {};
+      const token = getAuthToken();
+      if (token) headers.Authorization = 'Bearer ' + token;
+      const resp = await fetch(API_BASE + '/transcribe', { method: 'POST', headers, credentials: 'include', body: form });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(data.error || '识别失败');
+      const text = (data.text || '').trim();
+      if (!text) { $('#trStatus').textContent = '没听清，再说一次'; return; }
+      $('#trStatus').textContent = '点「开始录音」继续';
+      translateAndShow(text);
+    } catch (e) {
+      $('#trStatus').textContent = '⚠️ ' + e.message;
+      toast(e.message);
+    }
   }
 
   function stopTranslateListening() {
-    if (!trListening && !trRecognition) return;
+    if (!trListening && !trRecognition && !trMediaRecorder) return;
     trListening = false;
     clearTimeout(trRestartTimer);
     if (trRecognition) {
       try { trRecognition.abort(); } catch { try { trRecognition.stop(); } catch {} }
       trRecognition = null;
     }
-    $('#trStatus').textContent = '已停止。点击「开始收听」继续';
+    if (trMediaRecorder) {
+      // 录音模式下停止会触发 onstop，那里会把这段音频送去识别翻译
+      try { if (trMediaRecorder.state !== 'inactive') trMediaRecorder.stop(); } catch {}
+      trMediaRecorder = null;
+    } else {
+      $('#trStatus').textContent = '已停止。点击「开始收听」继续';
+    }
+    if (trStream) { trStream.getTracks().forEach(t => t.stop()); trStream = null; }
     updateTrMicUI();
   }
 

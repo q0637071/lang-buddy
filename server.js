@@ -861,6 +861,45 @@ app.post('/api/logout', (req, res) => {
 });
 
 // 轻量诊断接口：不暴露任何敏感信息，只用来确认当前是不是接到了持久化数据库
+// ==================== 服务端语音识别（浏览器不支持听写时的兜底） ====================
+// 微信/QQ 等内置浏览器既没有 speechSynthesis 也没有 SpeechRecognition，
+// 这些用户原本完全用不了实时翻译。前端会改成"录一段音上传"，这里用 Whisper 转文字。
+const ASR_MODEL = process.env.ASR_MODEL || 'whisper-large-v3-turbo';
+const audioUpload = multer({
+  storage: multer.memoryStorage(), // 音频转完文字就没用了，不落盘
+  limits: { fileSize: 10 * 1024 * 1024 },
+});
+
+app.post('/api/transcribe', allowMemberOrFreeQuota('translate', { type: 'count', max: 30 }), rateLimit(20), audioUpload.single('audio'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: '没有收到录音' });
+  if (!SF_API_KEY) return res.status(501).json({ error: '语音识别未配置' });
+
+  try {
+    const form = new FormData();
+    form.append('file', new Blob([req.file.buffer], { type: req.file.mimetype || 'audio/webm' }), req.file.originalname || 'audio.webm');
+    form.append('model', ASR_MODEL);
+    // 指定语言能显著提高准确率，前端会把"对方说的语言"传过来
+    if (req.body?.language && LANG_NAME[req.body.language]) form.append('language', req.body.language);
+    form.append('response_format', 'json');
+
+    const resp = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${SF_API_KEY}` },
+      body: form,
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      console.error('[ASR] 识别失败:', err?.error?.message || resp.status);
+      return res.status(502).json({ error: '语音识别暂时不可用，请稍后再试' });
+    }
+    const data = await resp.json();
+    res.json({ text: String(data.text || '').trim() });
+  } catch (e) {
+    console.error('[ASR] 异常:', e.message);
+    res.status(502).json({ error: '语音识别暂时不可用，请稍后再试' });
+  }
+});
+
 // ==================== 实时翻译 ====================
 // 对方说外语 → 识别成文字 → 这里翻译 → 前端用指定语言朗读出来。
 // 用途是当场沟通，所以只要译文本身，不要任何解释性废话，否则朗读出来很啰嗦。
