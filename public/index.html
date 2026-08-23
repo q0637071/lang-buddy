@@ -18,6 +18,7 @@
 
     <nav class="main-nav" id="mainNav" hidden>
       <button class="nav-item" data-nav="dashboard">首页</button>
+      <button class="nav-item" data-nav="translate">实时翻译</button>
       <button class="nav-item" data-nav="tutor">AI对话</button>
       <button class="nav-item" data-nav="vocab">背单词</button>
       <button class="nav-item" data-nav="mistakes">错题本</button>
@@ -413,6 +414,41 @@
   </section>
 
   <!-- 美式口语 -->
+  <!-- 实时翻译 -->
+  <section class="view" id="view-translate" hidden>
+    <div class="container container-narrow">
+      <h2 class="page-title">实时翻译</h2>
+      <p class="page-sub">对方说外语，实时翻译成你指定的语言并读出来</p>
+      <div class="tts-notice" id="ttsNoticeTranslate" hidden></div>
+
+      <div class="tr-langbar">
+        <div class="tr-lang">
+          <label>对方说</label>
+          <select id="trFromLang"></select>
+        </div>
+        <button type="button" class="tr-swap" id="btnTrSwap" title="互换语言">⇄</button>
+        <div class="tr-lang">
+          <label>翻译成</label>
+          <select id="trToLang"></select>
+        </div>
+      </div>
+
+      <div class="tr-mic-area">
+        <button type="button" class="tr-mic" id="btnTrMic">
+          <span class="tr-mic-icon">🎙️</span>
+          <span class="tr-mic-label" id="trMicLabel">开始收听</span>
+        </button>
+        <p class="tr-status" id="trStatus">点击开始，对方说话时会自动翻译并朗读</p>
+        <label class="auto-speak-toggle">
+          <input type="checkbox" id="trAutoSpeak" checked> 🔊 自动朗读译文
+        </label>
+      </div>
+
+      <div class="tr-results" id="trResults"></div>
+      <button type="button" class="btn btn-ghost btn-sm" id="btnTrClear" hidden>清空记录</button>
+    </div>
+  </section>
+
   <section class="view" id="view-colloquial" hidden>
     <div class="container container-narrow">
       <h2 class="page-title">地道美式口语</h2>

@@ -130,7 +130,7 @@
   }
 
   // ---------- 视图切换 ----------
-  const VIEWS = ['landing', 'dashboard', 'tutor', 'vocab', 'grammar', 'colloquial', 'mistakes', 'essay', 'profile', 'admin'];
+  const VIEWS = ['landing', 'dashboard', 'tutor', 'vocab', 'grammar', 'translate', 'colloquial', 'mistakes', 'essay', 'profile', 'admin'];
 
   function showView(name) {
     if (!state.user && name !== 'landing') name = 'landing';
@@ -152,6 +152,8 @@
     }
     if (name === 'grammar') renderGrammarList();
     if (name === 'colloquial') renderColloquial();
+    if (name === 'translate') renderTranslate();
+    if (name !== 'translate') stopTranslateListening(); // 离开页面就停掉麦克风，别一直占着
     if (name === 'mistakes') renderMistakes();
     if (name === 'essay') renderEssay();
     if (name === 'profile') renderProfile();
@@ -1903,6 +1905,197 @@
     const w = state.vocabQueue[state.vocabIndex];
     if (w) openOrbit(w.word);
   });
+
+  // ---------- 实时翻译 ----------
+  // 流程：连续听写 → 每听清一句就送去翻译 → 译文上屏并朗读。
+  // 和"语音对话模式"的区别是这里不需要等AI回复再继续听，是一直听着的。
+  let trRecognition = null;
+  let trListening = false;
+  let trRestartTimer = null;
+  let trErrorStreak = 0;
+  let trLastText = '';   // 上一句识别结果，用于去重
+  let trLastAt = 0;
+
+  function renderTranslate() {
+    const opts = state.languages.map(l => `<option value="${l.code}">${escapeHtml(l.name)}</option>`).join('');
+    const from = $('#trFromLang'), to = $('#trToLang');
+    if (!from.options.length) {
+      from.innerHTML = opts;
+      to.innerHTML = opts;
+      // 默认：对方说英语 → 翻译成中文，符合"听不懂外语"的主场景
+      from.value = safeGetItem('lb_tr_from') || 'en';
+      to.value = safeGetItem('lb_tr_to') || 'zh';
+    }
+    if (!window.speechSynthesis) {
+      const el = $('#ttsNoticeTranslate');
+      el.textContent = '🔈 当前浏览器不支持原生朗读，已自动改用服务端语音（首次播放稍慢）';
+      el.hidden = false;
+    }
+    updateTrMicUI();
+  }
+
+  function updateTrMicUI() {
+    $('#btnTrMic').classList.toggle('listening', trListening);
+    $('#trMicLabel').textContent = trListening ? '停止收听' : '开始收听';
+  }
+
+  $('#trFromLang').addEventListener('change', () => {
+    safeSetItem('lb_tr_from', $('#trFromLang').value);
+    if (trListening) { stopTranslateListening(); startTranslateListening(); } // 换语言要重开识别才生效
+  });
+  $('#trToLang').addEventListener('change', () => safeSetItem('lb_tr_to', $('#trToLang').value));
+
+  $('#btnTrSwap').addEventListener('click', () => {
+    const f = $('#trFromLang').value;
+    $('#trFromLang').value = $('#trToLang').value;
+    $('#trToLang').value = f;
+    safeSetItem('lb_tr_from', $('#trFromLang').value);
+    safeSetItem('lb_tr_to', $('#trToLang').value);
+    if (trListening) { stopTranslateListening(); startTranslateListening(); }
+  });
+
+  $('#btnTrMic').addEventListener('click', () => {
+    if (trListening) stopTranslateListening();
+    else startTranslateListening();
+  });
+
+  $('#btnTrClear').addEventListener('click', () => {
+    $('#trResults').innerHTML = '';
+    $('#btnTrClear').hidden = true;
+  });
+
+  function startTranslateListening() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      $('#trStatus').textContent = '⚠️ ' + speechUnavailableHint().replace('不支持朗读', '不支持语音识别');
+      return;
+    }
+    unlockSpeechSynthesis();
+    trListening = true;
+    trErrorStreak = 0;
+    updateTrMicUI();
+    listenTranslateTurn();
+  }
+
+  function stopTranslateListening() {
+    if (!trListening && !trRecognition) return;
+    trListening = false;
+    clearTimeout(trRestartTimer);
+    if (trRecognition) {
+      try { trRecognition.abort(); } catch { try { trRecognition.stop(); } catch {} }
+      trRecognition = null;
+    }
+    $('#trStatus').textContent = '已停止。点击「开始收听」继续';
+    updateTrMicUI();
+  }
+
+  function listenTranslateTurn() {
+    if (!trListening) return;
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const fromLang = $('#trFromLang').value;
+    $('#trStatus').textContent = '🎙️ 正在收听...';
+
+    // 开新一轮前先确保上一个实例已停：否则异常路径下可能出现多个识别实例
+    // 同时在跑，回调叠加会重复触发翻译
+    if (trRecognition) {
+      try { trRecognition.onresult = trRecognition.onerror = trRecognition.onend = null; } catch {}
+      try { trRecognition.abort(); } catch {}
+    }
+    trRecognition = new SR();
+    trRecognition.lang = LANG_BCP47[fromLang] || 'en-US';
+    trRecognition.interimResults = false;
+    trRecognition.maxAlternatives = 1;
+
+    // 和语音对话模式踩过同样的坑：部分安卓机型 onresult/onerror 都不触发，
+    // 会永远卡在"正在收听"。settled 防止兜底和原生回调重复处理同一轮。
+    let settled = false;
+    const finish = (fn) => { if (settled) return; settled = true; clearTimeout(trRestartTimer); fn(); };
+
+    trRecognition.onresult = (e) => finish(() => {
+      if (!trListening) return;
+      trErrorStreak = 0;
+      const said = e.results[0][0].transcript.trim();
+      // 去重：环境噪音、回声、或识别器抖动都可能把同一句连着报好几次，
+      // 不挡住的话既刷屏又白烧AI额度
+      const now = Date.now();
+      const isDup = said && said === trLastText && now - trLastAt < 3000;
+      if (said && !isDup) {
+        trLastText = said;
+        trLastAt = now;
+        translateAndShow(said);
+      }
+      // 稍作间隔再开下一轮：不加延迟的话，识别器若快速连续返回会形成失控循环
+      trRestartTimer = setTimeout(() => { if (trListening) listenTranslateTurn(); }, 300);
+    });
+
+    trRecognition.onerror = (e) => finish(() => handleTrError(e.error));
+    trRecognition.onend = () => finish(() => handleTrError('no-speech'));
+
+    try {
+      trRecognition.start();
+    } catch {
+      finish(() => handleTrError('timeout'));
+      return;
+    }
+    trRestartTimer = setTimeout(() => finish(() => {
+      try { trRecognition.abort(); } catch {}
+      handleTrError('timeout');
+    }), 12000);
+  }
+
+  function handleTrError(err) {
+    if (!trListening) return;
+    if (err === 'not-allowed' || err === 'audio-capture') {
+      $('#trStatus').textContent = '⚠️ ' + recognitionErrorMessage(err);
+      stopTranslateListening();
+      return;
+    }
+    if (err === 'no-speech' || err === 'timeout') {
+      // 没人说话是常态，静默重开继续听
+      trRestartTimer = setTimeout(() => { if (trListening) listenTranslateTurn(); }, 400);
+      return;
+    }
+    trErrorStreak++;
+    if (trErrorStreak >= 3) {
+      $('#trStatus').textContent = '⚠️ ' + recognitionErrorMessage(err);
+      stopTranslateListening();
+      return;
+    }
+    trRestartTimer = setTimeout(() => { if (trListening) listenTranslateTurn(); }, 1200);
+  }
+
+  async function translateAndShow(text) {
+    const to = $('#trToLang').value;
+    const from = $('#trFromLang').value;
+    // 先把原文占位上屏，让用户马上看到"听到了"，翻译回来再填
+    const row = document.createElement('div');
+    row.className = 'tr-item';
+    row.innerHTML = `
+      <div class="tr-src">${escapeHtml(text)}</div>
+      <div class="tr-dst tr-pending">翻译中...</div>`;
+    $('#trResults').prepend(row);
+    $('#btnTrClear').hidden = false;
+
+    try {
+      const data = await api('/translate', { method: 'POST', body: { text, from, to } });
+      const dst = row.querySelector('.tr-dst');
+      dst.textContent = data.translation;
+      dst.classList.remove('tr-pending');
+      const speak = document.createElement('span');
+      speak.className = 'msg-speak';
+      speak.textContent = '🔊';
+      speak.title = '重听';
+      speak.addEventListener('click', () => speakText(data.translation, LANG_BCP47[to]));
+      dst.appendChild(speak);
+      if ($('#trAutoSpeak').checked) speakText(data.translation, LANG_BCP47[to]);
+    } catch (err) {
+      const dst = row.querySelector('.tr-dst');
+      dst.textContent = '⚠️ ' + err.message;
+      dst.classList.remove('tr-pending');
+      dst.classList.add('tr-failed');
+      if (err.needMembership || err.needPhoneVerify) stopTranslateListening();
+    }
+  }
 
   // ---------- 语法 ----------
   async function renderGrammarList() {

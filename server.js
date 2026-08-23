@@ -861,6 +861,47 @@ app.post('/api/logout', (req, res) => {
 });
 
 // 轻量诊断接口：不暴露任何敏感信息，只用来确认当前是不是接到了持久化数据库
+// ==================== 实时翻译 ====================
+// 对方说外语 → 识别成文字 → 这里翻译 → 前端用指定语言朗读出来。
+// 用途是当场沟通，所以只要译文本身，不要任何解释性废话，否则朗读出来很啰嗦。
+app.post('/api/translate', allowMemberOrFreeQuota('translate', { type: 'count', max: 30 }), rateLimit(40), async (req, res) => {
+  const text = String(req.body?.text || '').trim();
+  const from = req.body?.from;
+  const to = req.body?.to;
+  if (!text) return res.status(400).json({ error: '没有需要翻译的内容' });
+  if (text.length > 500) return res.status(400).json({ error: '单次翻译内容过长' });
+  const toName = LANG_NAME[to];
+  if (!toName) return res.status(400).json({ error: '目标语言不支持' });
+  const fromName = LANG_NAME[from] || '自动识别的语言';
+
+  const systemPrompt = `你是专业的同声传译员。把用户给你的${fromName}内容翻译成${toName}。
+
+严格要求：
+1. 只输出译文本身，不要加任何解释、注释、引号或"翻译："之类的前缀。
+2. 口语化、自然，像真人现场口译，不要书面腔。
+3. 保留原话的语气（疑问就是疑问，命令就是命令）。
+4. 如果原文是不完整的片段或听不清的内容，就按字面尽力翻译，不要自行脑补补全。
+5. 无论原文是什么语言，译文必须是${toName}。`;
+
+  try {
+    const translation = await callChatAPI({
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: text },
+      ],
+      maxTokens: 500,
+      temperature: 0.2, // 翻译要稳定，不需要发挥
+    });
+    const db = loadDB();
+    const user = db.users[req.session.userId];
+    if (user) { recordActivity(user); saveDB(db); }
+    res.json({ translation: String(translation || '').trim() });
+  } catch (e) {
+    console.error('翻译失败:', e.message);
+    res.status(500).json({ error: friendlyAiError(e) });
+  }
+});
+
 // ==================== 服务端语音合成（浏览器不支持朗读时的兜底） ====================
 // 微信/QQ 等 App 内置浏览器没有 speechSynthesis，这些用户在网页端完全听不到发音。
 // 前端会先用浏览器原生朗读（快且不耗额度），只有原生不可用时才调这个接口。
