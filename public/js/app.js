@@ -2056,6 +2056,7 @@
   function stopTranslateListening() {
     if (!trListening && !trRecognition && !trMediaRecorder) return;
     trListening = false;
+    trResumeAfterSpeech = false; // 用户主动停了，朗读结束后不要再自动开麦
     clearTimeout(trRestartTimer);
     if (trRecognition) {
       try { trRecognition.abort(); } catch { try { trRecognition.stop(); } catch {} }
@@ -2147,6 +2148,30 @@
     trRestartTimer = setTimeout(() => { if (trListening) listenTranslateTurn(); }, 1200);
   }
 
+  // 朗读译文期间先把麦克风停掉，读完再恢复监听。两个原因：
+  // 1) 手机上麦克风开着时系统会切到"通话模式"，播放走听筒而不是扬声器，
+  //    音量小且录屏抓不到声音——录演示视频时会发现只有自己的声音没有译文。
+  // 2) 更要紧的是，开着麦克风时AI读出来的译文会被重新听到、再翻译一遍，形成回声循环。
+  let trResumeAfterSpeech = false;
+  function speakTranslation(text, lang) {
+    if (trListening && hasNativeASR()) {
+      trResumeAfterSpeech = true;
+      clearTimeout(trRestartTimer);
+      if (trRecognition) {
+        try { trRecognition.onresult = trRecognition.onerror = trRecognition.onend = null; } catch {}
+        try { trRecognition.abort(); } catch {}
+        trRecognition = null;
+      }
+      $('#trStatus').textContent = '🔊 正在朗读译文…';
+    }
+    speakText(text, lang, () => {
+      if (!trResumeAfterSpeech) return;
+      trResumeAfterSpeech = false;
+      // 留一点间隔再开麦，避免尾音被当成新的一句
+      trRestartTimer = setTimeout(() => { if (trListening) listenTranslateTurn(); }, 500);
+    });
+  }
+
   async function translateAndShow(text) {
     const to = $('#trToLang').value;
     const from = $('#trFromLang').value;
@@ -2168,9 +2193,9 @@
       speak.className = 'msg-speak';
       speak.textContent = '🔊';
       speak.title = '重听';
-      speak.addEventListener('click', () => speakText(data.translation, LANG_BCP47[to]));
+      speak.addEventListener('click', () => speakTranslation(data.translation, LANG_BCP47[to]));
       dst.appendChild(speak);
-      if ($('#trAutoSpeak').checked) speakText(data.translation, LANG_BCP47[to]);
+      if ($('#trAutoSpeak').checked) speakTranslation(data.translation, LANG_BCP47[to]);
     } catch (err) {
       const dst = row.querySelector('.tr-dst');
       dst.textContent = '⚠️ ' + err.message;
