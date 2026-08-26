@@ -444,6 +444,17 @@
         </label>
       </div>
 
+      <div class="tr-text-mode">
+        <div class="tr-text-head">
+          <span>或者直接输入文字翻译</span>
+          <span class="tr-text-tip">不占用麦克风，朗读走扬声器，适合录屏演示</span>
+        </div>
+        <div class="tr-text-row">
+          <input type="text" id="trTextInput" maxlength="200" placeholder="输入或粘贴对方说的话...">
+          <button type="button" class="btn btn-primary btn-sm" id="btnTrText">翻译</button>
+        </div>
+      </div>
+
       <div class="tr-results" id="trResults"></div>
       <button type="button" class="btn btn-ghost btn-sm" id="btnTrClear" hidden>清空记录</button>
     </div>
