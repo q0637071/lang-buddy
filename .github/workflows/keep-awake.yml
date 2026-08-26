@@ -1,0 +1,30 @@
+name: 保持服务唤醒
+
+# Render 免费套餐闲置 15 分钟就会休眠，下次访问要等约 1 分钟冷启动。
+# 这里定时访问一次轻量的健康检查接口，把服务保持在唤醒状态。
+#
+# 为什么只在部分时段跑：免费额度是每月 750 实例小时，24 小时不停唤醒约需 730 小时，
+# 几乎没有余量，一旦超出服务会被停到下个月。
+#
+# 业务在中国，凌晨基本没人用，所以只覆盖北京时间 07:00-次日01:00（共18小时），
+# 凌晨 1-7 点让它休眠。换算成 UTC 是 23:00-17:00，跨零点所以写成两段。
+# 每月约 540 实例小时，离 750 有足够余量。
+on:
+  schedule:
+    - cron: '*/10 23,0-16 * * *'   # UTC 23点 + 0~16点 = 北京时间 7:00~次日1:00
+  workflow_dispatch:                # 也可以在 Actions 页面手动触发一次
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 访问健康检查接口
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 90 \
+              https://langbuddy-m19g.onrender.com/api/health || echo 000)
+            echo "第 $i 次: HTTP=$code"
+            if [ "$code" = "200" ]; then exit 0; fi
+            sleep 20
+          done
+          echo "三次均未成功（服务可能正在冷启动，下一轮会再试）"
