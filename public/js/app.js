@@ -1985,6 +1985,22 @@
   let trChunks = [];
   let trStream = null;
 
+  // 语音输入不可用时的指引。之前是拿朗读的提示做字符串替换拼出来的，
+  // 对匹配不到的浏览器（比如百度App）替换会失效、说成"不支持朗读"，答非所问。
+  function voiceInputUnavailableHint() {
+    const ua = navigator.userAgent || '';
+    if (/MicroMessenger/i.test(ua)) return '微信内置浏览器不支持语音输入，请点右上角「···」→「在浏览器打开」';
+    if (/baiduboxapp|baiduhd/i.test(ua)) return '百度App内置浏览器不支持语音输入，请点右上角菜单→「用其他浏览器打开」';
+    if (/QQ\//i.test(ua) || /QQBrowser/i.test(ua)) return 'QQ内置浏览器不支持语音输入，请用手机自带浏览器打开';
+    if (/Weibo/i.test(ua)) return '微博内置浏览器不支持语音输入，请用手机自带浏览器打开';
+    return '当前浏览器不支持语音输入，建议换用 Chrome / Safari 或手机自带浏览器';
+  }
+
+  function failVoiceInput(msg) {
+    $('#trStatus').textContent = '⚠️ ' + msg;
+    toast(msg);
+  }
+
   function startTranslateListening() {
     unlockSpeechSynthesis();
     if (hasNativeASR()) {
@@ -1998,19 +2014,23 @@
       startRecordingMode();
       return;
     }
-    // 两条路都走不通，必须明确告诉用户，不能静默失败
-    const msg = speechUnavailableHint().replace('不支持朗读', '不支持语音输入');
-    $('#trStatus').textContent = '⚠️ ' + msg;
-    toast(msg);
+    failVoiceInput(voiceInputUnavailableHint());
   }
 
   async function startRecordingMode() {
+    // 点了要立刻有反馈，否则等权限的这几秒用户会以为按钮坏了
+    $('#trStatus').textContent = '正在获取麦克风权限…';
     try {
-      trStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch {
-      const msg = '无法使用麦克风，请检查是否已授权';
-      $('#trStatus').textContent = '⚠️ ' + msg;
-      toast(msg);
+      // 必须加超时：部分App内置浏览器（百度、微信等）会把权限弹窗吞掉，
+      // getUserMedia 既不resolve也不reject，界面就永远停在这里毫无反应
+      trStream = await Promise.race([
+        navigator.mediaDevices.getUserMedia({ audio: true }),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('TIMEOUT')), 6000)),
+      ]);
+    } catch (e) {
+      failVoiceInput(e && e.message === 'TIMEOUT'
+        ? voiceInputUnavailableHint()          // 权限弹窗被吞，等同于不支持
+        : '无法使用麦克风，请在浏览器设置中允许麦克风权限后重试');
       return;
     }
     trChunks = [];
