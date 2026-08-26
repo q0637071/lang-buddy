@@ -1970,23 +1970,6 @@
     else startTranslateListening();
   });
 
-  // 文字输入翻译：全程不碰麦克风。
-  // 手机上只要页面调用过一次麦克风，系统音频会话就会切到"通话模式"，
-  // 输出走听筒而非扬声器，且这个状态在页面生命周期内无法从网页层改回来——
-  // 结果就是录屏录不到朗读声。用文字模式（且本次会话没点过麦克风）就没这个问题。
-  async function translateTypedText() {
-    const input = $('#trTextInput');
-    const text = input.value.trim();
-    if (!text) return;
-    input.value = '';
-    unlockSpeechSynthesis();
-    await translateAndShow(text);
-  }
-  $('#btnTrText').addEventListener('click', translateTypedText);
-  $('#trTextInput').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); translateTypedText(); }
-  });
-
   $('#btnTrClear').addEventListener('click', () => {
     $('#trResults').innerHTML = '';
     $('#btnTrClear').hidden = true;
