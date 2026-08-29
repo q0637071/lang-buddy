@@ -244,7 +244,7 @@ function requireMember(req, res, next) {
 }
 
 // 非会员每日免费体验额度：会员不限量，非会员每天限量试用，用完后提示开通会员
-// type: 'window' 表示从当天第一次使用起计算的时长限额（如AI对话每天5分钟）；'count' 表示每天限次数（如作文批改/错题本每天1次）
+// type: 'window' 表示从当天第一次使用起计算的时长限额（如AI对话每天5分钟）；'count' 表示每天限次数（如作文批改/错题本/语法批改每天3次）
 function allowMemberOrFreeQuota(feature, quota) {
   return (req, res, next) => {
     if (!req.session.userId) return res.status(401).json({ error: '请先登录' });
@@ -1267,7 +1267,7 @@ app.post('/api/chat/clear', requireAuth, (req, res) => {
 
 // ==================== 语法 AI 批改 ====================
 
-app.post('/api/grammar/check', requireMember, rateLimit(15), async (req, res) => {
+app.post('/api/grammar/check', allowMemberOrFreeQuota('grammar', { type: 'count', max: 3 }), rateLimit(15), async (req, res) => {
   const { sentence } = req.body || {};
   if (!sentence || !String(sentence).trim()) return res.status(400).json({ error: '句子不能为空' });
   if (sentence.length > 300) return res.status(400).json({ error: '句子过长（最多300字符）' });
@@ -1307,7 +1307,7 @@ const ENGLISH_EXAM_RUBRIC = {
   '其他': '英语考试作文，按内容、结构、语言三方面综合评分',
 };
 
-app.post('/api/essay/check', allowMemberOrFreeQuota('essay', { type: 'count', max: 1 }), rateLimit(8), async (req, res) => {
+app.post('/api/essay/check', allowMemberOrFreeQuota('essay', { type: 'count', max: 3 }), rateLimit(8), async (req, res) => {
   const { essayText, examType, mode } = req.body || {};
   if (!essayText || !String(essayText).trim()) return res.status(400).json({ error: '请输入作文内容' });
   if (essayText.length > 3000) return res.status(400).json({ error: '作文过长（最多3000字符）' });
@@ -1884,7 +1884,7 @@ const mistakeUpload = multer({
   },
 });
 
-app.post('/api/mistakes/upload', allowMemberOrFreeQuota('mistake', { type: 'count', max: 1 }), rateLimit(6), mistakeUpload.single('image'), async (req, res) => {
+app.post('/api/mistakes/upload', allowMemberOrFreeQuota('mistake', { type: 'count', max: 3 }), rateLimit(6), mistakeUpload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '请上传一张错题图片' });
 
   const cleanupFile = () => fs.unlink(req.file.path, () => {});
@@ -2000,7 +2000,7 @@ app.post('/api/mistakes/upload', allowMemberOrFreeQuota('mistake', { type: 'coun
 });
 
 // 打字手动输入错题（不需要图片，直接用文本模型分析，速度更快、不受视觉模型的额度限制）
-app.post('/api/mistakes/submit-text', allowMemberOrFreeQuota('mistake', { type: 'count', max: 1 }), rateLimit(15), async (req, res) => {
+app.post('/api/mistakes/submit-text', allowMemberOrFreeQuota('mistake', { type: 'count', max: 3 }), rateLimit(15), async (req, res) => {
   const { questionText, examType } = req.body || {};
   if (!questionText || !String(questionText).trim()) return res.status(400).json({ error: '请输入错题内容' });
   if (String(questionText).length > 2000) return res.status(400).json({ error: '内容过长（最多2000字符）' });

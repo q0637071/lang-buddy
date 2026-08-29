@@ -2324,9 +2324,9 @@
         });
       });
 
-      const needMember = !state.user.isMember;
-      $('#grammarCheckerPaywall').hidden = !needMember;
-      $('#grammarCheckerPanel').hidden = needMember;
+      // 语法批改已开放每日3次免费额度：输入面板对所有人可见，非会员额外顶一条额度提示
+      $('#grammarCheckerPaywall').hidden = !!state.user.isMember;
+      $('#grammarCheckerPanel').hidden = false;
       $('#grammarCheckInput').value = '';
       $('#grammarCheckResult').classList.remove('show');
       $('#grammarCheckResult').textContent = '';
