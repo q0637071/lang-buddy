@@ -246,7 +246,7 @@ function requireMember(req, res, next) {
 // 额度只在请求真正成功后才扣。放在响应的 finish 事件里判断状态码，这样参数错误(4xx)、
 // AI 限流或调用失败(5xx)、客户端中途断开都不会消耗用户次数——免费额度本来就不多，
 // 因为报错白掉一次对用户很不友好。各业务处理函数不需要关心额度逻辑。
-function consumeQuotaOnSuccess(res, userId, feature, mutate) {
+function consumeQuotaOnSuccess(res, userId, mutate) {
   res.on('finish', () => {
     if (res.statusCode >= 400) return;
     const db = loadDB();
@@ -258,6 +258,12 @@ function consumeQuotaOnSuccess(res, userId, feature, mutate) {
   });
 }
 
+// 未验证手机号的账号（目前只有微信/QQ 登录进来的）给一份很小的尝鲜额度。
+// 以前是直接拦死，导致第三方登录用户开箱体验为 0，一点甜头没尝到就流失；
+// 注册接口本身强制手机号验证，所以没法靠批量注册小号来刷这份尝鲜额度。
+const TRIAL_WINDOW_MS = 60 * 1000; // AI 对话：1 分钟
+const TRIAL_COUNT = 1;             // 其余功能：各 1 次
+
 // 非会员每日免费体验额度：会员不限量，非会员每天限量试用，用完后提示开通会员
 // type: 'window' 表示从当天第一次使用起计算的时长限额（如AI对话每天5分钟）；'count' 表示每天限次数（如作文批改/错题本/语法批改每天3次）
 function allowMemberOrFreeQuota(feature, quota) {
@@ -267,38 +273,50 @@ function allowMemberOrFreeQuota(feature, quota) {
     const user = db.users[req.session.userId];
     if (!user) return res.status(401).json({ error: '请先登录' });
     if (isActiveMember(user)) return next();
-    // 防止有人靠无限注册小号白嫖每日免费额度：只有验证过手机号的账号才给免费额度，
-    // 用户名密码注册的账号默认没验证过，需要去"我的"页面绑定手机号才能解锁
-    if (!user.phoneVerified) {
-      return res.status(403).json({ error: '未验证手机号的账号暂不提供每日免费额度，请先在"我的"页面验证手机号解锁', needPhoneVerify: true });
-    }
+
+    // 尝鲜额度单独记在 trial: 前缀下，绑定手机号后立刻拿到一份完整的当日免费额度，
+    // 不会被之前试用掉的次数抵扣——这本身也是引导绑定的甜头
+    const isTrial = !user.phoneVerified;
+    const key = isTrial ? `trial:${feature}` : feature;
+    const limit = !isTrial ? quota
+      : quota.type === 'window'
+        ? { type: 'window', windowMs: TRIAL_WINDOW_MS }
+        : { type: 'count', max: TRIAL_COUNT };
 
     const today = dateKey(new Date());
-    const rec = user.freeUsage && user.freeUsage[feature];
+    const rec = user.freeUsage && user.freeUsage[key];
     const isToday = rec && rec.date === today;
 
-    if (quota.type === 'window') {
-      if (isToday && Date.now() - rec.firstAt >= quota.windowMs) {
-        return res.status(403).json({ error: `非会员每天可免费体验${Math.round(quota.windowMs / 60000)}分钟AI对话，开通会员畅享无限时长`, needMembership: true });
+    const denyExhausted = () => {
+      if (isTrial) {
+        return res.status(403).json({
+          error: '试用额度已用完，在"我的"页面验证手机号即可解锁每日免费额度',
+          needPhoneVerify: true,
+        });
       }
+      return res.status(403).json(limit.type === 'window'
+        ? { error: `非会员每天可免费体验${Math.round(limit.windowMs / 60000)}分钟AI对话，开通会员畅享无限时长`, needMembership: true }
+        : { error: '今日免费试用次数已用完，开通会员畅享无限次使用', needMembership: true });
+    };
+
+    if (limit.type === 'window') {
+      if (isToday && Date.now() - rec.firstAt >= limit.windowMs) return denyExhausted();
       // 当天首次使用：等这次请求成功了再开始计时，免得第一次就报错却已经把窗口耗掉了
       if (!isToday) {
-        consumeQuotaOnSuccess(res, req.session.userId, feature, usage => {
-          const cur = usage[feature];
-          if (!cur || cur.date !== today) usage[feature] = { date: today, firstAt: Date.now() };
+        consumeQuotaOnSuccess(res, req.session.userId, usage => {
+          const cur = usage[key];
+          if (!cur || cur.date !== today) usage[key] = { date: today, firstAt: Date.now() };
         });
       }
       return next();
     }
 
     // type === 'count'
-    if (isToday && rec.count >= quota.max) {
-      return res.status(403).json({ error: '今日免费试用次数已用完，开通会员畅享无限次使用', needMembership: true });
-    }
-    consumeQuotaOnSuccess(res, req.session.userId, feature, usage => {
-      const cur = usage[feature];
+    if (isToday && rec.count >= limit.max) return denyExhausted();
+    consumeQuotaOnSuccess(res, req.session.userId, usage => {
+      const cur = usage[key];
       if (cur && cur.date === today) cur.count += 1;
-      else usage[feature] = { date: today, count: 1 };
+      else usage[key] = { date: today, count: 1 };
     });
     return next();
   };

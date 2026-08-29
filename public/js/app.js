@@ -526,8 +526,19 @@
   let speakSafetyTimer = null; // 朗读的兜底超时：部分安卓机型 onend/onerror 从不触发，靠这个定时器强制续上
   let recognitionSafetyTimer = null; // 听写的兜底超时：部分安卓机型（尤其OPPO/ColorOS）连不上语音识别服务时onresult/onerror都不触发，只能靠这个强制打断
 
+  // 免费额度提示文案。未绑手机号的账号（微信/QQ 登录进来的）只有一份很小的尝鲜额度，
+  // 给它们换一套文案并指向手机验证。数值要和后端 allowMemberOrFreeQuota 里的
+  // TRIAL_WINDOW_MS / TRIAL_COUNT 以及各路由的正常额度保持一致。
+  function renderQuotaHint(bannerId, freeText, trialText) {
+    const el = document.querySelector('#' + bannerId + ' p');
+    if (el) el.textContent = state.user.phoneVerified ? freeText : trialText;
+  }
+
   async function renderTutor() {
     $('#tutorPaywall').hidden = state.user.isMember;
+    renderQuotaHint('tutorPaywall',
+      '🎁 非会员每天可免费体验 5 分钟 AI 对话，开通会员畅享无限时长。',
+      '🎁 当前可试用 1 分钟 AI 对话，在"我的"页面验证手机号即可解锁每天 5 分钟。');
     $('#tutorPanel').hidden = false;
 
     const toggle = $('#autoSpeakToggle');
@@ -2327,6 +2338,9 @@
       // 语法批改已开放每日3次免费额度：输入面板对所有人可见，非会员额外顶一条额度提示
       $('#grammarCheckerPaywall').hidden = !!state.user.isMember;
       $('#grammarCheckerPanel').hidden = false;
+      renderQuotaHint('grammarCheckerPaywall',
+        '🎁 非会员每天可免费体验 3 次 AI 语法批改，开通会员畅享无限次使用。',
+        '🎁 当前可试用 1 次 AI 语法批改，在"我的"页面验证手机号即可解锁每天 3 次。');
       $('#grammarCheckInput').value = '';
       $('#grammarCheckResult').classList.remove('show');
       $('#grammarCheckResult').textContent = '';
@@ -2347,8 +2361,11 @@
       resEl.classList.add('show');
     } catch (err) {
       if (err.needMembership) {
-        toast('需要开通会员才能使用 AI 批改');
+        toast(err.message);
         renderGrammarDetail(state.currentGrammarId);
+      } else if (err.needPhoneVerify) {
+        toast(err.message);
+        showView('profile');
       } else {
         toast(err.message);
       }
@@ -2418,6 +2435,9 @@
   // ---------- AI 错题本 ----------
   async function renderMistakes() {
     $('#mistakesPaywall').hidden = state.user.isMember;
+    renderQuotaHint('mistakesPaywall',
+      '🎁 非会员每天可免费体验 3 次错题解析，开通会员畅享无限次使用。',
+      '🎁 当前可试用 1 次错题解析，在"我的"页面验证手机号即可解锁每天 3 次。');
     $('#mistakesPanel').hidden = false;
     resetMistakeUpload();
     resetMistakeTextInput();
@@ -2772,6 +2792,9 @@
   // ---------- 作文批改 ----------
   function renderEssay() {
     $('#essayPaywall').hidden = state.user.isMember;
+    renderQuotaHint('essayPaywall',
+      '🎁 非会员每天可免费体验 3 次 AI 作文批改，开通会员畅享无限次使用。',
+      '🎁 当前可试用 1 次 AI 作文批改，在"我的"页面验证手机号即可解锁每天 3 次。');
     $('#essayPanel').hidden = false;
     $('#essayResult').hidden = true;
     $('#essayStatus').textContent = '';
