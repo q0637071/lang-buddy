@@ -775,9 +775,7 @@
         },
       });
       hideTypingBubble();
-      appendMsg('ai', data.reply, {
-        onSpeakEnd: () => { if (state.voiceCallActive) listenTurn(); },
-      });
+      appendMsg('ai', data.reply, { onSpeakEnd: nextVoiceTurn });
       if (state.voiceCallActive) setCallStatus('speaking', '🔊 AI 正在说话...');
     } catch (err) {
       hideTypingBubble();
@@ -830,10 +828,24 @@
     const micBtn = $('#micBtn');
     const hint = $('#voiceHint');
     const voiceCallBtn = $('#btnVoiceCall');
+    // 绝大多数安卓国产浏览器和App内置浏览器都没有 SpeechRecognition（iOS Safari 有），
+    // 原来这里直接把按钮禁用掉，用户的体感就是"能听见AI说话，AI却听不见我"。
+    // 现在改走"录一段音传给服务端识别"，和同声传译用的是同一条兜底路径。
     if (!SpeechRecognition) {
-      micBtn.disabled = true;
-      voiceCallBtn.disabled = true;
-      hint.textContent = '当前浏览器不支持语音识别，建议使用 Chrome 浏览器（语音朗读功能仍可用）。';
+      if (!canRecord()) {
+        micBtn.disabled = true;
+        voiceCallBtn.disabled = true;
+        hint.textContent = voiceInputUnavailableHint() + '（朗读仍可用，可改用打字输入）';
+        return;
+      }
+      micBtn.disabled = false;
+      voiceCallBtn.disabled = false;
+      hint.textContent = CHAT_RECORD_HINT;
+      micBtn.onclick = () => {
+        unlockSpeechSynthesis();
+        if (chatRecorder) stopChatRecording();
+        else startChatRecording();
+      };
       return;
     }
     hint.textContent = '点击麦克风单次语音输入，或开启"语音对话模式"实现连续免手动对话。';
@@ -861,6 +873,95 @@
       };
       recognition.start();
     };
+  }
+
+  // ---------- 语音输入的服务端兜底（浏览器没有 SpeechRecognition 时） ----------
+  // 原生识别是流式的、能自动判断"说完了"；录音兜底做不到，只能让用户点两次麦克风来划定一段。
+  const CHAT_RECORD_HINT = '点麦克风开始录音，说完再点一次（当前浏览器不支持实时识别，已改用服务端识别）';
+  let chatRecorder = null;
+  let chatRecStream = null;
+
+  function setChatVoiceStatus(text) {
+    $('#voiceHint').textContent = text;
+    if (state.voiceCallActive) setCallStatus('listening', text);
+  }
+
+  async function startChatRecording() {
+    $('#voiceHint').textContent = '正在获取麦克风权限…';
+    let stream;
+    try {
+      // 和同声传译一样要加超时：部分App内置浏览器会把权限弹窗吞掉，
+      // getUserMedia 既不 resolve 也不 reject，界面就永远卡在这
+      stream = await Promise.race([
+        navigator.mediaDevices.getUserMedia({ audio: true }),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('TIMEOUT')), 6000)),
+      ]);
+    } catch (e) {
+      const msg = e && e.message === 'TIMEOUT'
+        ? voiceInputUnavailableHint()
+        : '无法使用麦克风，请在浏览器设置中允许麦克风权限后重试';
+      $('#voiceHint').textContent = '⚠️ ' + msg;
+      toast(msg);
+      if (state.voiceCallActive) stopVoiceCall();
+      return;
+    }
+    chatRecStream = stream;
+    const chunks = [];
+    const rec = new MediaRecorder(stream); // 让浏览器自己挑格式，写死 mime 部分机型会抛错
+    chatRecorder = rec;
+    rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+    rec.onstop = () => {
+      const blob = new Blob(chunks, { type: rec.mimeType || 'audio/webm' });
+      if (chatRecStream) { chatRecStream.getTracks().forEach(t => t.stop()); chatRecStream = null; }
+      chatRecorder = null;
+      $('#micBtn').classList.remove('recording');
+      if (blob.size > 1000) transcribeChatAudio(blob);
+      else setChatVoiceStatus('🎙️ 没录到声音，点麦克风再说一次');
+    };
+    rec.start();
+    $('#micBtn').classList.add('recording');
+    setChatVoiceStatus('🔴 录音中…说完后再点一次麦克风');
+  }
+
+  function stopChatRecording() {
+    const rec = chatRecorder;
+    if (!rec) return;
+    // 先取局部引用再置空：onstop 是异步触发的，里面用的是 rec，不会读到 null
+    chatRecorder = null;
+    try { if (rec.state !== 'inactive') rec.stop(); } catch {}
+  }
+
+  async function transcribeChatAudio(blob) {
+    $('#voiceHint').textContent = '⏳ 识别中…';
+    if (state.voiceCallActive) setCallStatus('thinking', '⏳ 正在识别你说的话...');
+    try {
+      const form = new FormData();
+      form.append('audio', blob, 'speech.webm');
+      form.append('language', state.chatInputLang || 'zh');
+      const headers = {};
+      const token = getAuthToken();
+      if (token) headers.Authorization = 'Bearer ' + token;
+      const resp = await fetch(API_BASE + '/transcribe', { method: 'POST', headers, credentials: 'include', body: form });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(data.error || '识别失败');
+      const text = (data.text || '').trim();
+      if (!text) { setChatVoiceStatus('🎙️ 没听清，点麦克风再说一次'); return; }
+      $('#voiceHint').textContent = CHAT_RECORD_HINT;
+      // 语音对话模式下直接发出去；单次输入模式填进输入框，让用户能改完再发
+      if (state.voiceCallActive) sendChatMessage(text);
+      else $('#chatInput').value = text;
+    } catch (e) {
+      $('#voiceHint').textContent = '⚠️ ' + e.message;
+      toast(e.message);
+      if (state.voiceCallActive) setCallStatus('error', '⚠️ ' + e.message);
+    }
+  }
+
+  // 一轮说完之后怎么继续：有原生识别就自动开麦，走录音兜底时提示用户再点一次麦克风
+  function nextVoiceTurn() {
+    if (!state.voiceCallActive) return;
+    if (hasNativeASR()) { listenTurn(); return; }
+    setCallStatus('listening', '🎙️ 点麦克风开始说话，说完再点一次');
   }
 
   function recognitionErrorMessage(error) {
@@ -975,19 +1076,21 @@
   }
 
   function startVoiceCall() {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) { toast('当前浏览器不支持语音识别，无法使用语音对话模式'); return; }
+    const useRecording = !hasNativeASR();
+    if (useRecording && !canRecord()) { toast(voiceInputUnavailableHint()); return; }
     unlockSpeechSynthesis();
     state.voiceErrorStreak = 0;
     state.voiceCallActive = true;
     state.autoSpeak = true;
     $('#autoSpeakToggle').checked = true;
     $('#autoSpeakToggle').disabled = true;
-    $('#chatForm').hidden = true;
+    // 录音兜底模式要靠用户点麦克风来划定每一段话，所以输入行不能藏起来
+    $('#chatForm').hidden = !useRecording;
     $('#callStatusBar').hidden = false;
     $('#btnVoiceCall').hidden = true;
-    window.speechSynthesis.cancel();
-    listenTurn();
+    try { window.speechSynthesis.cancel(); } catch {}
+    if (useRecording) setCallStatus('listening', '🎙️ 点麦克风开始说话，说完再点一次');
+    else listenTurn();
   }
 
   function stopVoiceCall() {
@@ -1000,6 +1103,10 @@
     // （部分安卓机型上这些回调不可靠，是"点了结束但停不下来"的根源）
     setAvatarTalking(false);
     if (recognition) { try { recognition.abort(); } catch { try { recognition.stop(); } catch {} } }
+    stopChatRecording();
+    if (chatRecStream) { chatRecStream.getTracks().forEach(t => t.stop()); chatRecStream = null; }
+    $('#micBtn').classList.remove('recording');
+    $('#voiceHint').textContent = hasNativeASR() ? '' : CHAT_RECORD_HINT;
     try { window.speechSynthesis.cancel(); } catch {}
     $('#autoSpeakToggle').disabled = false;
     $('#chatForm').hidden = false;
@@ -2045,17 +2152,21 @@
       return;
     }
     trChunks = [];
-    // 让浏览器自己挑支持的格式，写死 mime 在部分机型上会直接抛错
-    trMediaRecorder = new MediaRecorder(trStream);
-    trMediaRecorder.ondataavailable = (e) => { if (e.data.size) trChunks.push(e.data); };
-    trMediaRecorder.onstop = () => {
-      const blob = new Blob(trChunks, { type: trMediaRecorder.mimeType || 'audio/webm' });
+    // 让浏览器自己挑支持的格式，写死 mime 在部分机型上会直接抛错。
+    // onstop 里必须用这个局部 rec 而不是 trMediaRecorder：停止时会把外层变量置空，
+    // 而 onstop 是异步触发的，读 null.mimeType 会抛错，整段录音就被静默丢弃了。
+    const rec = new MediaRecorder(trStream);
+    trMediaRecorder = rec;
+    rec.ondataavailable = (e) => { if (e.data.size) trChunks.push(e.data); };
+    rec.onstop = () => {
+      const blob = new Blob(trChunks, { type: rec.mimeType || 'audio/webm' });
       trChunks = [];
+      // 音轨要等 onstop 之后再关，提前关会丢掉最后一个数据块
       if (trStream) { trStream.getTracks().forEach(t => t.stop()); trStream = null; }
       if (blob.size > 1000) transcribeAndTranslate(blob);
       else $('#trStatus').textContent = '没录到声音，再试一次';
     };
-    trMediaRecorder.start();
+    rec.start();
     trListening = true;
     updateTrMicUI();
     $('#trStatus').textContent = '🔴 录音中…对方说完后点「停止并翻译」';
@@ -2094,13 +2205,15 @@
       trRecognition = null;
     }
     if (trMediaRecorder) {
-      // 录音模式下停止会触发 onstop，那里会把这段音频送去识别翻译
-      try { if (trMediaRecorder.state !== 'inactive') trMediaRecorder.stop(); } catch {}
+      // 录音模式下停止会触发 onstop，那里会把这段音频送去识别翻译，并负责关掉音轨。
+      // 这里不能顺手把 trStream 也关了——onstop 还没跑，提前关会丢掉最后一段音频。
+      const rec = trMediaRecorder;
       trMediaRecorder = null;
+      try { if (rec.state !== 'inactive') rec.stop(); } catch {}
     } else {
       $('#trStatus').textContent = '已停止。点击「开始收听」继续';
+      if (trStream) { trStream.getTracks().forEach(t => t.stop()); trStream = null; }
     }
-    if (trStream) { trStream.getTracks().forEach(t => t.stop()); trStream = null; }
     updateTrMicUI();
   }
 
