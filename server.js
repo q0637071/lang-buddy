@@ -1071,8 +1071,13 @@ app.post('/api/tts', requireAuth, rateLimit(30), async (req, res) => {
 app.get('/api/health', (req, res) => {
   // 只报"配没配"，不回显任何密钥。环境变量改完能不能生效，看这里最快，
   // 不用登录也不用翻 Render 后台
+  // 这个接口被保活 ping 匿名调用（每10分钟一次），必须始终可访问且返回 200，
+  // 否则服务会重新开始休眠。但用了什么数据库、接了哪些外部服务、限额配成多少，
+  // 都属于内部信息，没必要对全网公开——只对超级管理员展开。
+  if (!isSuperAdminName(req.session.userId)) return res.json({ ok: true });
+
   // Tavus 官方不提供消费上限（超出套餐后 never paused, never throttled），
-  // 这几个数字是唯一的账单防线，必须能随时确认配对了没有，所以放进健康检查。
+  // 这几个数字是唯一的账单防线，必须能随时确认配对了没有。
   res.json({
     ok: true,
     dbMode: mongoCollection ? 'mongodb' : 'file',
