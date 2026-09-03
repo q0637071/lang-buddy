@@ -1048,7 +1048,13 @@ app.post('/api/tts', requireAuth, rateLimit(30), async (req, res) => {
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({ ok: true, dbMode: mongoCollection ? 'mongodb' : 'file' });
+  // 只报"配没配"，不回显任何密钥。环境变量改完能不能生效，看这里最快，
+  // 不用登录也不用翻 Render 后台
+  res.json({
+    ok: true,
+    dbMode: mongoCollection ? 'mongodb' : 'file',
+    avatar: avatarEnabled(),
+  });
 });
 
 app.get('/api/me', (req, res) => {
