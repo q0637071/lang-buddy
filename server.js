@@ -50,7 +50,13 @@ const AVATAR_MONTHLY_MINUTES = Number(process.env.AVATAR_MONTHLY_MINUTES || 1);
 // Tavus 套餐用超了会自动按 $0.37/分钟计费且没有上限，几百个新用户就能刷出一笔
 // 意料之外的账单。这道闸门就是账单的硬顶，设成你套餐包含的分钟数
 // （Starter 60 / Builder 175 / Growth 1300），用满就停发新通话。
-const AVATAR_GLOBAL_MONTHLY_MINUTES = Number(process.env.AVATAR_GLOBAL_MONTHLY_MINUTES || 60);
+// ⚠️ 默认值对应当前的 Tavus Builder 套餐（175分钟/月、并发3路）。
+// 换套餐后这两个默认值就不对了，必须同步改，否则要么白锁额度、要么冲进超额计费。
+// 当前生效值可以直接查 /api/health 确认。
+const AVATAR_GLOBAL_MONTHLY_MINUTES = Number(process.env.AVATAR_GLOBAL_MONTHLY_MINUTES || 175);
+// Tavus 套餐的并发上限（Free/Starter 1、Builder 3、Growth 10、Business 15）。
+// 超了 Tavus 会直接拒绝建流，与其让用户撞上一个看不懂的报错，不如我们先拦住说清楚。
+const AVATAR_MAX_CONCURRENT = Number(process.env.AVATAR_MAX_CONCURRENT || 3);
 const AVATAR_MAX_CALL_SECONDS = Number(process.env.AVATAR_MAX_CALL_SECONDS || 300);
 // 通话期间前端每 20 秒报一次心跳。结算时按"最后一次心跳"算时长，而不是"到现在为止"——
 // 否则用户讲了30秒直接关页面，隔一会儿再回来会被按单次上限满额扣掉5分钟。
@@ -1075,6 +1081,7 @@ app.get('/api/health', (req, res) => {
       avatarGlobalMinutes: AVATAR_GLOBAL_MONTHLY_MINUTES,
       avatarPerIpMinutes: AVATAR_MONTHLY_MINUTES,
       avatarMaxCallSeconds: AVATAR_MAX_CALL_SECONDS,
+      avatarMaxConcurrent: AVATAR_MAX_CONCURRENT,
     } : {}),
   });
 });
@@ -1397,6 +1404,23 @@ function avatarGlobalUsage(db) {
   return rec;
 }
 
+// 统计此刻正在进行的通话数。顺便把明显已经断掉却没落账的僵尸会话就地结算——
+// 否则一个没正常结束的会话会一直占着并发位，把名额慢慢耗光。
+function countActiveAvatarCalls(db) {
+  const now = Date.now();
+  let n = 0;
+  for (const u of Object.values(db.users || {})) {
+    const a = u.avatarUsage && u.avatarUsage.active;
+    if (!a) continue;
+    const alive = a.lastSeenAt
+      ? now - a.lastSeenAt < 60000   // 还在发心跳（心跳间隔20秒，留3倍余量）
+      : now - a.startedAt < 90000;   // 刚创建还没进去，对齐 participant_absent_timeout
+    if (alive) { n++; continue; }
+    settleAvatarSession(db, u);      // 僵尸会话结算掉，释放并发位
+  }
+  return n;
+}
+
 function avatarGlobalQuota(db) {
   const limit = AVATAR_GLOBAL_MONTHLY_MINUTES * 60;
   const used = avatarGlobalUsage(db).seconds || 0;
@@ -1478,6 +1502,13 @@ app.post('/api/avatar/conversation', requireMember, rateLimit(6), async (req, re
   if (q.remaining <= 0) {
     saveDB(db);
     return res.status(403).json({ error: `AI 视频通话每月体验额度（${AVATAR_MONTHLY_MINUTES}分钟）已用完，下月1日重置` });
+  }
+
+  // 并发闸门放在额度之后：额度不够本来就不该发，没必要再占一个并发位去判断
+  const inCall = countActiveAvatarCalls(db);
+  if (inCall >= AVATAR_MAX_CONCURRENT) {
+    saveDB(db);
+    return res.status(503).json({ error: '当前通话的人有点多，请过一两分钟再试' });
   }
 
   const replyLangName = LANG_NAME[user.targetLang] || '英语';
