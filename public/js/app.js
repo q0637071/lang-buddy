@@ -1130,6 +1130,40 @@
     return m > 0 ? `${m}分${String(s % 60).padStart(2, '0')}秒` : `${s}秒`;
   }
 
+  // 后台的视频通话用量。这是唯一按分钟花钱的功能，超出套餐 Tavus 会自动扣费
+  // 且没有上限，所以"还剩多少"必须一眼能看到，快见底时要显眼。
+  function renderAdminAvatarUsage(a) {
+    const sec = $('#adminAvatarSection');
+    if (!sec) return;
+    if (!a || !a.enabled) { sec.hidden = true; return; }
+    sec.hidden = false;
+
+    const pct = a.limitSeconds ? Math.min(100, Math.round(a.usedSeconds / a.limitSeconds * 100)) : 0;
+    const bar = $('#adminAvatarBar');
+    bar.style.width = pct + '%';
+    bar.className = 'avatar-usage-fill' + (pct >= 90 ? ' danger' : pct >= 70 ? ' warn' : '');
+
+    $('#adminAvatarSummary').innerHTML =
+      `<strong>${fmtSeconds(a.usedSeconds)}</strong> / ${Math.round(a.limitSeconds / 60)} 分钟`
+      + `　<span class="avatar-usage-pct">已用 ${pct}%</span>`
+      + `　剩余 <strong>${fmtSeconds(a.remainingSeconds)}</strong>`;
+
+    const parts = [
+      `正在通话 ${a.activeCalls}/${a.maxConcurrent} 路`,
+      `本月 ${a.distinctIps} 个 IP 用过`,
+      `每 IP 上限 ${a.perIpMinutes} 分钟`,
+    ];
+    if (a.remainingSeconds <= 0) parts.push('⚠️ 额度已用尽，已停发新通话');
+    $('#adminAvatarMeta').textContent = parts.join('　·　');
+
+    const wrap = $('#adminAvatarIpWrap');
+    const rows = a.topIps || [];
+    wrap.hidden = rows.length === 0;
+    $('#adminAvatarIpBody').innerHTML = rows
+      .map(r => `<tr><td>${escapeHtml(r.ip)}</td><td>${fmtSeconds(r.seconds)}</td></tr>`)
+      .join('');
+  }
+
   async function refreshAvatarButton() {
     const cta = $('#avatarCta');
     const btn = $('#btnAvatarCall');
@@ -3164,6 +3198,7 @@
       $('#adminTotalMistakes').textContent = overview.totalMistakes;
       $('#adminNewToday').textContent = overview.newUsersToday;
       $('#adminNewWeek').textContent = overview.newUsersThisWeek;
+      renderAdminAvatarUsage(overview.avatar);
 
       // 公网IP/归属地只有超级管理员能看，普通管理员的接口响应里根本没有这些字段
       const canSeeIp = !!usersData.canSeeIp;

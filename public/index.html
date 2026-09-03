@@ -677,6 +677,22 @@
         <div class="metric-card"><div class="metric-icon">📈</div><div class="metric-value" id="adminNewWeek">-</div><div class="metric-label">近7天新增</div></div>
       </div>
 
+      <!-- 视频通话是唯一按分钟计费的功能，用量单独一块，避免混在其他统计里被忽略 -->
+      <div id="adminAvatarSection" hidden>
+        <h3 class="section-title">AI 视频通话用量（本月）</h3>
+        <div class="avatar-usage-card">
+          <div class="avatar-usage-bar"><div class="avatar-usage-fill" id="adminAvatarBar"></div></div>
+          <div class="avatar-usage-line" id="adminAvatarSummary"></div>
+          <div class="avatar-usage-meta" id="adminAvatarMeta"></div>
+        </div>
+        <div class="admin-table-wrap" id="adminAvatarIpWrap" hidden>
+          <table class="admin-table">
+            <thead><tr><th>来源 IP</th><th>本月用量</th></tr></thead>
+            <tbody id="adminAvatarIpBody"></tbody>
+          </table>
+        </div>
+      </div>
+
       <div id="adminRegionSection" hidden>
         <h3 class="section-title">注册地区分布</h3>
         <div class="admin-table-wrap">

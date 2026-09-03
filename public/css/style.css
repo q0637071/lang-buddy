@@ -660,3 +660,13 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--p
   padding: 3px 9px; border-radius: 999px;
 }
 .price-list-hl { font-weight: 700; color: var(--primary-dark); }
+
+/* 后台：AI 视频通话用量。快见底时要一眼看出来，所以进度条会变色 */
+.avatar-usage-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow-sm); margin-bottom: 14px; }
+.avatar-usage-bar { height: 10px; border-radius: 999px; background: var(--border); overflow: hidden; margin-bottom: 10px; }
+.avatar-usage-fill { height: 100%; width: 0; border-radius: 999px; background: var(--gradient-primary); transition: width .3s ease; }
+.avatar-usage-fill.warn { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+.avatar-usage-fill.danger { background: linear-gradient(135deg, #dc2626, #f87171); }
+.avatar-usage-line { font-size: 15px; color: var(--text); }
+.avatar-usage-pct { color: var(--text-muted); font-size: 13px; }
+.avatar-usage-meta { margin-top: 6px; font-size: 13px; color: var(--text-muted); }

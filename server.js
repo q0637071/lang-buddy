@@ -1406,7 +1406,8 @@ function avatarGlobalUsage(db) {
 
 // 统计此刻正在进行的通话数。顺便把明显已经断掉却没落账的僵尸会话就地结算——
 // 否则一个没正常结束的会话会一直占着并发位，把名额慢慢耗光。
-function countActiveAvatarCalls(db) {
+// settleStale=false 用于后台只读展示：不要在一个 GET 里改数据
+function countActiveAvatarCalls(db, settleStale = true) {
   const now = Date.now();
   let n = 0;
   for (const u of Object.values(db.users || {})) {
@@ -1416,7 +1417,7 @@ function countActiveAvatarCalls(db) {
       ? now - a.lastSeenAt < 60000   // 还在发心跳（心跳间隔20秒，留3倍余量）
       : now - a.startedAt < 90000;   // 刚创建还没进去，对齐 participant_absent_timeout
     if (alive) { n++; continue; }
-    settleAvatarSession(db, u);      // 僵尸会话结算掉，释放并发位
+    if (settleStale) settleAvatarSession(db, u); // 僵尸会话结算掉，释放并发位
   }
   return n;
 }
@@ -2511,6 +2512,26 @@ app.get('/api/admin/overview', requireAdmin, (req, res) => {
     canSeeIp,
     // 地区分布同样只给超级管理员看
     regionBreakdown: canSeeIp ? regionBreakdown : [],
+    // 视频通话是唯一按分钟真金白银计费的功能，用量必须能一眼看到
+    avatar: avatarEnabled() ? (() => {
+      const g = avatarGlobalQuota(db);
+      const ipRows = Object.entries(db.avatarIpUsage || {})
+        .filter(([, r]) => r.month === monthKey(new Date()) && r.seconds > 0)
+        .map(([ip, r]) => ({ ip, seconds: r.seconds }))
+        .sort((a, b) => b.seconds - a.seconds);
+      return {
+        enabled: true,
+        usedSeconds: g.used,
+        limitSeconds: g.limit,
+        remainingSeconds: g.remaining,
+        activeCalls: countActiveAvatarCalls(db, false),
+        maxConcurrent: AVATAR_MAX_CONCURRENT,
+        perIpMinutes: AVATAR_MONTHLY_MINUTES,
+        distinctIps: ipRows.length,
+        // 具体 IP 属于个人信息，跟注册IP一样只给超级管理员
+        topIps: canSeeIp ? ipRows.slice(0, 10) : [],
+      };
+    })() : { enabled: false },
   });
 });
 
