@@ -40,7 +40,7 @@
     <section class="hero">
       <div class="hero-inner">
         <h1>跟 AI 私教<br>1对1 练出真实的外语能力</h1>
-        <p class="hero-sub">打字对话 · 语音练习 · 背单词 · 语法精讲，一站式外语学习平台</p>
+        <p class="hero-sub">AI 视频通话 · 打字对话 · 语音练习 · 背单词 · 语法精讲，一站式外语学习平台</p>
         <div class="hero-cta">
           <button class="btn btn-primary btn-lg" id="btnHeroRegister">免费开始学习</button>
           <button class="btn btn-outline btn-lg" id="btnHeroLogin">已有账号，登录</button>
@@ -49,6 +49,13 @@
     </section>
 
     <section class="features">
+      <div class="feature-card feature-card-highlight">
+        <span class="badge-new">NEW</span>
+        <div class="feature-icon">📹</div>
+        <h3>AI 视频通话</h3>
+        <p>和 AI 私教面对面视频通话，看得见表情、听得见语气，最接近真人外教的口语练习。</p>
+        <span class="badge-member">会员专享</span>
+      </div>
       <div class="feature-card">
         <div class="feature-icon">💬</div>
         <h3>AI 1对1 对话</h3>
@@ -77,6 +84,7 @@
       <div class="price-card">
         <div class="price-tag">演示版 · 免费开通</div>
         <ul class="price-list">
+          <li class="price-list-hl">📹 AI 视频通话，面对面练口语</li>
           <li>✔ AI 1对1 打字/语音对话</li>
           <li>✔ AI 语法批改</li>
           <li>✔ 完整背单词与语法课程</li>
@@ -148,6 +156,16 @@
     <div class="container container-narrow">
       <h2 class="page-title">AI 1对1 对话练习</h2>
       <div class="tts-notice" id="ttsNoticeTutor" hidden></div>
+
+      <!-- 主打功能，放在最显眼的位置：标题正下方、其余内容之前 -->
+      <div class="avatar-cta" id="avatarCta" hidden>
+        <div class="avatar-cta-icon">📹</div>
+        <div class="avatar-cta-text">
+          <div class="avatar-cta-title">和 AI 私教面对面视频通话</div>
+          <div class="avatar-cta-sub" id="avatarCtaSub"></div>
+        </div>
+        <button type="button" class="btn btn-primary" id="btnAvatarCall">立即连接</button>
+      </div>
       <div id="tutorPaywall" class="paywall paywall-banner" hidden>
         <p>🎁 非会员每天可免费体验 5 分钟 AI 对话，开通会员畅享无限时长。</p>
         <button class="btn btn-primary btn-sm" id="btnTutorUpgrade">立即开通会员</button>
@@ -251,7 +269,6 @@
           <div style="display:flex;gap:8px;">
             <button type="button" class="btn btn-ghost btn-sm" id="btnClearChat" title="清空对话记录">🗑️ 清空对话</button>
             <button type="button" class="btn btn-outline btn-sm" id="btnVoiceCall">🎧 开启语音对话模式</button>
-            <button type="button" class="btn btn-outline btn-sm" id="btnAvatarCall" hidden>📹 连接AI 视频通话</button>
           </div>
         </div>
         <div class="chat-window" id="chatWindow"></div>

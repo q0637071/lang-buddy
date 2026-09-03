@@ -619,3 +619,44 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--p
   .avatar-modal { width: 100vw; height: 100dvh; max-width: none; border-radius: 0; padding: 12px; }
   .avatar-stage { flex: 1; aspect-ratio: auto; max-height: none; }
 }
+
+/* AI 视频通话：主打功能，入口做成醒目卡片放在对话页顶部 */
+.avatar-cta {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 18px; margin-bottom: 16px;
+  border-radius: var(--radius);
+  background: var(--gradient-primary);
+  box-shadow: var(--shadow-primary);
+  color: #fff;
+}
+.avatar-cta-icon { font-size: 30px; line-height: 1; flex: none; }
+.avatar-cta-text { flex: 1; min-width: 0; }
+.avatar-cta-title { font-weight: 700; font-size: 16px; }
+.avatar-cta-sub { font-size: 13px; opacity: .9; margin-top: 2px; }
+/* 卡片本身是主色渐变，按钮再用主色就糊成一片，这里反白更跳 */
+.avatar-cta .btn-primary {
+  flex: none; background: #fff; color: var(--primary-dark);
+  border-color: #fff; box-shadow: none;
+}
+.avatar-cta .btn-primary:hover:not(:disabled) { background: #f2fffe; }
+.avatar-cta .btn-primary:disabled { background: rgba(255,255,255,.55); color: var(--primary-dark); }
+@media (max-width: 600px) {
+  .avatar-cta { flex-wrap: wrap; gap: 10px; }
+  .avatar-cta-text { flex-basis: calc(100% - 48px); }
+  .avatar-cta .btn-primary { width: 100%; }
+}
+
+/* 首页把视频通话卡片做成主推 */
+.feature-card-highlight {
+  position: relative;
+  border: 2px solid var(--primary);
+  box-shadow: var(--shadow-primary);
+}
+/* 右上角已被 .badge-member 占着，NEW 放左上角，两个标签才不会叠在一起 */
+.badge-new {
+  position: absolute; top: 16px; left: 16px;
+  background: var(--gradient-primary); color: #fff;
+  font-size: 11px; font-weight: 700; letter-spacing: .5px;
+  padding: 3px 9px; border-radius: 999px;
+}
+.price-list-hl { font-weight: 700; color: var(--primary-dark); }

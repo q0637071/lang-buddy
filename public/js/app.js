@@ -1131,24 +1131,25 @@
   }
 
   async function refreshAvatarButton() {
+    const cta = $('#avatarCta');
     const btn = $('#btnAvatarCall');
-    if (!btn) return;
+    if (!cta || !btn) return;
     try {
       const s = await api('/avatar/status');
-      // 功能没开、或不是会员：入口不出现（非会员由会员提示条负责引导，
+      // 功能没开、或不是会员：整张卡片不出现（非会员由会员提示条负责引导，
       // 这个功能的单位成本远高于会员费，不能放进免费额度）
-      if (!s.enabled || !s.isMember) { btn.hidden = true; return; }
-      btn.hidden = false;
-      // 额度用完时不能让按钮凭空消失——用户只会觉得"功能怎么突然没了"。
-      // 入口保留但禁用，把原因直接写在按钮上。
+      if (!s.enabled || !s.isMember) { cta.hidden = true; return; }
+      cta.hidden = false;
+      // 额度用完时不能让入口凭空消失——用户只会觉得"功能怎么突然没了"。
+      // 卡片保留、按钮禁用，把原因写在副标题上。
       const out = s.remainingSeconds <= 0;
       btn.disabled = out;
-      btn.textContent = out ? '📹 视频通话额度已用完' : '📹 连接AI 视频通话';
-      btn.title = out
-        ? `本月 ${s.monthlyMinutes} 分钟额度已用完，下月1日重置`
-        : `本月剩余 ${fmtSeconds(s.remainingSeconds)}（共 ${s.monthlyMinutes} 分钟）`;
+      btn.textContent = out ? '额度已用完' : '立即连接';
+      $('#avatarCtaSub').textContent = out
+        ? `本月 ${s.monthlyMinutes} 分钟已用完，下月 1 日重置`
+        : `本月还剩 ${fmtSeconds(s.remainingSeconds)}（每月 ${s.monthlyMinutes} 分钟）`;
     } catch {
-      btn.hidden = true; // 状态查不到就当没开，不要给个点了报错的按钮
+      cta.hidden = true; // 状态查不到就当没开，不要给个点了报错的入口
     }
   }
 
