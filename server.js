@@ -39,11 +39,13 @@ const DOMESTIC_MODEL = process.env.DOMESTIC_MODEL || 'glm-4-flash';
 // 没配 TAVUS_API_KEY / TAVUS_REPLICA_ID 就整体关闭，其余功能不受影响。
 const TAVUS_API_KEY = process.env.TAVUS_API_KEY;
 const TAVUS_BASE_URL = process.env.TAVUS_BASE_URL || 'https://tavusapi.com/v2';
-const TAVUS_REPLICA_ID = process.env.TAVUS_REPLICA_ID; // 数字人形象（face）
-const TAVUS_PERSONA_ID = process.env.TAVUS_PERSONA_ID; // 人设，可留空
+// Tavus 把 replica 改名成 face、persona 改名成 PAL，接口字段也跟着变了。
+// 环境变量两套名字都认，免得照着旧教程配了半天发现不生效。
+const TAVUS_FACE_ID = process.env.TAVUS_FACE_ID || process.env.TAVUS_REPLICA_ID; // 数字人形象
+const TAVUS_PAL_ID = process.env.TAVUS_PAL_ID || process.env.TAVUS_PERSONA_ID;   // 人设，可留空
 const AVATAR_MONTHLY_MINUTES = Number(process.env.AVATAR_MONTHLY_MINUTES || 10);
 const AVATAR_MAX_CALL_SECONDS = Number(process.env.AVATAR_MAX_CALL_SECONDS || 300);
-const avatarEnabled = () => !!(TAVUS_API_KEY && TAVUS_REPLICA_ID);
+const avatarEnabled = () => !!(TAVUS_API_KEY && TAVUS_FACE_ID);
 
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_PATH = path.join(DATA_DIR, 'db.json');
@@ -1401,8 +1403,8 @@ app.post('/api/avatar/conversation', requireMember, rateLimit(6), async (req, re
     const data = await tavusFetch('/conversations', {
       method: 'POST',
       body: JSON.stringify({
-        replica_id: TAVUS_REPLICA_ID,
-        ...(TAVUS_PERSONA_ID ? { persona_id: TAVUS_PERSONA_ID } : {}),
+        face_id: TAVUS_FACE_ID,
+        ...(TAVUS_PAL_ID ? { pal_id: TAVUS_PAL_ID } : {}),
         conversation_name: `LangBuddy-${user.username}`,
         conversational_context: context,
         properties: {
