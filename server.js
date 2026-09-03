@@ -1076,10 +1076,27 @@ app.get('/api/health', (req, res) => {
   // 都属于内部信息，没必要对全网公开——只对超级管理员展开。
   if (!isSuperAdminName(req.session.userId)) return res.json({ ok: true });
 
+  // 配置风险自检。这些坑的共同点是"配错了不会报错，只会在出事那天才发现"，
+  // 靠人去记去核对迟早会漏，所以让程序自己盯着，在超管的健康检查里报出来。
+  const warnings = [];
+  if (SESSION_SECRET === 'langbuddy-dev-secret') {
+    warnings.push('SESSION_SECRET 仍是代码里的默认值（公开仓库可见）：任何人都能伪造任意用户的登录态，包括超级管理员。请立刻改成随机串。');
+  } else if (SESSION_SECRET.length < 24) {
+    warnings.push('SESSION_SECRET 太短，建议用 32 字节以上的随机串。');
+  }
+  if (!SMS_PROVIDER) {
+    warnings.push('SMS_PROVIDER 未配置：注册接口会把短信验证码直接返回给前端(devCode)，等于手机验证形同虚设，谁都能用任意号码注册。');
+  }
+  if (!mongoCollection) {
+    warnings.push('未连接 MongoDB，正在用本地文件存数据：Render 容器磁盘是临时的，重新部署会丢失全部用户数据。');
+  }
+
   // Tavus 官方不提供消费上限（超出套餐后 never paused, never throttled），
   // 这几个数字是唯一的账单防线，必须能随时确认配对了没有。
   res.json({
     ok: true,
+    configOk: warnings.length === 0,
+    warnings,
     dbMode: mongoCollection ? 'mongodb' : 'file',
     avatar: avatarEnabled(),
     ...(avatarEnabled() ? {
@@ -2695,7 +2712,15 @@ app.use((err, req, res, next) => {
 initDB().then(() => app.listen(PORT, () => {
   console.log(`\n✅ LangBuddy 语伴已启动`);
   console.log(`   本地访问: http://localhost:${PORT}`);
-  console.log(`   使用模型: ${SF_MODEL}\n`);
+  console.log(`   使用模型: ${SF_MODEL}`);
+  // 启动时就把配置风险喊出来，Render 的日志里一眼能看到，
+  // 不用等谁想起来去核对
+  if (SESSION_SECRET === 'langbuddy-dev-secret') {
+    console.warn('\n🔴 SESSION_SECRET 仍是默认值（公开仓库可见）——任何人都能伪造登录态，请立刻在环境变量里改掉');
+  }
+  if (!SMS_PROVIDER) console.warn('⚠️  SMS_PROVIDER 未配置：验证码会直接返回给前端，手机验证形同虚设');
+  if (!mongoCollection) console.warn('⚠️  未连接 MongoDB：数据存在临时磁盘上，重新部署会全部丢失');
+  console.log('');
 })).catch(err => {
   console.error('❌ 启动失败，数据库连接出错:', err.message);
   process.exit(1);
