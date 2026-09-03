@@ -1134,10 +1134,18 @@
     if (!btn) return;
     try {
       const s = await api('/avatar/status');
-      // 非会员不显示入口：这个功能的单位成本远高于会员费，不能放进免费额度
-      const usable = s.enabled && s.isMember && s.remainingSeconds > 0;
-      btn.hidden = !usable;
-      if (usable) btn.title = `本月剩余 ${fmtSeconds(s.remainingSeconds)}（共${s.monthlyMinutes}分钟）`;
+      // 功能没开、或不是会员：入口不出现（非会员由会员提示条负责引导，
+      // 这个功能的单位成本远高于会员费，不能放进免费额度）
+      if (!s.enabled || !s.isMember) { btn.hidden = true; return; }
+      btn.hidden = false;
+      // 额度用完时不能让按钮凭空消失——用户只会觉得"功能怎么突然没了"。
+      // 入口保留但禁用，把原因直接写在按钮上。
+      const out = s.remainingSeconds <= 0;
+      btn.disabled = out;
+      btn.textContent = out ? '🧑‍🏫 数字人额度已用完' : '🧑‍🏫 数字人对话';
+      btn.title = out
+        ? `本月 ${s.monthlyMinutes} 分钟额度已用完，下月1日重置`
+        : `本月剩余 ${fmtSeconds(s.remainingSeconds)}（共 ${s.monthlyMinutes} 分钟）`;
     } catch {
       btn.hidden = true; // 状态查不到就当没开，不要给个点了报错的按钮
     }
