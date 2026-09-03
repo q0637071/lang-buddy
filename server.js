@@ -1352,17 +1352,22 @@ async function tavusFetch(pathname, options = {}) {
 
 // 把上一场会话的用量落账。用户正常点结束会走这里；异常退出（关浏览器/断网）则等他
 // 下次进来时补记，按"已过去的时间"和单次上限取小值，避免一场没关的会话吃掉整月额度。
-function settleAvatarSession(user) {
+// exact=true 表示用户主动点了结束，挂断时刻是确定的，不需要宽限；
+// exact=false 是异常退出（关页面/断网），只能按最后一次心跳推算。
+function settleAvatarSession(user, exact = false) {
   const u = user.avatarUsage;
   if (!u || !u.active) return;
-  // 正常点结束会把 lastSeenAt 设成当下；异常退出则停在最后一次心跳，
-  // 用户人早走了就不会再被计费
-  const endedAt = u.active.lastSeenAt || u.active.startedAt;
-  const raw = Math.round((endedAt - u.active.startedAt) / 1000) + AVATAR_PING_GRACE;
-  const elapsed = Math.min(Math.max(raw, 0), AVATAR_MAX_CALL_SECONDS);
   const thisMonth = monthKey(new Date());
   if (u.month !== thisMonth) { u.month = thisMonth; u.seconds = 0; }
-  u.seconds = (u.seconds || 0) + Math.max(elapsed, 30); // Tavus 每场最低计 30 秒
+
+  // 一次心跳都没有 = 人根本没进到通话里（点开就退、接通失败、权限没给）。
+  // 这种情况不能计费——没用就不该扣。
+  if (!u.active.lastSeenAt) { u.active = null; return; }
+
+  const raw = Math.round((u.active.lastSeenAt - u.active.startedAt) / 1000)
+    + (exact ? 0 : AVATAR_PING_GRACE);
+  const elapsed = Math.min(Math.max(raw, 0), AVATAR_MAX_CALL_SECONDS);
+  u.seconds = (u.seconds || 0) + Math.max(elapsed, 30); // Tavus 每场最低计 30 秒，这是真实成本
   u.active = null;
 }
 
@@ -1431,8 +1436,8 @@ app.post('/api/avatar/conversation', requireMember, rateLimit(6), async (req, re
         },
       }),
     });
-    const now = Date.now();
-    user.avatarUsage.active = { conversationId: data.conversation_id, startedAt: now, lastSeenAt: now };
+    // lastSeenAt 先留空：等前端真的把通话界面挂上来、发出第一次心跳才开始计费
+    user.avatarUsage.active = { conversationId: data.conversation_id, startedAt: Date.now(), lastSeenAt: null };
     saveDB(db);
     res.json({
       conversationUrl: data.conversation_url,
@@ -1464,8 +1469,9 @@ app.post('/api/avatar/end', requireAuth, async (req, res) => {
   const user = db.users[req.session.userId];
   const active = user.avatarUsage && user.avatarUsage.active;
   // 主动结束时挂断时刻是确定的，直接用当下，不必等心跳
-  if (active) active.lastSeenAt = Date.now();
-  settleAvatarSession(user);
+  // 有过心跳才更新挂断时刻；一次都没有说明人没进去过，保持 null 以便结算成 0
+  if (active && active.lastSeenAt) active.lastSeenAt = Date.now();
+  settleAvatarSession(user, true);
   saveDB(db);
   // 先把用量记下来再去关远端会话：就算 Tavus 这一步失败，额度也不会漏记
   if (active && avatarEnabled()) {

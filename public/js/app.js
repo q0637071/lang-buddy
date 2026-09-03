@@ -1161,6 +1161,9 @@
     try {
       const data = await api('/avatar/conversation', { method: 'POST' });
       const frame = document.createElement('iframe');
+      // 通话界面真的加载出来了才发第一次心跳——服务端拿到第一跳才开始计费，
+      // 点开就退或接通失败一律不扣额度
+      frame.addEventListener('load', () => { api('/avatar/ping', { method: 'POST' }).catch(() => {}); });
       frame.src = data.conversationUrl;
       frame.allow = 'camera; microphone; fullscreen; display-capture; autoplay';
       frame.className = 'avatar-frame';
