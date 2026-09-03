@@ -1398,7 +1398,7 @@ app.get('/api/avatar/status', requireAuth, (req, res) => {
 });
 
 app.post('/api/avatar/conversation', requireMember, rateLimit(6), async (req, res) => {
-  if (!avatarEnabled()) return res.status(503).json({ error: '数字人功能尚未开启' });
+  if (!avatarEnabled()) return res.status(503).json({ error: 'AI 视频通话功能尚未开启' });
   const db = loadDB();
   const user = db.users[req.session.userId];
 
@@ -1406,7 +1406,7 @@ app.post('/api/avatar/conversation', requireMember, rateLimit(6), async (req, re
   const q = avatarQuota(user);
   if (q.remaining <= 0) {
     saveDB(db);
-    return res.status(403).json({ error: `本月数字人对话额度（${AVATAR_MONTHLY_MINUTES}分钟）已用完，下月1日重置` });
+    return res.status(403).json({ error: `本月AI 视频通话额度（${AVATAR_MONTHLY_MINUTES}分钟）已用完，下月1日重置` });
   }
 
   const replyLangName = LANG_NAME[user.targetLang] || '英语';
@@ -1447,7 +1447,7 @@ app.post('/api/avatar/conversation', requireMember, rateLimit(6), async (req, re
     });
   } catch (e) {
     console.error('创建数字人会话失败:', e.message);
-    res.status(502).json({ error: '数字人服务暂时不可用，请稍后再试（也可以继续用文字/语音对话）' });
+    res.status(502).json({ error: 'AI 视频通话暂时不可用，请稍后再试（也可以继续用文字/语音对话）' });
   }
 });
 

@@ -1143,7 +1143,7 @@
       // 入口保留但禁用，把原因直接写在按钮上。
       const out = s.remainingSeconds <= 0;
       btn.disabled = out;
-      btn.textContent = out ? '🧑‍🏫 数字人额度已用完' : '🧑‍🏫 数字人对话';
+      btn.textContent = out ? '📹 视频通话额度已用完' : '📹 连接AI 视频通话';
       btn.title = out
         ? `本月 ${s.monthlyMinutes} 分钟额度已用完，下月1日重置`
         : `本月剩余 ${fmtSeconds(s.remainingSeconds)}（共 ${s.monthlyMinutes} 分钟）`;
@@ -1155,7 +1155,7 @@
   async function startAvatarCall() {
     const btn = $('#btnAvatarCall');
     btn.disabled = true;
-    $('#avatarStatus').textContent = '正在接通数字人…';
+    $('#avatarStatus').textContent = '正在接通AI 视频通话…';
     $('#avatarStage').innerHTML = '';
     $('#avatarOverlay').hidden = false;
     try {
