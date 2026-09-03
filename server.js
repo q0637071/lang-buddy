@@ -46,6 +46,11 @@ const TAVUS_PAL_ID = process.env.TAVUS_PAL_ID || process.env.TAVUS_PERSONA_ID;  
 // 额度按登录 IP 记（不是按账号），同一 IP 注册小号也共用这一份。
 // 现阶段用户量小、Tavus 免费额度只有20分钟，先给每个 IP 1 分钟够体验就行。
 const AVATAR_MONTHLY_MINUTES = Number(process.env.AVATAR_MONTHLY_MINUTES || 1);
+// 全站每月总闸门。按 IP 限额只防得住"一个人用太多"，防不住"来的人太多"——
+// Tavus 套餐用超了会自动按 $0.37/分钟计费且没有上限，几百个新用户就能刷出一笔
+// 意料之外的账单。这道闸门就是账单的硬顶，设成你套餐包含的分钟数
+// （Starter 60 / Builder 175 / Growth 1300），用满就停发新通话。
+const AVATAR_GLOBAL_MONTHLY_MINUTES = Number(process.env.AVATAR_GLOBAL_MONTHLY_MINUTES || 60);
 const AVATAR_MAX_CALL_SECONDS = Number(process.env.AVATAR_MAX_CALL_SECONDS || 300);
 // 通话期间前端每 20 秒报一次心跳。结算时按"最后一次心跳"算时长，而不是"到现在为止"——
 // 否则用户讲了30秒直接关页面，隔一会儿再回来会被按单次上限满额扣掉5分钟。
@@ -1375,6 +1380,22 @@ function avatarIpUsage(db, ip) {
   return rec;
 }
 
+// 全站总用量。管理员的通话也要计进来——Tavus 照样收钱，不能因为是自己人就不算。
+function avatarGlobalUsage(db) {
+  const thisMonth = monthKey(new Date());
+  let rec = db.avatarGlobalUsage;
+  if (!rec || rec.month !== thisMonth) {
+    rec = db.avatarGlobalUsage = { month: thisMonth, seconds: 0 };
+  }
+  return rec;
+}
+
+function avatarGlobalQuota(db) {
+  const limit = AVATAR_GLOBAL_MONTHLY_MINUTES * 60;
+  const used = avatarGlobalUsage(db).seconds || 0;
+  return { used, limit, remaining: Math.max(0, limit - used) };
+}
+
 function avatarQuota(db, user, ip) {
   if (!user.avatarUsage) user.avatarUsage = { active: null };
   const limit = AVATAR_MONTHLY_MINUTES * 60;
@@ -1402,6 +1423,7 @@ function settleAvatarSession(db, user, exact = false) {
 
   // 落到发起这通电话时记录的 IP 上（中途换网也算在起始 IP，避免切网重置额度）
   if (!avatarUnlimited(user)) avatarIpUsage(db, u.active.ip).seconds += charge;
+  avatarGlobalUsage(db).seconds += charge; // 全站总量不分身份，管理员的也算
   u.active = null;
 }
 
@@ -1411,6 +1433,7 @@ app.get('/api/avatar/status', requireAuth, (req, res) => {
   if (!avatarEnabled()) return res.json({ enabled: false });
   settleAvatarSession(db, user);
   const q = avatarQuota(db, user, getClientIp(req));
+  const g = avatarGlobalQuota(db);
   saveDB(db);
   res.json({
     enabled: true,
@@ -1420,6 +1443,11 @@ app.get('/api/avatar/status', requireAuth, (req, res) => {
     usedSeconds: q.used,
     remainingSeconds: q.unlimited ? -1 : q.remaining,
     maxCallSeconds: AVATAR_MAX_CALL_SECONDS,
+    globalExhausted: g.remaining <= 0,
+    // 全站用量只给超级管理员看，普通用户没必要知道后台还剩多少
+    ...(isSuperAdminName(user.username)
+      ? { globalUsedSeconds: g.used, globalLimitSeconds: g.limit }
+      : {}),
   });
 });
 
@@ -1430,6 +1458,15 @@ app.post('/api/avatar/conversation', requireMember, rateLimit(6), async (req, re
 
   const clientIp = getClientIp(req);
   settleAvatarSession(db, user);
+
+  // 全站闸门优先判断：这道是账单硬顶，管理员也不能越过，否则限额就形同虚设
+  const g = avatarGlobalQuota(db);
+  if (g.remaining <= 0) {
+    saveDB(db);
+    console.warn(`[avatar] 全站月度额度已用尽（${AVATAR_GLOBAL_MONTHLY_MINUTES}分钟），已停发新通话`);
+    return res.status(503).json({ error: 'AI 视频通话本月体验名额已满，下月1日恢复' });
+  }
+
   const q = avatarQuota(db, user, clientIp);
   if (q.remaining <= 0) {
     saveDB(db);
@@ -1446,9 +1483,12 @@ app.post('/api/avatar/conversation', requireMember, rateLimit(6), async (req, re
   // 单次时长取"本月剩余"和"单次上限"的小值，防止一场就把剩余额度全部吃掉还超支
   // 单次时长取"剩余额度"和"单次上限"的小值，防止一场就把剩余额度全部吃掉还超支。
   // 额度只剩几十秒时不能再抬到60秒，否则每次都会超发。
-  const callSeconds = q.unlimited
-    ? AVATAR_MAX_CALL_SECONDS
-    : Math.min(AVATAR_MAX_CALL_SECONDS, q.remaining);
+  // 全站剩余也要参与取小值，否则最后几通会把套餐冲穿进超额计费
+  const callSeconds = Math.min(
+    AVATAR_MAX_CALL_SECONDS,
+    g.remaining,
+    q.unlimited ? Infinity : q.remaining,
+  );
 
   try {
     const data = await tavusFetch('/conversations', {

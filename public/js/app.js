@@ -1140,11 +1140,23 @@
       // 这个功能的单位成本远高于会员费，不能放进免费额度）
       if (!s.enabled || !s.isMember) { cta.hidden = true; return; }
       cta.hidden = false;
+      // 全站名额用尽是账单硬顶，管理员也一样打不了，要先判断
+      if (s.globalExhausted) {
+        btn.disabled = true;
+        btn.textContent = '本月名额已满';
+        $('#avatarCtaSub').textContent = s.globalLimitSeconds
+          ? `全站额度 ${Math.round(s.globalLimitSeconds / 60)} 分钟已用尽，下月 1 日恢复`
+          : '本月体验名额已满，下月 1 日恢复';
+        return;
+      }
       // 超级管理员不限量，用于演示和排查
       if (s.unlimited) {
         btn.disabled = false;
         btn.textContent = '立即连接';
-        $('#avatarCtaSub').textContent = '管理员账号，不限时长';
+        // 管理员顺带看一眼全站用了多少，好判断离套餐上限还有多远
+        $('#avatarCtaSub').textContent = s.globalLimitSeconds
+          ? `管理员不限时长 · 全站本月已用 ${fmtSeconds(s.globalUsedSeconds)} / ${Math.round(s.globalLimitSeconds / 60)} 分钟`
+          : '管理员账号，不限时长';
         return;
       }
       // 额度用完时不能让入口凭空消失——用户只会觉得"功能怎么突然没了"。
