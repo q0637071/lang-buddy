@@ -43,7 +43,9 @@ const TAVUS_BASE_URL = process.env.TAVUS_BASE_URL || 'https://tavusapi.com/v2';
 // 环境变量两套名字都认，免得照着旧教程配了半天发现不生效。
 const TAVUS_FACE_ID = process.env.TAVUS_FACE_ID || process.env.TAVUS_REPLICA_ID; // 数字人形象
 const TAVUS_PAL_ID = process.env.TAVUS_PAL_ID || process.env.TAVUS_PERSONA_ID;   // 人设，可留空
-const AVATAR_MONTHLY_MINUTES = Number(process.env.AVATAR_MONTHLY_MINUTES || 10);
+// 额度按登录 IP 记（不是按账号），同一 IP 注册小号也共用这一份。
+// 现阶段用户量小、Tavus 免费额度只有20分钟，先给每个 IP 1 分钟够体验就行。
+const AVATAR_MONTHLY_MINUTES = Number(process.env.AVATAR_MONTHLY_MINUTES || 1);
 const AVATAR_MAX_CALL_SECONDS = Number(process.env.AVATAR_MAX_CALL_SECONDS || 300);
 // 通话期间前端每 20 秒报一次心跳。结算时按"最后一次心跳"算时长，而不是"到现在为止"——
 // 否则用户讲了30秒直接关页面，隔一会儿再回来会被按单次上限满额扣掉5分钟。
@@ -230,7 +232,10 @@ app.use(express.static(path.join(__dirname, 'public'), {
 const rateLimitMap = new Map();
 function rateLimit(max = 20) {
   return (req, res, next) => {
-    const key = req.ip || req.connection.remoteAddress;
+    // 桶要按"IP + 接口"分。只按 IP 的话所有接口共用一个计数，各路由写的不同上限
+    // 就全失效了——最严的那个说了算。表现是：一分钟内正常聊几句（聊天上限15，合法），
+    // 再点视频通话（上限6）直接 429，用户完全摸不着头脑。
+    const key = (req.ip || req.connection.remoteAddress) + '|' + req.path;
     const now = Date.now();
     const timestamps = (rateLimitMap.get(key) || []).filter(t => now - t < 60000);
     if (timestamps.length >= max) {
@@ -1354,11 +1359,37 @@ async function tavusFetch(pathname, options = {}) {
 // 下次进来时补记，按"已过去的时间"和单次上限取小值，避免一场没关的会话吃掉整月额度。
 // exact=true 表示用户主动点了结束，挂断时刻是确定的，不需要宽限；
 // exact=false 是异常退出（关页面/断网），只能按最后一次心跳推算。
-function settleAvatarSession(user, exact = false) {
+// 超级管理员不受额度限制，方便自己演示和排查，不用反复改环境变量
+function avatarUnlimited(user) { return isSuperAdminName(user.username); }
+
+// 额度按登录 IP 记，不是按账号：同一个 IP 注册几个小号也只有这一份额度。
+// Tavus 是按分钟真金白银计费的，按账号限根本拦不住"注册新号再试一次"。
+function avatarIpUsage(db, ip) {
+  if (!db.avatarIpUsage) db.avatarIpUsage = {};
+  const key = ip || 'unknown';
+  const thisMonth = monthKey(new Date());
+  let rec = db.avatarIpUsage[key];
+  if (!rec || rec.month !== thisMonth) {
+    rec = db.avatarIpUsage[key] = { month: thisMonth, seconds: 0 };
+  }
+  return rec;
+}
+
+function avatarQuota(db, user, ip) {
+  if (!user.avatarUsage) user.avatarUsage = { active: null };
+  const limit = AVATAR_MONTHLY_MINUTES * 60;
+  if (avatarUnlimited(user)) return { used: 0, limit: Infinity, remaining: Infinity, unlimited: true };
+  const used = avatarIpUsage(db, ip).seconds || 0;
+  return { used, limit, remaining: Math.max(0, limit - used), unlimited: false };
+}
+
+// 把上一场会话的用量落账。用户正常点结束会走这里；异常退出（关浏览器/断网）则等他
+// 下次进来时补记，按最后一次心跳推算，避免一场没关的会话吃掉整月额度。
+// exact=true 表示用户主动点了结束，挂断时刻是确定的，不需要宽限；
+// exact=false 是异常退出（关页面/断网），只能按最后一次心跳推算。
+function settleAvatarSession(db, user, exact = false) {
   const u = user.avatarUsage;
   if (!u || !u.active) return;
-  const thisMonth = monthKey(new Date());
-  if (u.month !== thisMonth) { u.month = thisMonth; u.seconds = 0; }
 
   // 一次心跳都没有 = 人根本没进到通话里（点开就退、接通失败、权限没给）。
   // 这种情况不能计费——没用就不该扣。
@@ -1367,32 +1398,27 @@ function settleAvatarSession(user, exact = false) {
   const raw = Math.round((u.active.lastSeenAt - u.active.startedAt) / 1000)
     + (exact ? 0 : AVATAR_PING_GRACE);
   const elapsed = Math.min(Math.max(raw, 0), AVATAR_MAX_CALL_SECONDS);
-  u.seconds = (u.seconds || 0) + Math.max(elapsed, 30); // Tavus 每场最低计 30 秒，这是真实成本
-  u.active = null;
-}
+  const charge = Math.max(elapsed, 30); // Tavus 每场最低计 30 秒，这是真实成本
 
-function avatarQuota(user) {
-  if (!user.avatarUsage) user.avatarUsage = { month: monthKey(new Date()), seconds: 0, active: null };
-  const u = user.avatarUsage;
-  const thisMonth = monthKey(new Date());
-  if (u.month !== thisMonth) { u.month = thisMonth; u.seconds = 0; }
-  const limit = AVATAR_MONTHLY_MINUTES * 60;
-  return { used: u.seconds || 0, limit, remaining: Math.max(0, limit - (u.seconds || 0)) };
+  // 落到发起这通电话时记录的 IP 上（中途换网也算在起始 IP，避免切网重置额度）
+  if (!avatarUnlimited(user)) avatarIpUsage(db, u.active.ip).seconds += charge;
+  u.active = null;
 }
 
 app.get('/api/avatar/status', requireAuth, (req, res) => {
   const db = loadDB();
   const user = db.users[req.session.userId];
   if (!avatarEnabled()) return res.json({ enabled: false });
-  settleAvatarSession(user);
-  const q = avatarQuota(user);
+  settleAvatarSession(db, user);
+  const q = avatarQuota(db, user, getClientIp(req));
   saveDB(db);
   res.json({
     enabled: true,
     isMember: isActiveMember(user),
+    unlimited: q.unlimited,
     monthlyMinutes: AVATAR_MONTHLY_MINUTES,
     usedSeconds: q.used,
-    remainingSeconds: q.remaining,
+    remainingSeconds: q.unlimited ? -1 : q.remaining,
     maxCallSeconds: AVATAR_MAX_CALL_SECONDS,
   });
 });
@@ -1402,11 +1428,12 @@ app.post('/api/avatar/conversation', requireMember, rateLimit(6), async (req, re
   const db = loadDB();
   const user = db.users[req.session.userId];
 
-  settleAvatarSession(user);
-  const q = avatarQuota(user);
+  const clientIp = getClientIp(req);
+  settleAvatarSession(db, user);
+  const q = avatarQuota(db, user, clientIp);
   if (q.remaining <= 0) {
     saveDB(db);
-    return res.status(403).json({ error: `本月AI 视频通话额度（${AVATAR_MONTHLY_MINUTES}分钟）已用完，下月1日重置` });
+    return res.status(403).json({ error: `AI 视频通话每月体验额度（${AVATAR_MONTHLY_MINUTES}分钟）已用完，下月1日重置` });
   }
 
   const replyLangName = LANG_NAME[user.targetLang] || '英语';
@@ -1417,7 +1444,11 @@ app.post('/api/avatar/conversation', requireMember, rateLimit(6), async (req, re
 学生的昵称是${user.nickname || user.username}。`;
 
   // 单次时长取"本月剩余"和"单次上限"的小值，防止一场就把剩余额度全部吃掉还超支
-  const callSeconds = Math.max(60, Math.min(AVATAR_MAX_CALL_SECONDS, q.remaining));
+  // 单次时长取"剩余额度"和"单次上限"的小值，防止一场就把剩余额度全部吃掉还超支。
+  // 额度只剩几十秒时不能再抬到60秒，否则每次都会超发。
+  const callSeconds = q.unlimited
+    ? AVATAR_MAX_CALL_SECONDS
+    : Math.min(AVATAR_MAX_CALL_SECONDS, q.remaining);
 
   try {
     const data = await tavusFetch('/conversations', {
@@ -1437,7 +1468,7 @@ app.post('/api/avatar/conversation', requireMember, rateLimit(6), async (req, re
       }),
     });
     // lastSeenAt 先留空：等前端真的把通话界面挂上来、发出第一次心跳才开始计费
-    user.avatarUsage.active = { conversationId: data.conversation_id, startedAt: Date.now(), lastSeenAt: null };
+    user.avatarUsage.active = { conversationId: data.conversation_id, startedAt: Date.now(), lastSeenAt: null, ip: clientIp };
     saveDB(db);
     res.json({
       conversationUrl: data.conversation_url,
@@ -1471,14 +1502,14 @@ app.post('/api/avatar/end', requireAuth, async (req, res) => {
   // 主动结束时挂断时刻是确定的，直接用当下，不必等心跳
   // 有过心跳才更新挂断时刻；一次都没有说明人没进去过，保持 null 以便结算成 0
   if (active && active.lastSeenAt) active.lastSeenAt = Date.now();
-  settleAvatarSession(user, true);
+  settleAvatarSession(db, user, true);
   saveDB(db);
   // 先把用量记下来再去关远端会话：就算 Tavus 这一步失败，额度也不会漏记
   if (active && avatarEnabled()) {
     try { await tavusFetch(`/conversations/${active.conversationId}/end`, { method: 'POST' }); }
     catch (e) { console.error('结束数字人会话失败:', e.message); }
   }
-  res.json({ ok: true, ...avatarQuota(user) });
+  res.json({ ok: true, ...avatarQuota(db, user, getClientIp(req)) });
 });
 
 // ==================== 语法 AI 批改 ====================

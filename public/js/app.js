@@ -1140,14 +1140,21 @@
       // 这个功能的单位成本远高于会员费，不能放进免费额度）
       if (!s.enabled || !s.isMember) { cta.hidden = true; return; }
       cta.hidden = false;
+      // 超级管理员不限量，用于演示和排查
+      if (s.unlimited) {
+        btn.disabled = false;
+        btn.textContent = '立即连接';
+        $('#avatarCtaSub').textContent = '管理员账号，不限时长';
+        return;
+      }
       // 额度用完时不能让入口凭空消失——用户只会觉得"功能怎么突然没了"。
       // 卡片保留、按钮禁用，把原因写在副标题上。
       const out = s.remainingSeconds <= 0;
       btn.disabled = out;
       btn.textContent = out ? '额度已用完' : '立即连接';
       $('#avatarCtaSub').textContent = out
-        ? `本月 ${s.monthlyMinutes} 分钟已用完，下月 1 日重置`
-        : `本月还剩 ${fmtSeconds(s.remainingSeconds)}（每月 ${s.monthlyMinutes} 分钟）`;
+        ? `本月 ${s.monthlyMinutes} 分钟体验额度已用完，下月 1 日重置`
+        : `免费体验 ${fmtSeconds(s.remainingSeconds)}（每月 ${s.monthlyMinutes} 分钟）`;
     } catch {
       cta.hidden = true; // 状态查不到就当没开，不要给个点了报错的入口
     }
