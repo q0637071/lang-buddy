@@ -540,6 +540,7 @@
       '🎁 非会员每天可免费体验 5 分钟 AI 对话，开通会员畅享无限时长。',
       '🎁 当前可试用 1 分钟 AI 对话，在"我的"页面验证手机号即可解锁每天 5 分钟。');
     $('#tutorPanel').hidden = false;
+    refreshAvatarButton();
 
     const toggle = $('#autoSpeakToggle');
     toggle.checked = state.autoSpeak;
@@ -1116,6 +1117,88 @@
 
   $('#btnVoiceCall').addEventListener('click', startVoiceCall);
   $('#btnEndVoiceCall').addEventListener('click', stopVoiceCall);
+
+  // ---------- 数字人实时视频对话（Tavus） ----------
+  // 按分钟计费，比文字对话贵得多，所以入口只在"后端开启 + 是会员 + 本月还有额度"时才出现。
+  // 会话一定要关掉，否则会一直计费：结束按钮、关页面、倒计时到点，三条路都要能关。
+  let avatarTimer = null;
+  let avatarEnding = false;
+
+  function fmtSeconds(s) {
+    const m = Math.floor(s / 60);
+    return m > 0 ? `${m}分${String(s % 60).padStart(2, '0')}秒` : `${s}秒`;
+  }
+
+  async function refreshAvatarButton() {
+    const btn = $('#btnAvatarCall');
+    if (!btn) return;
+    try {
+      const s = await api('/avatar/status');
+      // 非会员不显示入口：这个功能的单位成本远高于会员费，不能放进免费额度
+      const usable = s.enabled && s.isMember && s.remainingSeconds > 0;
+      btn.hidden = !usable;
+      if (usable) btn.title = `本月剩余 ${fmtSeconds(s.remainingSeconds)}（共${s.monthlyMinutes}分钟）`;
+    } catch {
+      btn.hidden = true; // 状态查不到就当没开，不要给个点了报错的按钮
+    }
+  }
+
+  async function startAvatarCall() {
+    const btn = $('#btnAvatarCall');
+    btn.disabled = true;
+    $('#avatarStatus').textContent = '正在接通数字人…';
+    $('#avatarStage').innerHTML = '';
+    $('#avatarOverlay').hidden = false;
+    try {
+      const data = await api('/avatar/conversation', { method: 'POST' });
+      const frame = document.createElement('iframe');
+      frame.src = data.conversationUrl;
+      frame.allow = 'camera; microphone; fullscreen; display-capture; autoplay';
+      frame.className = 'avatar-frame';
+      $('#avatarStage').appendChild(frame);
+      avatarEnding = false;
+      startAvatarCountdown(data.maxSeconds);
+      $('#avatarStatus').textContent = '接通后请允许摄像头和麦克风权限。';
+    } catch (err) {
+      $('#avatarStatus').textContent = '⚠️ ' + err.message;
+      toast(err.message);
+      $('#avatarOverlay').hidden = true;
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function startAvatarCountdown(maxSeconds) {
+    let left = maxSeconds;
+    clearInterval(avatarTimer);
+    const tick = () => {
+      $('#avatarQuotaHint').textContent = `本次通话剩余 ${fmtSeconds(left)}`;
+      if (left <= 0) { endAvatarCall('本次通话时长已到'); return; }
+      left--;
+    };
+    tick();
+    avatarTimer = setInterval(tick, 1000);
+  }
+
+  async function endAvatarCall(reason) {
+    if (avatarEnding) return;
+    avatarEnding = true;
+    clearInterval(avatarTimer);
+    $('#avatarStage').innerHTML = ''; // 先卸掉 iframe，媒体流立刻断开
+    $('#avatarOverlay').hidden = true;
+    if (reason) toast(reason);
+    try { await api('/avatar/end', { method: 'POST' }); } catch { /* 失败也不拦用户，服务端会在下次请求时补记 */ }
+    refreshAvatarButton();
+  }
+
+  $('#btnAvatarCall').addEventListener('click', startAvatarCall);
+  $('#btnAvatarEnd').addEventListener('click', () => endAvatarCall());
+
+  // 直接关页面不会触发任何按钮，用 sendBeacon 补一刀，避免会话在服务商那边空转计费
+  window.addEventListener('pagehide', () => {
+    if (avatarEnding || $('#avatarOverlay').hidden) return;
+    try { navigator.sendBeacon(API_BASE + '/avatar/end'); } catch {}
+  });
 
   // 微信/QQ 等 App 内置浏览器普遍没有 speechSynthesis，
   // 只说"不支持"用户完全不知道该怎么办，这里给出可操作的指引

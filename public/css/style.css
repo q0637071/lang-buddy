@@ -607,3 +607,15 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--p
   .chat-window { height: 220px; padding: 12px; margin-bottom: 8px; }
   #voiceHint { display: none; }
 }
+
+/* 数字人实时视频对话：视频要尽量占满，所以不用常规 .modal 的固定窄宽度 */
+.avatar-modal { width: min(560px, 94vw); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.avatar-modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.avatar-quota-hint { font-size: 13px; color: var(--text-muted, #6b7280); }
+/* 9:16 竖版更贴合手机，数字人本身也是竖构图 */
+.avatar-stage { position: relative; width: 100%; aspect-ratio: 9 / 16; max-height: 70vh; background: #0f0f1e; border-radius: 12px; overflow: hidden; }
+.avatar-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+@media (max-width: 600px) {
+  .avatar-modal { width: 100vw; height: 100dvh; max-width: none; border-radius: 0; padding: 12px; }
+  .avatar-stage { flex: 1; aspect-ratio: auto; max-height: none; }
+}

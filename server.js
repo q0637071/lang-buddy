@@ -33,6 +33,18 @@ const DOMESTIC_API_KEY = process.env.DOMESTIC_API_KEY;
 const DOMESTIC_BASE_URL = process.env.DOMESTIC_BASE_URL || 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
 const DOMESTIC_MODEL = process.env.DOMESTIC_MODEL || 'glm-4-flash';
 
+// Tavus 数字人（实时视频对话）。按实际通话分钟计费，约 ¥1.7-2.7/分钟，比文本对话贵两三个
+// 数量级——包月 ¥29 的会员用满 12 分钟就把整月会费烧光了。所以这个功能必须严格限量：
+// 仅会员 + 每月独立分钟额度 + 单次会话硬上限 + 用户离开自动结束。
+// 没配 TAVUS_API_KEY / TAVUS_REPLICA_ID 就整体关闭，其余功能不受影响。
+const TAVUS_API_KEY = process.env.TAVUS_API_KEY;
+const TAVUS_BASE_URL = process.env.TAVUS_BASE_URL || 'https://tavusapi.com/v2';
+const TAVUS_REPLICA_ID = process.env.TAVUS_REPLICA_ID; // 数字人形象（face）
+const TAVUS_PERSONA_ID = process.env.TAVUS_PERSONA_ID; // 人设，可留空
+const AVATAR_MONTHLY_MINUTES = Number(process.env.AVATAR_MONTHLY_MINUTES || 10);
+const AVATAR_MAX_CALL_SECONDS = Number(process.env.AVATAR_MAX_CALL_SECONDS || 300);
+const avatarEnabled = () => !!(TAVUS_API_KEY && TAVUS_REPLICA_ID);
+
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_PATH = path.join(DATA_DIR, 'db.json');
 const VOCAB_PATH = path.join(DATA_DIR, 'vocab.json');
@@ -1298,6 +1310,136 @@ app.post('/api/chat/clear', requireAuth, (req, res) => {
   user.chatHistory = [];
   saveDB(db);
   res.json({ ok: true });
+});
+
+// ==================== 数字人实时视频对话（Tavus） ====================
+// 计费口径：Tavus 按会话实际时长收费，每次最低计 30 秒。所以"会话必须被关掉"是这里
+// 最重要的事——用户直接关浏览器不会触发任何前端代码，靠三道保险兜着：
+//   1) max_call_duration：Tavus 侧硬性掐断
+//   2) participant_left_timeout / participant_absent_timeout：人走了自动关
+//   3) settleAvatarSession：用户下次请求时结算上一场没正常结束的会话，防止白嫖额度
+
+function monthKey(d) { return d.toISOString().slice(0, 7); }
+
+async function tavusFetch(pathname, options = {}) {
+  const resp = await fetch(TAVUS_BASE_URL + pathname, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', 'x-api-key': TAVUS_API_KEY, ...(options.headers || {}) },
+  });
+  const text = await resp.text();
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch { /* 非JSON响应按原文报错 */ }
+  if (!resp.ok) {
+    const err = new Error((data && (data.message || data.error)) || text || `Tavus 请求失败(${resp.status})`);
+    err.status = resp.status;
+    throw err;
+  }
+  return data;
+}
+
+// 把上一场会话的用量落账。用户正常点结束会走这里；异常退出（关浏览器/断网）则等他
+// 下次进来时补记，按"已过去的时间"和单次上限取小值，避免一场没关的会话吃掉整月额度。
+function settleAvatarSession(user) {
+  const u = user.avatarUsage;
+  if (!u || !u.active) return;
+  const elapsed = Math.min(Math.round((Date.now() - u.active.startedAt) / 1000), AVATAR_MAX_CALL_SECONDS);
+  const thisMonth = monthKey(new Date());
+  if (u.month !== thisMonth) { u.month = thisMonth; u.seconds = 0; }
+  u.seconds = (u.seconds || 0) + Math.max(elapsed, 30); // Tavus 每场最低计 30 秒
+  u.active = null;
+}
+
+function avatarQuota(user) {
+  if (!user.avatarUsage) user.avatarUsage = { month: monthKey(new Date()), seconds: 0, active: null };
+  const u = user.avatarUsage;
+  const thisMonth = monthKey(new Date());
+  if (u.month !== thisMonth) { u.month = thisMonth; u.seconds = 0; }
+  const limit = AVATAR_MONTHLY_MINUTES * 60;
+  return { used: u.seconds || 0, limit, remaining: Math.max(0, limit - (u.seconds || 0)) };
+}
+
+app.get('/api/avatar/status', requireAuth, (req, res) => {
+  const db = loadDB();
+  const user = db.users[req.session.userId];
+  if (!avatarEnabled()) return res.json({ enabled: false });
+  settleAvatarSession(user);
+  const q = avatarQuota(user);
+  saveDB(db);
+  res.json({
+    enabled: true,
+    isMember: isActiveMember(user),
+    monthlyMinutes: AVATAR_MONTHLY_MINUTES,
+    usedSeconds: q.used,
+    remainingSeconds: q.remaining,
+    maxCallSeconds: AVATAR_MAX_CALL_SECONDS,
+  });
+});
+
+app.post('/api/avatar/conversation', requireMember, rateLimit(6), async (req, res) => {
+  if (!avatarEnabled()) return res.status(503).json({ error: '数字人功能尚未开启' });
+  const db = loadDB();
+  const user = db.users[req.session.userId];
+
+  settleAvatarSession(user);
+  const q = avatarQuota(user);
+  if (q.remaining <= 0) {
+    saveDB(db);
+    return res.status(403).json({ error: `本月数字人对话额度（${AVATAR_MONTHLY_MINUTES}分钟）已用完，下月1日重置` });
+  }
+
+  const replyLangName = LANG_NAME[user.targetLang] || '英语';
+  const levelZh = LEVEL_ZH[user.level] || '初级';
+  const context = `你是一位耐心友好的${replyLangName}私教，正在和一位${levelZh}水平的中国学生做面对面口语练习。
+请全程使用${replyLangName}交流，难度贴合${levelZh}水平。学生说错时先温和纠正再继续话题。
+每次回应简短自然（不超过60个词），多用提问引导学生开口，不要长篇讲课。
+学生的昵称是${user.nickname || user.username}。`;
+
+  // 单次时长取"本月剩余"和"单次上限"的小值，防止一场就把剩余额度全部吃掉还超支
+  const callSeconds = Math.max(60, Math.min(AVATAR_MAX_CALL_SECONDS, q.remaining));
+
+  try {
+    const data = await tavusFetch('/conversations', {
+      method: 'POST',
+      body: JSON.stringify({
+        replica_id: TAVUS_REPLICA_ID,
+        ...(TAVUS_PERSONA_ID ? { persona_id: TAVUS_PERSONA_ID } : {}),
+        conversation_name: `LangBuddy-${user.username}`,
+        conversational_context: context,
+        properties: {
+          max_call_duration: callSeconds,
+          participant_left_timeout: 30,  // 人走了30秒就关，别空转烧钱
+          participant_absent_timeout: 90, // 创建后90秒没人进来直接关
+          enable_recording: false,
+          enable_closed_captions: true,
+        },
+      }),
+    });
+    user.avatarUsage.active = { conversationId: data.conversation_id, startedAt: Date.now() };
+    saveDB(db);
+    res.json({
+      conversationUrl: data.conversation_url,
+      conversationId: data.conversation_id,
+      maxSeconds: callSeconds,
+      remainingSeconds: q.remaining,
+    });
+  } catch (e) {
+    console.error('创建数字人会话失败:', e.message);
+    res.status(502).json({ error: '数字人服务暂时不可用，请稍后再试（也可以继续用文字/语音对话）' });
+  }
+});
+
+app.post('/api/avatar/end', requireAuth, async (req, res) => {
+  const db = loadDB();
+  const user = db.users[req.session.userId];
+  const active = user.avatarUsage && user.avatarUsage.active;
+  settleAvatarSession(user);
+  saveDB(db);
+  // 先把用量记下来再去关远端会话：就算 Tavus 这一步失败，额度也不会漏记
+  if (active && avatarEnabled()) {
+    try { await tavusFetch(`/conversations/${active.conversationId}/end`, { method: 'POST' }); }
+    catch (e) { console.error('结束数字人会话失败:', e.message); }
+  }
+  res.json({ ok: true, ...avatarQuota(user) });
 });
 
 // ==================== 语法 AI 批改 ====================
