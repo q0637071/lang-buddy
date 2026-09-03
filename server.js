@@ -45,6 +45,11 @@ const TAVUS_FACE_ID = process.env.TAVUS_FACE_ID || process.env.TAVUS_REPLICA_ID;
 const TAVUS_PAL_ID = process.env.TAVUS_PAL_ID || process.env.TAVUS_PERSONA_ID;   // 人设，可留空
 const AVATAR_MONTHLY_MINUTES = Number(process.env.AVATAR_MONTHLY_MINUTES || 10);
 const AVATAR_MAX_CALL_SECONDS = Number(process.env.AVATAR_MAX_CALL_SECONDS || 300);
+// 通话期间前端每 20 秒报一次心跳。结算时按"最后一次心跳"算时长，而不是"到现在为止"——
+// 否则用户讲了30秒直接关页面，隔一会儿再回来会被按单次上限满额扣掉5分钟。
+// 宽限比心跳间隔略长，覆盖最后一次心跳到真正断开之间那一小段（这段 Tavus 是要收钱的）。
+const AVATAR_PING_SECONDS = 20;
+const AVATAR_PING_GRACE = 25;
 const avatarEnabled = () => !!(TAVUS_API_KEY && TAVUS_FACE_ID);
 
 const DATA_DIR = path.join(__dirname, 'data');
@@ -1350,7 +1355,11 @@ async function tavusFetch(pathname, options = {}) {
 function settleAvatarSession(user) {
   const u = user.avatarUsage;
   if (!u || !u.active) return;
-  const elapsed = Math.min(Math.round((Date.now() - u.active.startedAt) / 1000), AVATAR_MAX_CALL_SECONDS);
+  // 正常点结束会把 lastSeenAt 设成当下；异常退出则停在最后一次心跳，
+  // 用户人早走了就不会再被计费
+  const endedAt = u.active.lastSeenAt || u.active.startedAt;
+  const raw = Math.round((endedAt - u.active.startedAt) / 1000) + AVATAR_PING_GRACE;
+  const elapsed = Math.min(Math.max(raw, 0), AVATAR_MAX_CALL_SECONDS);
   const thisMonth = monthKey(new Date());
   if (u.month !== thisMonth) { u.month = thisMonth; u.seconds = 0; }
   u.seconds = (u.seconds || 0) + Math.max(elapsed, 30); // Tavus 每场最低计 30 秒
@@ -1422,7 +1431,8 @@ app.post('/api/avatar/conversation', requireMember, rateLimit(6), async (req, re
         },
       }),
     });
-    user.avatarUsage.active = { conversationId: data.conversation_id, startedAt: Date.now() };
+    const now = Date.now();
+    user.avatarUsage.active = { conversationId: data.conversation_id, startedAt: now, lastSeenAt: now };
     saveDB(db);
     res.json({
       conversationUrl: data.conversation_url,
@@ -1436,10 +1446,25 @@ app.post('/api/avatar/conversation', requireMember, rateLimit(6), async (req, re
   }
 });
 
+// 通话进行中的心跳。人还在就往后推 lastSeenAt，一旦页面关掉/断网就停止，
+// 结算时便只按"人还在的那段"计费。
+app.post('/api/avatar/ping', requireAuth, (req, res) => {
+  const db = loadDB();
+  const user = db.users[req.session.userId];
+  const active = user.avatarUsage && user.avatarUsage.active;
+  if (!active) return res.json({ ok: false });
+  active.lastSeenAt = Date.now();
+  const usedNow = Math.round((active.lastSeenAt - active.startedAt) / 1000);
+  saveDB(db);
+  res.json({ ok: true, elapsedSeconds: usedNow, pingSeconds: AVATAR_PING_SECONDS });
+});
+
 app.post('/api/avatar/end', requireAuth, async (req, res) => {
   const db = loadDB();
   const user = db.users[req.session.userId];
   const active = user.avatarUsage && user.avatarUsage.active;
+  // 主动结束时挂断时刻是确定的，直接用当下，不必等心跳
+  if (active) active.lastSeenAt = Date.now();
   settleAvatarSession(user);
   saveDB(db);
   // 先把用量记下来再去关远端会话：就算 Tavus 这一步失败，额度也不会漏记

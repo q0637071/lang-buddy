@@ -1122,6 +1122,7 @@
   // 按分钟计费，比文字对话贵得多，所以入口只在"后端开启 + 是会员 + 本月还有额度"时才出现。
   // 会话一定要关掉，否则会一直计费：结束按钮、关页面、倒计时到点，三条路都要能关。
   let avatarTimer = null;
+  let avatarPingTimer = null;
   let avatarEnding = false;
 
   function fmtSeconds(s) {
@@ -1166,6 +1167,12 @@
       $('#avatarStage').appendChild(frame);
       avatarEnding = false;
       startAvatarCountdown(data.maxSeconds);
+      // 心跳：只要页面还开着就持续上报，服务端据此判断人什么时候真的走了。
+      // 没有它，异常退出会被按单次上限满额扣费。
+      clearInterval(avatarPingTimer);
+      avatarPingTimer = setInterval(() => {
+        api('/avatar/ping', { method: 'POST' }).catch(() => {});
+      }, 20000);
       $('#avatarStatus').textContent = '接通后请允许摄像头和麦克风权限。';
     } catch (err) {
       $('#avatarStatus').textContent = '⚠️ ' + err.message;
@@ -1192,6 +1199,7 @@
     if (avatarEnding) return;
     avatarEnding = true;
     clearInterval(avatarTimer);
+    clearInterval(avatarPingTimer);
     $('#avatarStage').innerHTML = ''; // 先卸掉 iframe，媒体流立刻断开
     $('#avatarOverlay').hidden = true;
     if (reason) toast(reason);
