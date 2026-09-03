@@ -1065,10 +1065,17 @@ app.post('/api/tts', requireAuth, rateLimit(30), async (req, res) => {
 app.get('/api/health', (req, res) => {
   // 只报"配没配"，不回显任何密钥。环境变量改完能不能生效，看这里最快，
   // 不用登录也不用翻 Render 后台
+  // Tavus 官方不提供消费上限（超出套餐后 never paused, never throttled），
+  // 这几个数字是唯一的账单防线，必须能随时确认配对了没有，所以放进健康检查。
   res.json({
     ok: true,
     dbMode: mongoCollection ? 'mongodb' : 'file',
     avatar: avatarEnabled(),
+    ...(avatarEnabled() ? {
+      avatarGlobalMinutes: AVATAR_GLOBAL_MONTHLY_MINUTES,
+      avatarPerIpMinutes: AVATAR_MONTHLY_MINUTES,
+      avatarMaxCallSeconds: AVATAR_MAX_CALL_SECONDS,
+    } : {}),
   });
 });
 
