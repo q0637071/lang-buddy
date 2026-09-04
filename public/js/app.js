@@ -139,8 +139,7 @@
     VIEWS.forEach(v => {
       $('#view-' + v).hidden = v !== name;
     });
-    // 顶部菜单和底部标签栏的选中态要一起同步
-    $all('.nav-item, .tab-item').forEach(btn => btn.classList.toggle('active', btn.dataset.nav === name));
+    $all('.nav-item').forEach(btn => btn.classList.toggle('active', btn.dataset.nav === name));
     window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
 
     if (name === 'dashboard') renderDashboard();
@@ -176,11 +175,8 @@
     const nav = $('#mainNav');
     const authArea = $('#authArea');
     nav.hidden = false;
-    // 底部标签栏跟顶部菜单同进同退；has-tabbar 用来给固定栏让出页面底部空间
-    $('#tabbar').hidden = false;
-    // has-tabbar 给手机底部栏让出高度，has-sidebar 给桌面左侧栏让出宽度，
-    // 两个类同时加，各自只在对应的断点里生效
-    document.body.classList.add('has-tabbar', 'has-sidebar');
+    // has-sidebar 给桌面左侧栏让出宽度，只在 >=769px 生效
+    document.body.classList.add('has-sidebar');
     $('#navAdmin').hidden = !state.user.isAdmin;
     $('#dashNavAdmin').hidden = !state.user.isAdmin;
     const av = state.user.avatar;
@@ -197,8 +193,7 @@
       renderLoggedInTopbar();
     } else {
       $('#mainNav').hidden = true;
-      $('#tabbar').hidden = true;
-      document.body.classList.remove('has-tabbar', 'has-sidebar');
+      document.body.classList.remove('has-sidebar');
       rebuildAuthButtons();
     }
   }

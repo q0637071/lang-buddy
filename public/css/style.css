@@ -697,38 +697,9 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--p
   padding: 2px 6px; border-radius: 999px; white-space: nowrap;
 }
 
-/* 手机底部标签栏：默认不显示，只在窄屏出现 */
-.tabbar { display: none; }
-
 @media (max-width: 768px) {
-  /* 手机上顶部菜单整个收起，改用底部标签栏——横向滑动的菜单等于把后面的功能藏起来 */
-  .main-nav { display: none !important; }
-  .topbar-inner { flex-wrap: nowrap; }
-
-  .tabbar {
-    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
-    background: rgba(255,255,255,.94);
-    backdrop-filter: blur(14px) saturate(160%); -webkit-backdrop-filter: blur(14px) saturate(160%);
-    border-top: 1px solid var(--border);
-    /* 适配 iPhone 底部横条，否则最后一行会被挡住 */
-    padding-bottom: env(safe-area-inset-bottom, 0);
-  }
-  .tab-item {
-    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
-    background: transparent; border: none; padding: 8px 2px 6px;
-    color: var(--text-muted); cursor: pointer; font-family: inherit;
-  }
-  .tab-icon { font-size: 20px; line-height: 1; transition: transform .18s ease; }
-  .tab-label { font-size: 11px; font-weight: 600; }
-  .tab-item.active { color: var(--primary); }
-  .tab-item.active .tab-icon { transform: translateY(-1px) scale(1.12); }
-
-  /* 给固定标签栏让出高度，否则页面最底部的内容会被永久遮住 */
-  body.has-tabbar .container,
-  body.has-tabbar .pricing { padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
-  /* 聊天输入行也是贴底的，要一起抬上来 */
-  body.has-tabbar .chat-input-row { margin-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
-
+  /* 手机端保持顶部菜单（上面 max-width:768 那段里的横向滚动样式），
+     底部标签栏试过之后撤掉了 */
   .feature-nav-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
   .feature-nav { padding: 14px 4px 11px; gap: 5px; border-radius: 12px; }
   .fn-icon { font-size: 22px; }
