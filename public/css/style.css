@@ -744,3 +744,35 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--p
 /* 顶栏容器比正文宽一点，给 10 个菜单项腾地方；品牌名不允许折行 */
 .topbar-inner { max-width: 1240px; }
 .brand-name { white-space: nowrap; }
+
+/* ============ 桌面端：左侧悬浮导航栏 ============ */
+/* 只在 >=769px 生效。手机端保持底部标签栏——左边缘手势会和浏览器的"返回"
+   打架，而且藏起来的菜单本身就违背"容易找到"这个目标。 */
+@media (min-width: 769px) {
+  .main-nav {
+    position: fixed; left: 0; top: 0; bottom: 0; z-index: 70;
+    display: flex; flex-direction: column; gap: 4px;
+    width: 64px; padding: 66px 8px 16px;    /* 顶部留出顶栏的高度 */
+    background: #fff; border-right: 1px solid var(--border);
+    overflow-x: hidden; overflow-y: auto;
+    transition: width .22s cubic-bezier(.2,.8,.3,1), box-shadow .22s ease;
+  }
+  /* 鼠标移上去展开显示文字；折叠时靠 overflow 把文字裁掉，
+     不用 display:none，这样宽度动画才是连续的 */
+  .main-nav:hover { width: 208px; box-shadow: var(--shadow-lg); }
+  .main-nav::-webkit-scrollbar { width: 0; }
+
+  .nav-item {
+    width: 100%; justify-content: flex-start; flex-shrink: 0;
+    padding: 11px 12px; gap: 12px; font-size: 14px;
+  }
+  .nav-icon { font-size: 19px; width: 22px; text-align: center; flex: none; }
+
+  /* 侧边栏是固定定位，整页要往右让出它的宽度 */
+  body.has-sidebar { padding-left: 64px; }
+  /* 展开时不推挤内容，让它浮在上面——否则每次 hover 整页都会跳动 */
+}
+/* 键盘用户没有 hover，用 Tab 键走到导航里时也要能展开，否则只能看图标猜 */
+@media (min-width: 769px) {
+  .main-nav:focus-within { width: 208px; box-shadow: var(--shadow-lg); }
+}

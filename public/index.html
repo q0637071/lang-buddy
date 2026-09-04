@@ -16,22 +16,26 @@
       <span class="brand-name">LangBuddy 语伴</span>
     </div>
 
-    <nav class="main-nav" id="mainNav" hidden>
-      <button class="nav-item" data-nav="dashboard"><span class="nav-icon">🏠</span>首页</button>
-      <button class="nav-item" data-nav="translate"><span class="nav-icon">🎧</span>同声传译</button>
-      <button class="nav-item" data-nav="tutor"><span class="nav-icon">💬</span>AI对话</button>
-      <button class="nav-item" data-nav="vocab"><span class="nav-icon">📚</span>背单词</button>
-      <button class="nav-item" data-nav="mistakes"><span class="nav-icon">📝</span>错题本</button>
-      <button class="nav-item" data-nav="essay"><span class="nav-icon">✍️</span>作文批改</button>
-      <button class="nav-item" data-nav="grammar"><span class="nav-icon">📖</span>语法</button>
-      <button class="nav-item" data-nav="colloquial"><span class="nav-icon">🗣️</span>美式口语</button>
-      <button class="nav-item" data-nav="profile"><span class="nav-icon">👤</span>我的</button>
-      <button class="nav-item" data-nav="admin" id="navAdmin" hidden><span class="nav-icon">⚙️</span>管理后台</button>
-    </nav>
-
     <div class="auth-area" id="authArea"></div>
   </div>
 </header>
+
+<!-- 桌面端的左侧悬浮导航（手机端隐藏，改用下面的底部标签栏）。
+     必须放在 header 外面：.topbar 有 backdrop-filter，而 backdrop-filter 会成为
+     固定定位子元素的定位基准——放在里面时 left/bottom 是相对顶栏而不是视口，
+     侧边栏会被压成顶栏那么高（实测只有 82px）。 -->
+<nav class="main-nav" id="mainNav" hidden>
+  <button class="nav-item" data-nav="dashboard"><span class="nav-icon">🏠</span>首页</button>
+  <button class="nav-item" data-nav="translate"><span class="nav-icon">🎧</span>同声传译</button>
+  <button class="nav-item" data-nav="tutor"><span class="nav-icon">💬</span>AI对话</button>
+  <button class="nav-item" data-nav="vocab"><span class="nav-icon">📚</span>背单词</button>
+  <button class="nav-item" data-nav="mistakes"><span class="nav-icon">📝</span>错题本</button>
+  <button class="nav-item" data-nav="essay"><span class="nav-icon">✍️</span>作文批改</button>
+  <button class="nav-item" data-nav="grammar"><span class="nav-icon">📖</span>语法</button>
+  <button class="nav-item" data-nav="colloquial"><span class="nav-icon">🗣️</span>美式口语</button>
+  <button class="nav-item" data-nav="profile"><span class="nav-icon">👤</span>我的</button>
+  <button class="nav-item" data-nav="admin" id="navAdmin" hidden><span class="nav-icon">⚙️</span>管理后台</button>
+</nav>
 
 <!-- 手机底部标签栏。顶部菜单在手机上要横向滑动，排在后面的功能等于藏起来了；
      底部固定标签栏是国内 App 的通用做法，常用功能一直在拇指范围内。
