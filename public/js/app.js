@@ -139,7 +139,8 @@
     VIEWS.forEach(v => {
       $('#view-' + v).hidden = v !== name;
     });
-    $all('.nav-item').forEach(btn => btn.classList.toggle('active', btn.dataset.nav === name));
+    // 顶部菜单和底部标签栏的选中态要一起同步
+    $all('.nav-item, .tab-item').forEach(btn => btn.classList.toggle('active', btn.dataset.nav === name));
     window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
 
     if (name === 'dashboard') renderDashboard();
@@ -175,7 +176,11 @@
     const nav = $('#mainNav');
     const authArea = $('#authArea');
     nav.hidden = false;
+    // 底部标签栏跟顶部菜单同进同退；has-tabbar 用来给固定栏让出页面底部空间
+    $('#tabbar').hidden = false;
+    document.body.classList.add('has-tabbar');
     $('#navAdmin').hidden = !state.user.isAdmin;
+    $('#dashNavAdmin').hidden = !state.user.isAdmin;
     const av = state.user.avatar;
     const avatarHtml = av?.type === 'image'
       ? `<img class="topbar-avatar" src="${escapeHtml(av.value)}" alt="">`
@@ -190,6 +195,8 @@
       renderLoggedInTopbar();
     } else {
       $('#mainNav').hidden = true;
+      $('#tabbar').hidden = true;
+      document.body.classList.remove('has-tabbar');
       rebuildAuthButtons();
     }
   }
@@ -411,6 +418,10 @@
     try {
       const data = await api('/vocab/review');
       $('#dashDueWords').textContent = data.words.length;
+      // 宫格上直接标出待复习数量，不用点进去才知道今天有没有活儿
+      const due = $('#fnVocabDue');
+      due.hidden = data.words.length === 0;
+      due.textContent = data.words.length + ' 待复习';
     } catch { $('#dashDueWords').textContent = '-'; }
     renderMetrics();
   }

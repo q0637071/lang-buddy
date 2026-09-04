@@ -670,3 +670,77 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--p
 .avatar-usage-line { font-size: 15px; color: var(--text); }
 .avatar-usage-pct { color: var(--text-muted); font-size: 13px; }
 .avatar-usage-meta { margin-top: 6px; font-size: 13px; color: var(--text-muted); }
+
+/* ============ 导航改版 ============ */
+/* 顶部菜单加图标，10个纯文字项扫读太费力 */
+.nav-item { display: inline-flex; align-items: center; gap: 5px; }
+.nav-icon { font-size: 15px; line-height: 1; }
+
+/* 首页功能宫格：所有功能的总入口，保证任何功能最多两步可达 */
+.feature-nav-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 12px; margin-bottom: 26px;
+}
+.feature-nav {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 7px;
+  padding: 18px 8px 14px; background: #fff; border: 1px solid var(--border);
+  border-radius: var(--radius); cursor: pointer; box-shadow: var(--shadow-xs);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.feature-nav:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--primary); }
+.feature-nav:active { transform: translateY(0); }
+.fn-icon { font-size: 26px; line-height: 1; }
+.fn-label { font-size: 13.5px; font-weight: 700; color: var(--text); }
+.fn-tag {
+  position: absolute; top: 7px; right: 7px; background: var(--primary-light);
+  color: var(--primary-dark); font-size: 10px; font-weight: 700;
+  padding: 2px 6px; border-radius: 999px; white-space: nowrap;
+}
+
+/* 手机底部标签栏：默认不显示，只在窄屏出现 */
+.tabbar { display: none; }
+
+@media (max-width: 768px) {
+  /* 手机上顶部菜单整个收起，改用底部标签栏——横向滑动的菜单等于把后面的功能藏起来 */
+  .main-nav { display: none !important; }
+  .topbar-inner { flex-wrap: nowrap; }
+
+  .tabbar {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+    background: rgba(255,255,255,.94);
+    backdrop-filter: blur(14px) saturate(160%); -webkit-backdrop-filter: blur(14px) saturate(160%);
+    border-top: 1px solid var(--border);
+    /* 适配 iPhone 底部横条，否则最后一行会被挡住 */
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  .tab-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    background: transparent; border: none; padding: 8px 2px 6px;
+    color: var(--text-muted); cursor: pointer; font-family: inherit;
+  }
+  .tab-icon { font-size: 20px; line-height: 1; transition: transform .18s ease; }
+  .tab-label { font-size: 11px; font-weight: 600; }
+  .tab-item.active { color: var(--primary); }
+  .tab-item.active .tab-icon { transform: translateY(-1px) scale(1.12); }
+
+  /* 给固定标签栏让出高度，否则页面最底部的内容会被永久遮住 */
+  body.has-tabbar .container,
+  body.has-tabbar .pricing { padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+  /* 聊天输入行也是贴底的，要一起抬上来 */
+  body.has-tabbar .chat-input-row { margin-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+
+  .feature-nav-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .feature-nav { padding: 14px 4px 11px; gap: 5px; border-radius: 12px; }
+  .fn-icon { font-size: 22px; }
+  .fn-label { font-size: 11.5px; }
+  .fn-tag { display: none; } /* 手机上宫格太窄，角标会压住文字 */
+}
+
+/* 加了图标后 10 个菜单项在 1100px 容器里放不下，会被挤到折行（每项高 70px）。
+   收紧内边距并禁止折行；769~1000px 这个窄区间放不下时退化成横向滚动。 */
+.nav-item { white-space: nowrap; padding: 8px 10px; font-size: 13.5px; }
+.main-nav { overflow-x: auto; scrollbar-width: none; }
+.main-nav::-webkit-scrollbar { display: none; }
+/* 顶栏容器比正文宽一点，给 10 个菜单项腾地方；品牌名不允许折行 */
+.topbar-inner { max-width: 1240px; }
+.brand-name { white-space: nowrap; }

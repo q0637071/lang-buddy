@@ -17,21 +17,32 @@
     </div>
 
     <nav class="main-nav" id="mainNav" hidden>
-      <button class="nav-item" data-nav="dashboard">首页</button>
-      <button class="nav-item" data-nav="translate">同声传译</button>
-      <button class="nav-item" data-nav="tutor">AI对话</button>
-      <button class="nav-item" data-nav="vocab">背单词</button>
-      <button class="nav-item" data-nav="mistakes">错题本</button>
-      <button class="nav-item" data-nav="essay">AI作文助手</button>
-      <button class="nav-item" data-nav="grammar">语法</button>
-      <button class="nav-item" data-nav="colloquial">美式口语</button>
-      <button class="nav-item" data-nav="profile">我的</button>
-      <button class="nav-item" data-nav="admin" id="navAdmin" hidden>管理后台</button>
+      <button class="nav-item" data-nav="dashboard"><span class="nav-icon">🏠</span>首页</button>
+      <button class="nav-item" data-nav="translate"><span class="nav-icon">🎧</span>同声传译</button>
+      <button class="nav-item" data-nav="tutor"><span class="nav-icon">💬</span>AI对话</button>
+      <button class="nav-item" data-nav="vocab"><span class="nav-icon">📚</span>背单词</button>
+      <button class="nav-item" data-nav="mistakes"><span class="nav-icon">📝</span>错题本</button>
+      <button class="nav-item" data-nav="essay"><span class="nav-icon">✍️</span>作文批改</button>
+      <button class="nav-item" data-nav="grammar"><span class="nav-icon">📖</span>语法</button>
+      <button class="nav-item" data-nav="colloquial"><span class="nav-icon">🗣️</span>美式口语</button>
+      <button class="nav-item" data-nav="profile"><span class="nav-icon">👤</span>我的</button>
+      <button class="nav-item" data-nav="admin" id="navAdmin" hidden><span class="nav-icon">⚙️</span>管理后台</button>
     </nav>
 
     <div class="auth-area" id="authArea"></div>
   </div>
 </header>
+
+<!-- 手机底部标签栏。顶部菜单在手机上要横向滑动，排在后面的功能等于藏起来了；
+     底部固定标签栏是国内 App 的通用做法，常用功能一直在拇指范围内。
+     放不下的功能走首页宫格，任何功能最多两步可达。 -->
+<nav class="tabbar" id="tabbar" hidden>
+  <button type="button" class="tab-item" data-nav="dashboard"><span class="tab-icon">🏠</span><span class="tab-label">首页</span></button>
+  <button type="button" class="tab-item" data-nav="tutor"><span class="tab-icon">💬</span><span class="tab-label">AI 对话</span></button>
+  <button type="button" class="tab-item" data-nav="translate"><span class="tab-icon">🎧</span><span class="tab-label">同声传译</span></button>
+  <button type="button" class="tab-item" data-nav="vocab"><span class="tab-icon">📚</span><span class="tab-label">背单词</span></button>
+  <button type="button" class="tab-item" data-nav="profile"><span class="tab-icon">👤</span><span class="tab-label">我的</span></button>
+</nav>
 
 <main id="app">
 
@@ -99,6 +110,41 @@
   <section class="view" id="view-dashboard" hidden>
     <div class="container">
       <h2 class="page-title">欢迎回来，<span id="dashNickname"></span> 👋</h2>
+
+      <!-- 功能宫格。以前首页只有状态卡片，所有功能都只能从顶部菜单进；
+           手机上菜单要横滑，第5个之后基本没人发现得了。 -->
+      <div class="feature-nav-grid">
+        <button type="button" class="feature-nav" data-nav="tutor">
+          <span class="fn-icon">💬</span><span class="fn-label">AI 对话</span>
+          <span class="fn-tag">含视频通话</span>
+        </button>
+        <button type="button" class="feature-nav" data-nav="translate">
+          <span class="fn-icon">🎧</span><span class="fn-label">同声传译</span>
+        </button>
+        <button type="button" class="feature-nav" data-nav="vocab">
+          <span class="fn-icon">📚</span><span class="fn-label">背单词</span>
+          <span class="fn-tag" id="fnVocabDue" hidden></span>
+        </button>
+        <button type="button" class="feature-nav" data-nav="grammar">
+          <span class="fn-icon">📖</span><span class="fn-label">语法精讲</span>
+        </button>
+        <button type="button" class="feature-nav" data-nav="colloquial">
+          <span class="fn-icon">🗣️</span><span class="fn-label">美式口语</span>
+        </button>
+        <button type="button" class="feature-nav" data-nav="mistakes">
+          <span class="fn-icon">📝</span><span class="fn-label">错题本</span>
+        </button>
+        <button type="button" class="feature-nav" data-nav="essay">
+          <span class="fn-icon">✍️</span><span class="fn-label">作文批改</span>
+        </button>
+        <button type="button" class="feature-nav" data-nav="profile">
+          <span class="fn-icon">👤</span><span class="fn-label">我的</span>
+        </button>
+        <button type="button" class="feature-nav" data-nav="admin" id="dashNavAdmin" hidden>
+          <span class="fn-icon">⚙️</span><span class="fn-label">管理后台</span>
+        </button>
+      </div>
+
       <div class="dash-grid">
         <div class="dash-card">
           <div class="dash-card-label">会员状态</div>
