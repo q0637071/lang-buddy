@@ -171,30 +171,41 @@
     $('#authArea').innerHTML = '';
   }
 
+  // 顶栏/导航的渲染里但凡有一个节点找不到（HTML 和 JS 版本不一致时就会发生，
+  // 比如浏览器缓存了旧 app.js 配上新 index.html），抛出的异常会中断整个登录流程，
+  // 用户看到的就是"登录成功了却又回到登录页"。装饰性的 DOM 操作不该有这种杀伤力，
+  // 一律用这个安全取值器：拿不到就跳过，不影响登录本身。
+  const $safe = (sel) => { try { return $(sel); } catch { return null; } };
+  const setHidden = (sel, v) => { const el = $safe(sel); if (el) el.hidden = v; };
+
   function renderLoggedInTopbar() {
-    const nav = $('#mainNav');
-    const authArea = $('#authArea');
-    nav.hidden = false;
+    const authArea = $safe('#authArea');
+    setHidden('#mainNav', false);
     // has-sidebar 给桌面左侧栏让出宽度，只在 >=769px 生效
     document.body.classList.add('has-sidebar');
-    $('#navAdmin').hidden = !state.user.isAdmin;
-    $('#dashNavAdmin').hidden = !state.user.isAdmin;
+    setHidden('#navAdmin', !state.user.isAdmin);
+    setHidden('#dashNavAdmin', !state.user.isAdmin);
     const av = state.user.avatar;
     const avatarHtml = av?.type === 'image'
       ? `<img class="topbar-avatar" src="${escapeHtml(av.value)}" alt="">`
       : av?.type === 'preset'
         ? `<span class="topbar-avatar">${escapeHtml(av.value)}</span>`
         : `<span class="topbar-avatar topbar-avatar-letter">${escapeHtml((state.user.nickname || 'U').trim().charAt(0).toUpperCase())}</span>`;
-    authArea.innerHTML = `${avatarHtml}<span class="topbar-name">${escapeHtml(state.user.nickname)}</span>`;
+    if (authArea) authArea.innerHTML = `${avatarHtml}<span class="topbar-name">${escapeHtml(state.user.nickname)}</span>`;
   }
 
   function updateTopbar() {
-    if (state.user) {
-      renderLoggedInTopbar();
-    } else {
-      $('#mainNav').hidden = true;
-      document.body.classList.remove('has-sidebar');
-      rebuildAuthButtons();
+    // 顶栏只是外观，出了问题也绝不能挡住登录：整体兜住异常
+    try {
+      if (state.user) {
+        renderLoggedInTopbar();
+      } else {
+        setHidden('#mainNav', true);
+        document.body.classList.remove('has-sidebar');
+        rebuildAuthButtons();
+      }
+    } catch (e) {
+      console.error('顶栏渲染失败（不影响登录）:', e);
     }
   }
 

@@ -235,6 +235,34 @@ app.use(cookieSession);
 // 导致每次发新版本后，有的用户看到的还是几天前的 app.js/index.html（新功能"看起来没生效"）。
 // 用 no-cache 强制浏览器每次都带 ETag 去问一下服务器，没变化时后端仍然返回轻量的 304，
 // 内容变了才会重新下载，兼顾"总是拿到最新版本"和"没必要每次全量下载"。
+// 光靠 no-cache 不够：手机浏览器和各类 App 内置 WebView 并不总是老实照做，
+// 出现过"拿到了新的 index.html，JS 却还是缓存的旧 app.js"这种版本错配——
+// 旧 JS 去找新 HTML 里已经删掉的节点，抛异常中断渲染，用户看到的是
+// "登录成功却又回到登录页"。这里给资源地址加上按文件修改时间算出的版本号，
+// 代码一变地址就变，浏览器没有旧版可用，从根上杜绝这类错配。
+function assetVersion() {
+  try {
+    const mt = ['public/js/app.js', 'public/css/style.css']
+      .map(f => fs.statSync(path.join(__dirname, f)).mtimeMs);
+    return Math.round(Math.max(...mt)).toString(36);
+  } catch { return String(Date.now()); }
+}
+let indexHtmlCached = null;
+app.get(['/', '/index.html'], (req, res, next) => {
+  try {
+    if (!indexHtmlCached) {
+      const v = assetVersion();
+      indexHtmlCached = fs.readFileSync(path.join(__dirname, 'public/index.html'), 'utf8')
+        .replace('href="css/style.css"', `href="css/style.css?v=${v}"`)
+        .replace('src="js/app.js"', `src="js/app.js?v=${v}"`);
+    }
+    res.setHeader('Cache-Control', 'no-cache');
+    res.type('html').send(indexHtmlCached);
+  } catch (e) {
+    next(); // 出问题就退回普通静态文件服务，别把首页搞挂
+  }
+});
+
 app.use(express.static(path.join(__dirname, 'public'), {
   setHeaders: (res) => res.setHeader('Cache-Control', 'no-cache'),
 }));
