@@ -45,10 +45,26 @@ npm run app:open
 
 ---
 
-## 二、iOS（在 M1 MacBook 上开发）
+## 二、iOS（在 Apple Silicon 的 Mac 上开发，M1 iMac / MacBook 均可）
 
 iOS 工程已经在 Windows 这边生成好并提交到 git 了，Mac 上拉下来就能直接用。
 Capacitor 8 用的是 Swift Package Manager，**不需要装 CocoaPods**，省一大堆麻烦。
+
+### 第 0 步：先确认 macOS 版本（这一步决定后面能不能干）
+
+Xcode 版本受 macOS 限制，Xcode 又决定能编译哪个 iOS SDK。
+苹果要求用**较新版本的 Xcode 构建才能提交 App Store**，而新 Xcode 需要较新的 macOS。
+
+```bash
+sw_vers          # 看 macOS 版本
+xcode-select -p  # 看有没有装过命令行工具
+```
+
+M1 机器硬件上支持最新 macOS，但**如果一直没升级过**（出厂是 Big Sur），
+要先去 系统设置 → 通用 → 软件更新 升上去，否则 App Store 里装不到能上架的 Xcode。
+
+判断依据：装完 Xcode 后看它的版本号，如果 App Store 只给你很老的版本，
+基本就是 macOS 太旧被卡住了。
 
 ### 首次在 Mac 上准备
 
@@ -99,7 +115,19 @@ npm run ios:sync
 | Apple Developer Program | **$99/年**，没有它连 TestFlight 内测都做不了 |
 | App 图标 | 1024×1024 无透明通道，用 @capacitor/assets 生成全套 |
 | 隐私政策网址 | 强制要求，必须是可公开访问的页面 |
-| 中国大陆上架 | 需要 **ICP 备案号**，审核比安卓严格得多 |
+| 软件著作权登记 | 上架中国区需要，办理周期约 1-2 个月，要提前动手 |
+| **工信部 App 备案** | 2023 年起强制。备案要求 App 使用的域名/服务器**已完成 ICP 备案** |
+| **ICP 备案** | ⚠️ 当前最大障碍，见下 |
+
+⚠️ **上架中国区的硬门槛**：`langbuddy.org` 目前挂在 Render（境外服务器），
+这个组合**做不了 ICP 备案** —— 而没有 ICP 备案就办不了工信部 App 备案，
+办不了 App 备案就上不了中国区 App Store。
+
+要上架中国区，绕不开这一步：域名换成可备案的（.com/.cn 等，.org 也可以但需实名），
+服务器迁到国内（阿里云/腾讯云），并用国内主体（公司或个体工商户）完成备案。
+这件事周期长（备案本身 2-3 周），要上架就得尽早启动。
+
+不上架中国区、只上美区等海外市场的话，以上中国特有的手续都不需要。
 
 ⚠️ **重要**：App 内如果要卖会员，苹果强制走 App 内购（抽成 15-30%），
 直接接微信/支付宝会被拒审。我们接的 ZPay 在 iOS 端不能用于卖会员，
