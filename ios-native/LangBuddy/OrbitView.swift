@@ -15,8 +15,12 @@ struct OrbitView: View {
     @State private var yaw: Double = 0
     @State private var pitch: Double = 0
     @State private var dragStart: (yaw: Double, pitch: Double) = (0, 0)
-    @State private var spinning = true          // 没人碰的时候自己慢慢转
     @State private var selected: RelatedWord?
+
+    // 自转不再用定时器手动推进（那样只有 25fps，看着一格一格跳）。
+    // 记下开始时刻，由 TimelineView 按屏幕刷新率算出当前角度，是多少帧就是多少帧。
+    @State private var autoSpinSince: Date? = Date()
+    private let spinSpeed: Double = 0.22   // 弧度/秒
 
     var body: some View {
         VStack(spacing: 0) {
@@ -40,7 +44,6 @@ struct OrbitView: View {
         }
         .background(Color(red: 0.06, green: 0.07, blue: 0.12).ignoresSafeArea())
         .task { await load() }
-        .task { await autoSpin() }
     }
 
     // MARK: - 球体
@@ -51,49 +54,62 @@ struct OrbitView: View {
             let radius = size * 0.36
             let mid = CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
 
-            ZStack {
-                // 中心词固定在正中，不参与旋转
-                VStack(spacing: 2) {
-                    Text(center?.word ?? centerWord)
-                        .font(.system(size: 22, weight: .bold))
-                        .foregroundColor(.white)
-                    if let r = center?.root, !r.isEmpty {
-                        Text(r).font(.system(size: 11)).foregroundColor(Theme.accent)
-                    }
-                }
-                .padding(.horizontal, 14).padding(.vertical, 9)
-                .background(Theme.primary.opacity(0.9))
-                .clipShape(Capsule())
-                .position(mid)
-                .zIndex(10)
+            // TimelineView(.animation) 按屏幕刷新率驱动，自转是连续的；
+            // 之前用定时器每 40ms 手动加角度，只有 25fps，肉眼就是一格一格跳。
+            TimelineView(.animation) { ctx in
+                let liveYaw = yaw + autoOffset(at: ctx.date)
 
-                ForEach(Array(related.enumerated()), id: \.element.id) { i, w in
-                    let p = project(index: i, total: related.count, radius: radius)
-                    Text(w.word)
-                        .font(.system(size: 13 + 3 * p.depth, weight: w.isRoot ? .semibold : .regular))
-                        .foregroundColor(w.isRoot ? .white : Color.white.opacity(0.75))
-                        .padding(.horizontal, 9).padding(.vertical, 5)
-                        .background(
-                            Capsule().fill(w.isRoot
-                                ? Theme.primary.opacity(0.25 + 0.35 * p.depth)
-                                : Color.white.opacity(0.06 + 0.10 * p.depth))
-                        )
-                        // 越靠后的词越小越淡，做出前后景深
-                        .opacity(0.25 + 0.75 * p.depth)
-                        .scaleEffect(0.75 + 0.35 * p.depth)
-                        .position(x: mid.x + p.x, y: mid.y + p.y)
-                        .zIndex(p.depth)
-                        .onTapGesture {
-                            selected = w
-                            spinning = false
+                ZStack {
+                    // 中心词固定在正中，不参与旋转
+                    VStack(spacing: 2) {
+                        Text(center?.word ?? centerWord)
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundColor(.white)
+                        if let r = center?.root, !r.isEmpty {
+                            Text(r).font(.system(size: 11)).foregroundColor(Theme.accent)
                         }
+                    }
+                    .padding(.horizontal, 14).padding(.vertical, 9)
+                    .background(Theme.primary.opacity(0.9))
+                    .clipShape(Capsule())
+                    .position(mid)
+                    .zIndex(10)
+
+                    ForEach(Array(related.enumerated()), id: \.element.id) { i, w in
+                        let p = project(index: i, total: related.count, radius: radius, yaw: liveYaw)
+                        let isSel = selected?.id == w.id
+                        Text(w.word)
+                            .font(.system(size: 13 + 3 * p.depth, weight: w.isRoot ? .semibold : .regular))
+                            .foregroundColor(w.isRoot ? .white : Color.white.opacity(0.75))
+                            .padding(.horizontal, 9).padding(.vertical, 5)
+                            .background(
+                                Capsule().fill(isSel
+                                    ? Theme.accent.opacity(0.85)
+                                    : (w.isRoot
+                                        ? Theme.primary.opacity(0.25 + 0.35 * p.depth)
+                                        : Color.white.opacity(0.06 + 0.10 * p.depth)))
+                            )
+                            // 整个胶囊都可点，否则只有文字笔画上才响应，很难点中
+                            .contentShape(Capsule())
+                            // 越靠后的词越小越淡，做出前后景深
+                            .opacity(0.25 + 0.75 * p.depth)
+                            .scaleEffect(0.75 + 0.35 * p.depth)
+                            .position(x: mid.x + p.x, y: mid.y + p.y)
+                            .zIndex(p.depth)
+                            .onTapGesture {
+                                selected = w
+                                freezeSpin()
+                            }
+                    }
                 }
             }
             .contentShape(Rectangle())
-            .gesture(
-                DragGesture()
+            // 必须用 simultaneousGesture：普通 .gesture 会把子视图的点击一并吞掉，
+            // 表现就是点第二个词没反应、底部一直停在第一个词上。
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 4)
                     .onChanged { v in
-                        if spinning { spinning = false; dragStart = (yaw, pitch) }
+                        if autoSpinSince != nil { freezeSpin() }
                         yaw = dragStart.yaw + Double(v.translation.width) * 0.01
                         // 上下限制在 ±60°，转过头球体会翻过来，很难看
                         pitch = max(-1.05, min(1.05, dragStart.pitch - Double(v.translation.height) * 0.01))
@@ -103,9 +119,24 @@ struct OrbitView: View {
         }
     }
 
+    /// 自转累计的角度。停转后返回 0，当前朝向已经并进 yaw 里了。
+    private func autoOffset(at now: Date) -> Double {
+        guard let since = autoSpinSince else { return 0 }
+        return now.timeIntervalSince(since) * spinSpeed
+    }
+
+    /// 把自转累计的角度并进 yaw，然后停下——不这么做的话一停就会跳回起始朝向
+    private func freezeSpin() {
+        if let since = autoSpinSince {
+            yaw += Date().timeIntervalSince(since) * spinSpeed
+            autoSpinSince = nil
+        }
+        dragStart = (yaw, pitch)
+    }
+
     /// 斐波那契球面分布 + 旋转 + 透视投影。
     /// depth 是归一化到 0...1 的前后位置，1 表示最靠近观察者。
-    private func project(index: Int, total: Int, radius: CGFloat)
+    private func project(index: Int, total: Int, radius: CGFloat, yaw: Double)
         -> (x: CGFloat, y: CGFloat, depth: Double) {
         let n = max(total, 2)
         let golden = Double.pi * (3 - 5.0.squareRoot())
@@ -127,14 +158,6 @@ struct OrbitView: View {
         return (CGFloat(x1 * scale) * radius,
                 CGFloat(y2 * scale) * radius,
                 (z2 + 1) / 2)
-    }
-
-    private func autoSpin() async {
-        // 没人操作时缓慢自转，让球体"活着"；一旦被碰过就不再自动转
-        while !Task.isCancelled {
-            try? await Task.sleep(nanoseconds: 40_000_000)
-            if spinning { yaw += 0.004 }
-        }
     }
 
     // MARK: - 底部释义
