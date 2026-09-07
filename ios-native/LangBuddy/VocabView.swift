@@ -141,7 +141,7 @@ struct VocabView: View {
                         }
                         if let r = w.root, !r.isEmpty {
                             Button {
-                                app.route = .orbit(w.word)
+                                app.route = .orbit(word: w.word, fromHome: false)
                             } label: {
                                 HStack(spacing: 4) {
                                     Text("🪐").font(.system(size: 12))

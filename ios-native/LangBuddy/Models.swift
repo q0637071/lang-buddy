@@ -176,6 +176,14 @@ struct RelatedWord: Codable, Identifiable, Equatable {
     var isRoot: Bool { relation == "root" }
 }
 
+/// 首页"词根星球"入口用：后端随机挑一个词根足够常见的词
+struct RootPick: Codable {
+    let word: String?
+    let root: String?
+    let meaning_zh: String?
+    let poolSize: Int?
+}
+
 struct RelatedResponse: Codable {
     let center: VocabWord
     let related: [RelatedWord]

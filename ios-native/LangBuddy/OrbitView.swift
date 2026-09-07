@@ -5,6 +5,7 @@ import SwiftUI
 struct OrbitView: View {
     @EnvironmentObject var app: AppState
     let centerWord: String
+    var fromHome: Bool = false
 
     @State private var center: VocabWord?
     @State private var related: [RelatedWord] = []
@@ -19,7 +20,7 @@ struct OrbitView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            NavHeader(title: "词根关联") { app.route = .vocab }
+            NavHeader(title: "词根关联") { app.route = fromHome ? .home : .vocab }
             Divider()
 
             if loading {

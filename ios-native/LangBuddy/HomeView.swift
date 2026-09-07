@@ -12,7 +12,11 @@ struct HomeView: View {
         var featured = false
         /// 已经做好的功能给一个目标路由；为 nil 表示还没做，点了给提示
         var route: AppState.Route?
+        /// 星球入口要先跟后端要一个随机词才知道去哪，不能写死路由
+        var isOrbit = false
     }
+
+    @State private var pickingOrbit = false
 
     // 按"今天学什么"的顺序排，做好一个接一个
     private let items: [PathItem] = [
@@ -24,6 +28,8 @@ struct HomeView: View {
               subtitle: "卡片式复习，看词根记得更牢", route: .vocab),
         .init(icon: "text.book.closed.fill", title: "语法精讲",
               subtitle: "一次讲透一个知识点，带 AI 批改", route: .grammar),
+        .init(icon: "circle.hexagongrid.fill", title: "词根星球",
+              subtitle: "顺着词根一次记住一串词", isOrbit: true),
     ]
 
     var body: some View {
@@ -56,12 +62,14 @@ struct HomeView: View {
                 VStack(spacing: 12) {
                     ForEach(items) { item in
                         Button {
-                            if let r = item.route { app.route = r }
+                            if item.isOrbit { Task { await openOrbit() } }
+                            else if let r = item.route { app.route = r }
                             else { app.showToast("这个功能正在做，敬请期待") }
                         } label: {
                             card(item)
                         }
                         .buttonStyle(.plain)
+                        .disabled(item.isOrbit && pickingOrbit)
                     }
                 }
             }
@@ -71,6 +79,22 @@ struct HomeView: View {
             Button("重新测评") { app.route = .placementIntro }
             Button("退出登录", role: .destructive) { Task { await app.signOut() } }
             Button("取消", role: .cancel) {}
+        }
+    }
+
+    /// 星球没有固定入口词，先跟后端随机要一个词根够常见的词再进
+    private func openOrbit() async {
+        pickingOrbit = true
+        defer { pickingOrbit = false }
+        do {
+            let p = try await API.shared.rootPick()
+            if let w = p.word, !w.isEmpty {
+                app.route = .orbit(word: w, fromHome: true)
+            } else {
+                app.showToast("词库里暂时没有合适的词根")
+            }
+        } catch {
+            app.showToast(error.localizedDescription)
         }
     }
 

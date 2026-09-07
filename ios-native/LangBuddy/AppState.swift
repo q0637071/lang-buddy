@@ -21,7 +21,9 @@ final class AppState: ObservableObject {
         case grammar
         case grammarDetail(String)   // 关联值是课程 id
         case videoCall
-        case orbit(String)   // 关联值是中心词
+        // 中心词 + 从哪进来的：从首页进就返回首页，从背单词卡片进就返回背单词，
+        // 否则用户会莫名其妙被丢到另一个功能里
+        case orbit(word: String, fromHome: Bool)
     }
 
     @Published var route: Route = .launching

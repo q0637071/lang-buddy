@@ -163,6 +163,11 @@ actor API {
                               body: ["word": word, "skip": true], as: OKResponse.self)
     }
 
+    /// 随机取一个词根够常见的词，给首页"词根星球"入口用
+    func rootPick() async throws -> RootPick {
+        try await request("vocab/root-pick", as: RootPick.self)
+    }
+
     /// 词根关联：同词根的词优先，不够再用同主题补齐
     func relatedWords(_ word: String) async throws -> RelatedResponse {
         let q = word.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? word

@@ -1873,6 +1873,26 @@ function getRootIndex(vocab) {
   return index;
 }
 
+// App 首页"词根星球"入口用：随机挑一个词。挑选条件是它的词根至少还有 5 个同根词，
+// 否则点进去球面上只有一两颗星，看着很寒酸。
+// 单独开这个接口是因为 /api/vocab/list 会把全部 6900 多个词连例句一起返回，
+// 手机上只为随机取一个词拉那么大的包不划算。
+app.get('/api/vocab/root-pick', requireAuth, (req, res) => {
+  const vocab = readVocab();
+  const rootIndex = getRootIndex(vocab);
+  const candidates = vocab.filter(w =>
+    parseRootParts(w.root).some(r => (rootIndex.get(r) || []).length >= 5)
+  );
+  if (!candidates.length) return res.json({ word: null, poolSize: 0 });
+  const pick = candidates[Math.floor(Math.random() * candidates.length)];
+  res.json({
+    word: pick.word,
+    root: pick.root || '',
+    meaning_zh: pick.meaning_zh || '',
+    poolSize: candidates.length,
+  });
+});
+
 app.get('/api/vocab/related', requireAuth, (req, res) => {
   const { word } = req.query;
   if (!word) return res.status(400).json({ error: '缺少单词' });
