@@ -230,6 +230,33 @@ struct GrammarCheckResponse: Codable {
     let result: String
 }
 
+// MARK: - AI 视频通话（Tavus）
+
+struct AvatarStatus: Codable {
+    let enabled: Bool
+    let isMember: Bool?
+    let unlimited: Bool?
+    let monthlyMinutes: Int?
+    let usedSeconds: Int?
+    let remainingSeconds: Int?
+    let maxCallSeconds: Int?
+    let globalExhausted: Bool?
+
+    /// -1 是后端给不限量账号的约定值
+    var isUnlimited: Bool { unlimited == true || remainingSeconds == -1 }
+    var canStart: Bool {
+        guard enabled, isMember == true, globalExhausted != true else { return false }
+        return isUnlimited || (remainingSeconds ?? 0) > 0
+    }
+}
+
+struct AvatarConversation: Codable {
+    let conversationUrl: String
+    let conversationId: String
+    let maxSeconds: Int
+    let remainingSeconds: Int?
+}
+
 struct SendCodeResponse: Codable {
     let ok: Bool?
     // 后端没接短信服务商时会把验证码直接返回，方便内测阶段自测

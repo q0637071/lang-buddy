@@ -48,6 +48,8 @@ struct RootView: View {
             case .grammarDetail(let id):
                 GrammarDetailView(lessonId: id)
                     .transition(.move(edge: .trailing).combined(with: .opacity))
+            case .videoCall:
+                VideoCallView().transition(.opacity)
             }
 
             if let toast = app.toast {
@@ -84,6 +86,7 @@ struct RootView: View {
         case .grammar: return "grammar"
         // 详情带上 id，切换不同课程时才会触发过渡动画
         case .grammarDetail(let id): return "grammarDetail-" + id
+        case .videoCall: return "videoCall"
         }
     }
 }

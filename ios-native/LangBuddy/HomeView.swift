@@ -18,7 +18,8 @@ struct HomeView: View {
     private let items: [PathItem] = [
         .init(icon: "bubble.left.and.bubble.right.fill", title: "AI 对话练习",
               subtitle: "打字聊天，AI 按你的水平调整难度", featured: true, route: .chat),
-        .init(icon: "video.fill", title: "AI 视频通话", subtitle: "和 AI 私教面对面练口语"),
+        .init(icon: "video.fill", title: "AI 视频通话",
+              subtitle: "和 AI 私教面对面练口语", route: .videoCall),
         .init(icon: "books.vertical.fill", title: "今日单词",
               subtitle: "卡片式复习，看词根记得更牢", route: .vocab),
         .init(icon: "text.book.closed.fill", title: "语法精讲",

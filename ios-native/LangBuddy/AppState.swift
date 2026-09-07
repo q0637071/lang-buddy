@@ -20,6 +20,7 @@ final class AppState: ObservableObject {
         case vocab
         case grammar
         case grammarDetail(String)   // 关联值是课程 id
+        case videoCall
     }
 
     @Published var route: Route = .launching

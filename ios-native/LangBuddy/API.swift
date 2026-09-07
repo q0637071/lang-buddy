@@ -173,4 +173,24 @@ actor API {
         try await request("grammar/check", method: "POST",
                           body: ["sentence": sentence], as: GrammarCheckResponse.self).result
     }
+
+    // MARK: - AI 视频通话
+
+    func avatarStatus() async throws -> AvatarStatus {
+        try await request("avatar/status", as: AvatarStatus.self)
+    }
+
+    func startAvatarCall() async throws -> AvatarConversation {
+        try await request("avatar/conversation", method: "POST", as: AvatarConversation.self)
+    }
+
+    /// 通话中每 20 秒报一次，服务端据此判断人什么时候真的离开——
+    /// 不报心跳会被按"异常退出"结算，用户会被多扣时长
+    func pingAvatar() async throws {
+        _ = try await request("avatar/ping", method: "POST", as: OKResponse.self)
+    }
+
+    func endAvatarCall() async throws {
+        _ = try await request("avatar/end", method: "POST", as: OKResponse.self)
+    }
 }
