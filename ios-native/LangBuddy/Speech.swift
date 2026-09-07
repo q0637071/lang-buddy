@@ -7,7 +7,7 @@ import Combine
 /// 系统合成音一听就是机器，orpheus 有语气起伏，接近真人。
 /// 代价是要联网、有几百毫秒延迟，所以本地缓存同一句话的音频。
 @MainActor
-final class Speaker: NSObject, ObservableObject {
+final class Speaker: ObservableObject {
     static let shared = Speaker()
 
     @Published private(set) var speakingID: String?   // 正在读哪条消息
@@ -16,6 +16,7 @@ final class Speaker: NSObject, ObservableObject {
     private var player: AVAudioPlayer?
     private var cache: [String: Data] = [:]           // "voice|text" -> wav
     private let cacheLimit = 40
+    private var finishTask: Task<Void, Never>?
 
     /// 可选音色。orpheus 只认这几个，名字是模型定的，不能自己编。
     static let voices: [(id: String, label: String)] = [
@@ -27,14 +28,14 @@ final class Speaker: NSObject, ObservableObject {
         ("troy",   "Troy · 男声"),
     ]
 
-    private override init() {
-        super.init()
+    private init() {
         // 用 playback 类别：手机静音开关拨到静音时也要能出声，
         // 否则用户会以为"点了朗读没反应"
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
     }
 
     func stop() {
+        finishTask?.cancel(); finishTask = nil
         player?.stop()
         player = nil
         speakingID = nil
@@ -56,7 +57,10 @@ final class Speaker: NSObject, ObservableObject {
         defer { loadingID = nil }
         do {
             let data = try await API.shared.tts(text: text, voice: voice)
-            if cache.count >= cacheLimit { cache.removeValue(forKey: cache.keys.first!) }
+            // 别用 cache.keys.first! ——真到空字典那一刻就是崩溃，没必要为省一行冒这个险
+            if cache.count >= cacheLimit, let oldest = cache.keys.first {
+                cache.removeValue(forKey: oldest)
+            }
             cache[key] = data
             play(data, id: id)
         } catch {
@@ -69,22 +73,26 @@ final class Speaker: NSObject, ObservableObject {
         do {
             try AVAudioSession.sharedInstance().setActive(true)
             let p = try AVAudioPlayer(data: data)
-            p.delegate = self
             p.prepareToPlay()
             p.play()
             player = p
             speakingID = id
+
+            // 不用 AVAudioPlayerDelegate 判断播完：它的回调从后台线程打回来，
+            // 而这个类是 @MainActor 隔离的，在 Xcode 26 默认的 MainActor 隔离下会崩。
+            // 音频时长是已知的，睡够了再收尾，行为一样且没有跨线程问题。
+            finishTask?.cancel()
+            let duration = p.duration
+            finishTask = Task { [weak self] in
+                try? await Task.sleep(nanoseconds: UInt64((duration + 0.15) * 1_000_000_000))
+                guard !Task.isCancelled, let self else { return }
+                if self.speakingID == id {
+                    self.speakingID = nil
+                    self.player = nil
+                }
+            }
         } catch {
             speakingID = nil
-        }
-    }
-}
-
-extension Speaker: AVAudioPlayerDelegate {
-    nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        Task { @MainActor in
-            self.speakingID = nil
-            self.player = nil
         }
     }
 }

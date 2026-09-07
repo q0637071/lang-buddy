@@ -140,7 +140,10 @@ struct OrbitView: View {
         -> (x: CGFloat, y: CGFloat, depth: Double) {
         let n = max(total, 2)
         let golden = Double.pi * (3 - 5.0.squareRoot())
-        let y0 = 1 - (Double(index) / Double(n - 1)) * 2
+        // 用 (i + 0.5) / n 而不是 i / (n-1)：后者会让第一个点落在正北极、最后一个落在正南极，
+        // 而绕 Y 轴旋转时极点是不动的——表现就是第一个单词永远钉在那儿转不走。
+        // 加 0.5 偏移后所有点都避开两极，旋转时每个词都会轮转到前面来。
+        let y0 = 1 - (Double(index) + 0.5) / Double(n) * 2
         let r0 = max(0, (1 - y0 * y0)).squareRoot()
         let theta = golden * Double(index)
         let x0 = cos(theta) * r0
