@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<!-- viewport-fit=cover + 下面 CSS 里的 safe-area 变量，一起处理 iPhone 刘海和底部横条 -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<title>LangBuddy 语伴</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<!-- App 是"一屏一件事"的流程式结构，和网站的多标签导航完全不同。
+     每个 .screen 是一整屏，同一时刻只显示一个。 -->
+
+<!-- 1. 欢迎 -->
+<section class="screen" id="s-welcome">
+  <div class="welcome-hero">
+    <div class="brand-mark">L</div>
+    <h1>LangBuddy<br><span>语伴</span></h1>
+    <p class="welcome-sub">先花 2 分钟测出你的英语水平<br>之后每一句练习都按你的程度来</p>
+  </div>
+  <div class="screen-foot">
+    <button class="btn btn-primary btn-lg" id="btnStart">开始</button>
+    <button class="btn btn-text" id="btnGoLogin">已有账号，登录</button>
+  </div>
+</section>
+
+<!-- 2. 登录 -->
+<section class="screen" id="s-login" hidden>
+  <header class="nav-head">
+    <button class="nav-back" data-back="s-welcome">‹</button>
+    <span>登录</span>
+  </header>
+  <div class="screen-body">
+    <label class="field">
+      <span>用户名</span>
+      <input type="text" id="loginUser" autocomplete="username" autocapitalize="none" spellcheck="false">
+    </label>
+    <label class="field">
+      <span>密码</span>
+      <input type="password" id="loginPass" autocomplete="current-password">
+    </label>
+    <p class="form-err" id="loginErr" hidden></p>
+  </div>
+  <div class="screen-foot">
+    <button class="btn btn-primary btn-lg" id="btnLogin">登录</button>
+    <button class="btn btn-text" data-go="s-register">没有账号？去注册</button>
+  </div>
+</section>
+
+<!-- 3. 注册 -->
+<section class="screen" id="s-register" hidden>
+  <header class="nav-head">
+    <button class="nav-back" data-back="s-welcome">‹</button>
+    <span>创建账号</span>
+  </header>
+  <div class="screen-body">
+    <label class="field">
+      <span>昵称</span>
+      <input type="text" id="regNick" placeholder="怎么称呼你">
+    </label>
+    <label class="field">
+      <span>用户名</span>
+      <input type="text" id="regUser" placeholder="3-30 位，用于登录" autocapitalize="none" spellcheck="false">
+    </label>
+    <label class="field">
+      <span>密码</span>
+      <input type="password" id="regPass" placeholder="至少 6 位" autocomplete="new-password">
+    </label>
+    <label class="field">
+      <span>手机号</span>
+      <input type="tel" id="regPhone" placeholder="11 位手机号" inputmode="numeric" maxlength="11">
+    </label>
+    <label class="field field-inline">
+      <span>验证码</span>
+      <div class="inline-row">
+        <input type="tel" id="regCode" placeholder="6 位验证码" inputmode="numeric" maxlength="6">
+        <button class="btn btn-outline btn-sm" id="btnSendCode">获取验证码</button>
+      </div>
+    </label>
+    <p class="form-hint" id="regHint" hidden></p>
+    <p class="form-err" id="regErr" hidden></p>
+  </div>
+  <div class="screen-foot">
+    <button class="btn btn-primary btn-lg" id="btnRegister">注册并开始测评</button>
+  </div>
+</section>
+
+<!-- 4. 测评说明 -->
+<section class="screen" id="s-test-intro" hidden>
+  <div class="screen-body center">
+    <div class="big-emoji">📝</div>
+    <h2>先测一下你的英语水平</h2>
+    <ul class="intro-list">
+      <li><b id="introCount">15</b> 道题，约 2 分钟</li>
+      <li>从简单到难，不会的直接跳过</li>
+      <li>结果决定 AI 跟你说话的难度</li>
+    </ul>
+    <p class="muted">随时可以在「我的」里重测。</p>
+  </div>
+  <div class="screen-foot">
+    <button class="btn btn-primary btn-lg" id="btnBeginTest">开始测评</button>
+    <button class="btn btn-text" id="btnSkipTest">先跳过</button>
+  </div>
+</section>
+
+<!-- 5. 答题 -->
+<section class="screen" id="s-test" hidden>
+  <header class="nav-head">
+    <button class="nav-back" id="btnTestPrev">‹</button>
+    <span id="testProgressText">1 / 15</span>
+    <button class="nav-skip" id="btnTestSkip">跳过</button>
+  </header>
+  <div class="progress-track"><div class="progress-fill" id="testProgress"></div></div>
+  <div class="screen-body">
+    <div class="q-tier" id="qTier"></div>
+    <div class="q-text" id="qText"></div>
+    <div class="q-options" id="qOptions"></div>
+  </div>
+</section>
+
+<!-- 6. 结果 -->
+<section class="screen" id="s-result" hidden>
+  <div class="screen-body center">
+    <div class="result-ring">
+      <div class="result-cefr" id="resCefr">B1</div>
+      <div class="result-cefr-label">CEFR</div>
+    </div>
+    <h2 id="resLevel">中级</h2>
+    <p class="muted" id="resScore"></p>
+    <p class="result-desc" id="resDesc"></p>
+  </div>
+  <div class="screen-foot">
+    <button class="btn btn-primary btn-lg" id="btnResultNext">开始学习</button>
+  </div>
+</section>
+
+<!-- 7. 首页 -->
+<section class="screen" id="s-home" hidden>
+  <div class="screen-body">
+    <div class="home-head">
+      <div>
+        <div class="home-hello" id="homeHello">你好</div>
+        <div class="home-level" id="homeLevel"></div>
+      </div>
+      <button class="avatar-btn" id="btnMe">我</button>
+    </div>
+    <div class="path-list" id="pathList"></div>
+  </div>
+</section>
+
+<div class="toast" id="toast" hidden></div>
+<div class="loading" id="loading" hidden><div class="spinner"></div></div>
+
+<!-- 和网站一样：App 里出错就是黑屏，没法看控制台，把异常画到屏幕上 -->
+<script>
+(function () {
+  var shown = false;
+  function show(t, d) {
+    if (shown) return; shown = true;
+    try {
+      var el = document.createElement('div');
+      el.setAttribute('style', 'position:fixed;inset:0;z-index:99999;background:#fff;color:#111;padding:24px;'
+        + 'font:14px/1.6 -apple-system,system-ui,sans-serif;overflow:auto');
+      el.innerHTML = '<div style="font-size:17px;font-weight:700;margin-bottom:10px">⚠️ 加载出错</div>'
+        + '<div style="color:#666;margin-bottom:14px">把下面这段发给开发者即可定位。</div>'
+        + '<div style="font-weight:600;margin-bottom:6px"></div>'
+        + '<pre style="white-space:pre-wrap;word-break:break-all;background:#f5f5f7;padding:12px;border-radius:10px;margin:0"></pre>';
+      el.querySelector('div:nth-of-type(3)').textContent = t;
+      el.querySelector('pre').textContent = d;
+      (document.body || document.documentElement).appendChild(el);
+    } catch (e) {}
+  }
+  window.addEventListener('error', function (e) {
+    show(e.message || '脚本错误', (e.filename || '') + (e.lineno ? ':' + e.lineno : '')
+      + (e.error && e.error.stack ? '\n\n' + e.error.stack : ''));
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    var r = e.reason; show('未处理的 Promise 异常', (r && (r.stack || r.message)) || String(r));
+  });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      if (!window.__APP_BOOTED__ && !shown) {
+        show('脚本未能启动', 'js/app.js 没有加载成功。\nApp 里最常见的原因是资源没同步，执行 npx cap sync ios 后重新运行。');
+      }
+    }, 3000);
+  });
+})();
+</script>
+<script src="js/app.js"></script>
+</body>
+</html>

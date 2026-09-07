@@ -1,0 +1,175 @@
+/* LangBuddy App 独立样式。和网站的 public/css/style.css 完全无关，改这里不影响网站。
+   设计取向和网站不同：网站是信息密集的多页面，App 是一屏一件事的流程。 */
+
+:root {
+  --primary: #0ABAB5;
+  --primary-dark: #078F8B;
+  --primary-light: #E3FBFA;
+  --text: #14161f;
+  --muted: #7a8090;
+  --border: #e8e9f0;
+  --bg: #ffffff;
+  --danger: #dc2626;
+  --radius: 16px;
+  /* 刘海和底部横条的安全区，配合 index.html 里的 viewport-fit=cover */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+/* 必须放在所有 display 规则之前声明优先级：.screen 上的 display:flex 会盖掉浏览器
+   给 hidden 属性的 display:none，导致七个屏幕全叠在一起渲染。加 !important 兜死。 */
+[hidden] { display: none !important; }
+html, body {
+  margin: 0; padding: 0; height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+  color: var(--text); background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  /* App 不是网页，禁掉整页橡皮筋滚动，滚动交给各自的 .screen-body */
+  overscroll-behavior: none;
+}
+
+/* ---------- 屏幕容器 ---------- */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  background: var(--bg);
+  animation: screenIn .22s ease;
+}
+@keyframes screenIn { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: none; } }
+
+.screen-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 20px 22px; }
+.screen-body.center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+/* 底部按钮区常驻，不跟随内容滚动——单手操作时拇指位置固定 */
+.screen-foot { padding: 12px 22px calc(16px + var(--safe-bottom)); display: flex; flex-direction: column; gap: 8px; }
+
+/* ---------- 顶部导航 ---------- */
+.nav-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 12px; min-height: 48px;
+  font-weight: 600; font-size: 16px;
+}
+.nav-head > span { flex: 1; text-align: center; }
+.nav-back, .nav-skip {
+  background: none; border: none; color: var(--text);
+  font-size: 26px; line-height: 1; width: 44px; height: 44px;
+  cursor: pointer; font-family: inherit;
+}
+.nav-skip { font-size: 14px; color: var(--muted); font-weight: 600; }
+
+/* ---------- 按钮 ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  border: none; border-radius: 12px; cursor: pointer;
+  font-family: inherit; font-size: 15px; font-weight: 600;
+  padding: 12px 20px; transition: opacity .15s ease, transform .1s ease;
+}
+.btn:active { transform: scale(.98); }
+.btn:disabled { opacity: .45; }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-outline { background: #fff; color: var(--primary); border: 1.5px solid var(--primary); }
+.btn-text { background: none; color: var(--muted); font-weight: 500; }
+.btn-lg { padding: 16px 20px; font-size: 16px; border-radius: 14px; }
+.btn-sm { padding: 10px 14px; font-size: 13px; }
+
+/* ---------- 欢迎页 ---------- */
+.welcome-hero { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 30px; text-align: center; }
+.brand-mark {
+  width: 76px; height: 76px; border-radius: 22px;
+  background: linear-gradient(135deg, var(--primary), #3DD9D2);
+  color: #fff; font-size: 38px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 26px; box-shadow: 0 14px 34px rgba(10,186,181,.32);
+}
+.welcome-hero h1 { font-size: 34px; line-height: 1.2; margin: 0 0 14px; font-weight: 800; letter-spacing: -.02em; }
+.welcome-hero h1 span { color: var(--primary); }
+.welcome-sub { color: var(--muted); font-size: 15px; line-height: 1.7; margin: 0; }
+
+/* ---------- 表单 ---------- */
+.field { display: block; margin-bottom: 16px; }
+.field > span { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
+.field input {
+  width: 100%; padding: 14px 15px; font-size: 16px; /* 16px 以下 iOS 聚焦会自动放大页面 */
+  border: 1.5px solid var(--border); border-radius: 12px;
+  font-family: inherit; background: #fafbfc; color: var(--text);
+}
+.field input:focus { outline: none; border-color: var(--primary); background: #fff; }
+.inline-row { display: flex; gap: 8px; }
+.inline-row input { flex: 1; }
+.inline-row .btn { flex: none; white-space: nowrap; }
+.form-err { color: var(--danger); font-size: 13.5px; margin: 4px 0 0; }
+.form-hint { color: var(--muted); font-size: 13px; margin: 4px 0 0; }
+.muted { color: var(--muted); font-size: 14px; }
+
+/* ---------- 测评 ---------- */
+.big-emoji { font-size: 54px; margin-bottom: 14px; }
+.intro-list { list-style: none; padding: 0; margin: 18px 0; text-align: left; }
+.intro-list li { padding: 9px 0 9px 26px; position: relative; color: var(--text); font-size: 15px; }
+.intro-list li::before { content: "✓"; position: absolute; left: 0; color: var(--primary); font-weight: 800; }
+
+.progress-track { height: 4px; background: var(--border); }
+.progress-fill { height: 100%; width: 0; background: var(--primary); transition: width .25s ease; }
+
+.q-tier { font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: .04em; margin-bottom: 10px; }
+.q-text { font-size: 21px; font-weight: 700; line-height: 1.5; margin-bottom: 24px; }
+.q-options { display: flex; flex-direction: column; gap: 10px; }
+.q-opt {
+  padding: 16px 18px; border: 1.5px solid var(--border); border-radius: 14px;
+  background: #fff; font-size: 16px; text-align: left; cursor: pointer;
+  font-family: inherit; color: var(--text); transition: border-color .12s ease, background .12s ease, transform .1s ease;
+}
+.q-opt:active { transform: scale(.99); }
+.q-opt.picked { border-color: var(--primary); background: var(--primary-light); font-weight: 600; }
+
+/* ---------- 结果 ---------- */
+.result-ring {
+  width: 132px; height: 132px; border-radius: 50%;
+  border: 5px solid var(--primary);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  margin-bottom: 20px; box-shadow: 0 12px 34px rgba(10,186,181,.2);
+}
+.result-cefr { font-size: 40px; font-weight: 800; color: var(--primary); line-height: 1; }
+.result-cefr-label { font-size: 11px; color: var(--muted); letter-spacing: .12em; margin-top: 4px; }
+.result-desc { color: var(--muted); font-size: 14.5px; line-height: 1.7; max-width: 300px; }
+
+/* ---------- 首页 ---------- */
+.home-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 22px; }
+.home-hello { font-size: 24px; font-weight: 800; }
+.home-level { color: var(--muted); font-size: 14px; margin-top: 4px; }
+.avatar-btn {
+  width: 42px; height: 42px; border-radius: 50%; flex: none;
+  background: var(--primary-light); color: var(--primary-dark);
+  border: none; font-weight: 700; font-size: 15px; cursor: pointer; font-family: inherit;
+}
+.path-list { display: flex; flex-direction: column; gap: 12px; }
+.path-card {
+  display: flex; align-items: center; gap: 14px;
+  padding: 18px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: #fff; cursor: pointer; text-align: left;
+  font-family: inherit; color: var(--text); width: 100%;
+  transition: transform .1s ease, border-color .15s ease;
+}
+.path-card:active { transform: scale(.99); }
+.path-card .pc-icon { font-size: 28px; flex: none; }
+/* 标题和副标题用的是 span（行内元素），不转成块级会挤在同一行 */
+.path-card .pc-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.path-card .pc-icon, .path-card .pc-arrow { display: block; }
+.path-card .pc-title { font-weight: 700; font-size: 16px; }
+.path-card .pc-sub { color: var(--muted); font-size: 13px; margin-top: 3px; }
+.path-card .pc-arrow { color: var(--muted); font-size: 20px; flex: none; }
+.path-card.featured { border-color: var(--primary); background: linear-gradient(135deg, var(--primary), #3DD9D2); color: #fff; }
+.path-card.featured .pc-sub, .path-card.featured .pc-arrow { color: rgba(255,255,255,.85); }
+
+/* ---------- 通用反馈 ---------- */
+.toast {
+  position: fixed; left: 50%; bottom: calc(40px + var(--safe-bottom)); transform: translateX(-50%);
+  background: rgba(20,22,31,.92); color: #fff; padding: 11px 18px; border-radius: 10px;
+  font-size: 14px; z-index: 9000; max-width: 82%; text-align: center;
+}
+.loading { position: fixed; inset: 0; background: rgba(255,255,255,.6); display: flex; align-items: center; justify-content: center; z-index: 9500; }
+.spinner {
+  width: 30px; height: 30px; border: 3px solid var(--border);
+  border-top-color: var(--primary); border-radius: 50%; animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }

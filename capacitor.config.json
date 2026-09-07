@@ -1,7 +1,7 @@
 {
   "appId": "org.langbuddy.app",
   "appName": "LangBuddy 语伴",
-  "webDir": "public",
+  "webDir": "app",
   "server": {
     "androidScheme": "https"
   },

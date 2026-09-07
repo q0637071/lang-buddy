@@ -264,6 +264,13 @@ app.get(['/', '/index.html'], (req, res, next) => {
   }
 });
 
+// App 的界面（app/ 目录）也挂一份到 /app 下。App 本身是把这些文件打包进去的，
+// 不依赖这个路由；挂出来纯粹是为了开发方便——不用每次都在 Mac 上编译才能看效果，
+// 手机浏览器打开 /app 就能预览。网站本身在 / ，两套界面互不影响。
+app.use('/app', express.static(path.join(__dirname, 'app'), {
+  setHeaders: (res) => res.setHeader('Cache-Control', 'no-cache'),
+}));
+
 app.use(express.static(path.join(__dirname, 'public'), {
   setHeaders: (res) => res.setHeader('Cache-Control', 'no-cache'),
 }));
