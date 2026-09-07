@@ -21,7 +21,8 @@ struct HomeView: View {
         .init(icon: "video.fill", title: "AI 视频通话", subtitle: "和 AI 私教面对面练口语"),
         .init(icon: "books.vertical.fill", title: "今日单词",
               subtitle: "卡片式复习，看词根记得更牢", route: .vocab),
-        .init(icon: "text.book.closed.fill", title: "语法精讲", subtitle: "一次讲透一个知识点"),
+        .init(icon: "text.book.closed.fill", title: "语法精讲",
+              subtitle: "一次讲透一个知识点，带 AI 批改", route: .grammar),
     ]
 
     var body: some View {

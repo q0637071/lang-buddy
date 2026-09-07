@@ -18,6 +18,8 @@ final class AppState: ObservableObject {
         case home
         case chat
         case vocab
+        case grammar
+        case grammarDetail(String)   // 关联值是课程 id
     }
 
     @Published var route: Route = .launching

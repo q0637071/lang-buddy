@@ -174,6 +174,62 @@ struct VocabQueue: Codable {
     let stats: VocabStats
 }
 
+// MARK: - 语法
+
+struct GrammarSummary: Codable, Identifiable, Equatable {
+    let id: String
+    let title: String
+    let summary: String
+    let level: String?
+
+    var levelKey: String { level ?? "basic" }
+}
+
+struct GrammarListResponse: Codable {
+    let lessons: [GrammarSummary]
+}
+
+struct GrammarExample: Codable, Identifiable, Equatable {
+    var id: String { en }
+    let en: String
+    let zh: String
+}
+
+/// 中国学生常见错误。老课程数据里没有这个字段，所以整段都是可选的
+struct GrammarMistake: Codable, Identifiable, Equatable {
+    var id: String { wrong }
+    let wrong: String
+    let right: String
+    let why: String
+}
+
+struct GrammarPractice: Codable, Identifiable, Equatable {
+    var id: String { question }
+    let question: String
+    let options: [String]
+    let answerIndex: Int
+    let explanation: String?
+}
+
+struct GrammarLesson: Codable, Equatable {
+    let id: String
+    let title: String
+    let summary: String
+    let structure: String?
+    let explanation: String?
+    let examples: [GrammarExample]?
+    let mistakes: [GrammarMistake]?
+    let practice: [GrammarPractice]?
+}
+
+struct GrammarLessonResponse: Codable {
+    let lesson: GrammarLesson
+}
+
+struct GrammarCheckResponse: Codable {
+    let result: String
+}
+
 struct SendCodeResponse: Codable {
     let ok: Bool?
     // 后端没接短信服务商时会把验证码直接返回，方便内测阶段自测

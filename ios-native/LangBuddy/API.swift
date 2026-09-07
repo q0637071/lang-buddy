@@ -157,4 +157,20 @@ actor API {
         _ = try await request("vocab/review", method: "POST",
                               body: ["word": word, "skip": true], as: OKResponse.self)
     }
+
+    // MARK: - 语法
+
+    func grammarList() async throws -> [GrammarSummary] {
+        try await request("grammar/list", as: GrammarListResponse.self).lessons
+    }
+
+    func grammarLesson(_ id: String) async throws -> GrammarLesson {
+        try await request("grammar/\(id)", as: GrammarLessonResponse.self).lesson
+    }
+
+    /// AI 语法批改。非会员每天 3 次，超了后端返回 403 带中文说明
+    func checkGrammar(_ sentence: String) async throws -> String {
+        try await request("grammar/check", method: "POST",
+                          body: ["sentence": sentence], as: GrammarCheckResponse.self).result
+    }
 }

@@ -43,6 +43,11 @@ struct RootView: View {
                 ChatView().transition(.move(edge: .trailing).combined(with: .opacity))
             case .vocab:
                 VocabView().transition(.move(edge: .trailing).combined(with: .opacity))
+            case .grammar:
+                GrammarListView().transition(.move(edge: .trailing).combined(with: .opacity))
+            case .grammarDetail(let id):
+                GrammarDetailView(lessonId: id)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
             }
 
             if let toast = app.toast {
@@ -76,6 +81,9 @@ struct RootView: View {
         case .home: return "home"
         case .chat: return "chat"
         case .vocab: return "vocab"
+        case .grammar: return "grammar"
+        // 详情带上 id，切换不同课程时才会触发过渡动画
+        case .grammarDetail(let id): return "grammarDetail-" + id
         }
     }
 }
