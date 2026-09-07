@@ -1,4 +1,7 @@
 import SwiftUI
+// ObservableObject 和 @Published 定义在 Combine 里。老版本 Xcode 通过 SwiftUI 隐式带出来，
+// 新版本不再隐式导出，必须显式 import，否则报 "does not conform to ObservableObject"。
+import Combine
 
 /// App 的全局状态和流程调度。哪一屏该出现由 route 决定，视图只负责画。
 @MainActor
