@@ -100,6 +100,11 @@ Xcode 里加：选中项目 → TARGETS → **Info** 标签 → 在列表里点 
 - 语音对话（按住说话、原生录音）
 - 错题本、作文批改、美式口语、同声传译
 
+## 国内网络
+
+已用国内移动数据实测 `network-test.daily.co`，全部通过。
+Tavus 走的 Daily.co WebRTC 在国内可用，这条路没有网络层面的障碍。
+
 ## 关于视频通话为什么是 WebView
 
 Tavus 交付通话的方式就是给一个网页房间地址（`tavus.daily.co/...`），
