@@ -9,8 +9,11 @@ import Combine
 final class Recorder: NSObject, ObservableObject {
 
     @Published private(set) var isRecording = false
-    @Published private(set) var level: CGFloat = 0      // 0...1，画音量条用
+    @Published private(set) var level: CGFloat = 0      // 0...1，当前音量
     @Published private(set) var seconds = 0
+    /// 最近若干次采样，用来画滚动波形。只留够画一屏的量，不无限增长。
+    @Published private(set) var levels: [CGFloat] = []
+    private let waveformBars = 26
 
     private var recorder: AVAudioRecorder?
     private var meterTask: Task<Void, Never>?
@@ -107,6 +110,7 @@ final class Recorder: NSObject, ObservableObject {
             fileURL = url
             isRecording = true
             seconds = 0
+            levels = []   // 清掉上一次的残留，否则新录音会先闪一段旧波形
             startMetering()
             return true
         } catch {
@@ -125,6 +129,7 @@ final class Recorder: NSObject, ObservableObject {
         recorder = nil
         isRecording = false
         level = 0
+        levels = []
         // 录完切回 playback，否则接下来的朗读会从听筒出声而不是扬声器
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
         guard duration >= Double(minSeconds), let url = fileURL else {
@@ -140,6 +145,7 @@ final class Recorder: NSObject, ObservableObject {
         recorder = nil
         isRecording = false
         level = 0
+        levels = []
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
         discard()
     }
@@ -160,6 +166,8 @@ final class Recorder: NSObject, ObservableObject {
                 let db = Double(r.averagePower(forChannel: 0))
                 let norm = max(0, min(1, (db + 50) / 50))
                 self.level = CGFloat(norm)
+                self.levels.append(CGFloat(norm))
+                if self.levels.count > self.waveformBars { self.levels.removeFirst() }
                 tick += 1
                 if tick % 16 == 0 { self.seconds = Int(r.currentTime) }
                 if r.currentTime >= Double(self.maxSeconds) { return }

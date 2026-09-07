@@ -39,6 +39,12 @@ struct ChatView: View {
 
             inputBar
         }
+        // 微信那块浮在中间的录音提示。按住时才出现，盖在整个页面上方，
+        // 让人一眼确认"确实在录"，而不是盯着一个变了色的按钮猜。
+        .overlay { if recorder.isRecording { recordingOverlay } }
+        // 开始录、进入取消区、松手发送各给一次震动反馈，和微信一致
+        .sensoryFeedback(.impact(weight: .medium), trigger: recorder.isRecording)
+        .sensoryFeedback(.warning, trigger: willCancel)
         .background(Color(red: 0.97, green: 0.97, blue: 0.98).ignoresSafeArea(edges: .bottom))
         .task { await load() }
         // 离开对话页要停掉朗读，否则声音会跟着人跑到别的页面
@@ -282,6 +288,64 @@ struct ChatView: View {
         }
     }
 
+    // MARK: - 录音浮层
+
+    private var recordingOverlay: some View {
+        ZStack {
+            // 半透明背景既是视觉焦点，也顺带挡住误触
+            Color.black.opacity(0.12).ignoresSafeArea()
+
+            VStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(willCancel ? Theme.danger : Color(red: 0.35, green: 0.78, blue: 0.55))
+                        .frame(width: 190, height: 96)
+
+                    if willCancel {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 34, weight: .bold))
+                            .foregroundColor(.white)
+                    } else {
+                        waveform
+                    }
+                }
+
+                Text(willCancel ? "松开手指，取消发送" : "手指上滑，取消发送")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .background(willCancel ? Theme.danger : Color.black.opacity(0.55))
+                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+
+                // 快到上限时开始倒数，别让人说到一半被静默截断
+                if recorder.maxSeconds - recorder.seconds <= 10 {
+                    Text("还可以说 \(max(0, recorder.maxSeconds - recorder.seconds)) 秒")
+                        .font(.system(size: 12))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                        .background(Color.black.opacity(0.45))
+                        .clipShape(Capsule())
+                }
+            }
+        }
+        .transition(.opacity)
+        .animation(.easeOut(duration: 0.15), value: willCancel)
+    }
+
+    /// 实时音量条。取最近若干次采样从左往右排，说话时会跟着起伏。
+    private var waveform: some View {
+        HStack(alignment: .center, spacing: 3) {
+            ForEach(Array(recorder.levels.enumerated()), id: \.offset) { _, lv in
+                Capsule()
+                    .fill(Color.white.opacity(0.9))
+                    // 给个最小高度，安静时也留一条细线，不然中间会空掉显得像卡死
+                    .frame(width: 3, height: max(4, lv * 52))
+            }
+        }
+        .frame(height: 56)
+        .animation(.linear(duration: 0.06), value: recorder.levels.count)
+    }
+
     private var holdToTalkButton: some View {
         Text(holdLabel)
             .font(.system(size: 15, weight: .semibold))
@@ -312,6 +376,9 @@ struct ChatView: View {
 
     private var holdLabel: String {
         if transcribing { return "识别中…" }
+        // 录音时按钮本身只显示"松开发送"，细节都交给中间那块浮层，
+        // 手指压在按钮上本来也看不见按钮上的字
+        if recorder.isRecording { return willCancel ? "松开手指取消" : "松开发送" }
         if micGranted == false {
             // 三种失败要分开说，因为要做的事完全不同
             if !recorder.hasUsageDescription { return "工程缺麦克风用途说明，见下方提示" }
@@ -320,8 +387,7 @@ struct ChatView: View {
                 : "拿不到麦克风权限，请重试"
         }
         if micGranted == nil { return "正在获取麦克风权限…" }
-        guard recorder.isRecording else { return "按住说话" }
-        return willCancel ? "松开取消" : "松开发送 · 上滑取消 \(recorder.seconds)s"
+        return "按住 说话"
     }
 
     /// 同步启动：权限已经在切模式时问过了，这里不再 await，
