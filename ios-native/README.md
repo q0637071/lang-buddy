@@ -76,9 +76,9 @@ Xcode 里加：选中项目 → TARGETS → **Info** 标签 → 在列表里点 
 | Key | Value |
 |---|---|
 | `Privacy - Camera Usage Description` | 用于与 AI 私教进行视频通话练习口语 |
-| `Privacy - Microphone Usage Description` | 用于语音输入和与 AI 私教对话练习 |
+| `Privacy - Microphone Usage Description` | 用于语音输入、按住说话和与 AI 私教对话练习 |
 
-加完重新运行。**不加的话点"AI 视频通话"会闪退。**
+加完重新运行。**不加的话点"AI 视频通话"或"按住说话"都会闪退。**
 
 ## 当前进度
 

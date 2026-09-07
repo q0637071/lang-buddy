@@ -217,6 +217,42 @@ actor API {
         return data
     }
 
+    // MARK: - 语音识别
+
+    /// multipart 上传录音给 Whisper。手写 body 是因为只有一个文件加一个字段，
+    /// 为这点东西引第三方库不值得。
+    func transcribe(fileURL: URL, language: String) async throws -> String {
+        guard let url = URL(string: baseURL.absoluteString + "/transcribe") else {
+            throw APIError(message: "请求地址不合法")
+        }
+        let audio = try Data(contentsOf: fileURL)
+        let boundary = "lb-\(UUID().uuidString)"
+        var body = Data()
+        func append(_ s: String) { body.append(Data(s.utf8)) }
+
+        append("--\(boundary)\r\n")
+        append("Content-Disposition: form-data; name=\"language\"\r\n\r\n\(language)\r\n")
+        append("--\(boundary)\r\n")
+        append("Content-Disposition: form-data; name=\"audio\"; filename=\"speech.m4a\"\r\n")
+        append("Content-Type: audio/m4a\r\n\r\n")
+        body.append(audio)
+        append("\r\n--\(boundary)--\r\n")
+
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.timeoutInterval = 60      // 识别比普通接口慢，超时给宽一点
+        req.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        if let token { req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
+        // 用 upload(for:from:) 传 body，不要再设 httpBody——那个会被忽略，留着只会让人困惑
+        let (data, response) = try await URLSession.shared.upload(for: req, from: body)
+        let code = (response as? HTTPURLResponse)?.statusCode ?? 0
+        let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        guard (200..<300).contains(code) else {
+            throw APIError(message: (obj?["error"] as? String) ?? "语音识别失败（\(code)）")
+        }
+        return (obj?["text"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+
     // MARK: - AI 视频通话
 
     func avatarStatus() async throws -> AvatarStatus {

@@ -17,6 +17,13 @@ struct ChatView: View {
     @AppStorage("lb_tts_voice") private var voice = "hannah"
     @AppStorage("lb_tts_auto") private var autoSpeak = true
 
+    // 按住说话
+    @StateObject private var recorder = Recorder()
+    @State private var voiceMode = false        // 输入栏切成"按住说话"
+    @State private var willCancel = false       // 手指上滑到取消区
+    @State private var transcribing = false
+    @State private var micDenied = false
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -221,28 +228,112 @@ struct ChatView: View {
         VStack(spacing: 0) {
             Divider()
             HStack(spacing: 10) {
-                TextField("说点什么…", text: $draft, axis: .vertical)
-                    .font(.system(size: 16))
-                    .lineLimit(1...4)
-                    .focused($inputFocused)
-                    .padding(.horizontal, 14).padding(.vertical, 10)
-                    .background(Color(red: 0.95, green: 0.95, blue: 0.97))
-                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-
+                // 键盘 / 语音 切换
                 Button {
-                    Task { await send() }
+                    voiceMode.toggle()
+                    inputFocused = false
                 } label: {
-                    Image(systemName: "arrow.up")
-                        .font(.system(size: 17, weight: .bold))
-                        .foregroundColor(.white)
-                        .frame(width: 38, height: 38)
-                        .background(canSend ? Theme.primary : Theme.muted.opacity(0.4))
-                        .clipShape(Circle())
+                    Image(systemName: voiceMode ? "keyboard" : "mic")
+                        .font(.system(size: 19))
+                        .foregroundColor(Theme.primary)
+                        .frame(width: 34, height: 38)
                 }
-                .disabled(!canSend)
+
+                if voiceMode {
+                    holdToTalkButton
+                } else {
+                    TextField("说点什么…", text: $draft, axis: .vertical)
+                        .font(.system(size: 16))
+                        .lineLimit(1...4)
+                        .focused($inputFocused)
+                        .padding(.horizontal, 14).padding(.vertical, 10)
+                        .background(Color(red: 0.95, green: 0.95, blue: 0.97))
+                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+
+                    Button {
+                        Task { await send() }
+                    } label: {
+                        Image(systemName: "arrow.up")
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(width: 38, height: 38)
+                            .background(canSend ? Theme.primary : Theme.muted.opacity(0.4))
+                            .clipShape(Circle())
+                    }
+                    .disabled(!canSend)
+                }
             }
             .padding(.horizontal, 14).padding(.vertical, 10)
             .background(Color.white)
+        }
+    }
+
+    private var holdToTalkButton: some View {
+        Text(holdLabel)
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundColor(recorder.isRecording ? .white : Theme.text)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 11)
+            .background(
+                recorder.isRecording
+                    ? (willCancel ? Theme.danger : Theme.primary)
+                    : Color(red: 0.95, green: 0.95, blue: 0.97)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .contentShape(Rectangle())
+            .gesture(
+                // minimumDistance 必须是 0，否则手指按下去要挪一下才触发，
+                // "按住说话"就变成"按住并挪一下才说话"
+                DragGesture(minimumDistance: 0)
+                    .onChanged { v in
+                        if !recorder.isRecording && !transcribing { Task { await beginHold() } }
+                        // 上滑超过 60pt 进入取消区，和微信一致
+                        willCancel = v.translation.height < -60
+                    }
+                    .onEnded { _ in Task { await endHold() } }
+            )
+            .disabled(transcribing)
+    }
+
+    private var holdLabel: String {
+        if transcribing { return "识别中…" }
+        if micDenied { return "麦克风权限未开启" }
+        guard recorder.isRecording else { return "按住说话" }
+        return willCancel ? "松开取消" : "松开发送 · 上滑取消 \(recorder.seconds)s"
+    }
+
+    private func beginHold() async {
+        guard await recorder.requestPermission() else {
+            micDenied = true
+            app.showToast("请到 设置 → LangBuddy 里打开麦克风权限")
+            return
+        }
+        micDenied = false
+        speaker.stop()          // 录音前先停掉朗读，否则会把AI的声音一起录进去
+        recorder.start()
+    }
+
+    private func endHold() async {
+        let cancelled = willCancel
+        willCancel = false
+        guard recorder.isRecording else { return }
+        if cancelled { recorder.cancel(); return }
+
+        guard let url = recorder.stop() else {
+            app.showToast("说话时间太短")
+            return
+        }
+        transcribing = true
+        defer { transcribing = false; recorder.discard() }
+        do {
+            let text = try await API.shared.transcribe(fileURL: url, language: inputLang)
+            guard !text.isEmpty else {
+                app.showToast("没听清，再说一次")
+                return
+            }
+            await sendText(text)
+        } catch {
+            app.showToast(error.localizedDescription)
         }
     }
 
@@ -266,6 +357,11 @@ struct ChatView: View {
         guard !text.isEmpty else { return }
         draft = ""
         inputFocused = false
+        await sendText(text)
+    }
+
+    /// 打字和语音走同一条发送路径，免得两边逻辑各写一遍慢慢长歪
+    private func sendText(_ text: String) async {
         messages.append(ChatMessage(role: "user", content: text))
         sending = true
         defer { sending = false }
