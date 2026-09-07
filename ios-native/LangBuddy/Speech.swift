@@ -1,5 +1,7 @@
 import Foundation
 import AVFoundation
+// ObservableObject 和 @Published 定义在 Combine 里，新版 Xcode 不再隐式导出
+import Combine
 
 /// 朗读。走服务端的 Groq orpheus 模型，不用 iOS 自带的 AVSpeechSynthesizer——
 /// 系统合成音一听就是机器，orpheus 有语气起伏，接近真人。

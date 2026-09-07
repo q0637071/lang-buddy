@@ -1,5 +1,7 @@
 import Foundation
 import AVFoundation
+// ObservableObject 和 @Published 定义在 Combine 里，新版 Xcode 不再隐式导出
+import Combine
 
 /// 按住说话的录音器。录成 16kHz 单声道 m4a——Whisper 认这个格式，
 /// 而且采样率压到 16k 后文件小很多，手机网络下上传快得多，识别精度没有损失。
