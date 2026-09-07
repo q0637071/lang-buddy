@@ -49,6 +49,10 @@ struct ChatView: View {
         .task { await load() }
         // 离开对话页要停掉朗读，否则声音会跟着人跑到别的页面
         .onDisappear { speaker.stop() }
+        // 朗读失败要说出来。之前是静默失败，用户只看到"没声音"，无从下手
+        .onChange(of: speaker.lastError) { _, e in
+            if let e { app.showToast("朗读失败：\(e)"); speaker.lastError = nil }
+        }
     }
 
     // MARK: - 顶部

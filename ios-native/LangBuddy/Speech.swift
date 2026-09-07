@@ -12,6 +12,9 @@ final class Speaker: ObservableObject {
 
     @Published private(set) var speakingID: String?   // 正在读哪条消息
     @Published private(set) var loadingID: String?    // 哪条正在合成
+    /// 朗读失败的原因。之前这里是静默 catch，用户只知道"没声音"却不知道为什么，
+    /// 排查完全没有抓手。
+    @Published var lastError: String?
 
     private var player: AVAudioPlayer?
     private var cache: [String: Data] = [:]           // "voice|text" -> wav
@@ -57,6 +60,12 @@ final class Speaker: ObservableObject {
         defer { loadingID = nil }
         do {
             let data = try await API.shared.tts(text: text, voice: voice)
+            guard data.count > 1000 else {
+                // 正常的 wav 至少几十 KB。太小说明后端返回的不是音频，
+                // 直接当播放失败处理，否则 AVAudioPlayer 会抛一个看不懂的错
+                lastError = "服务端返回的音频异常（\(data.count) 字节）"
+                return
+            }
             // 别用 cache.keys.first! ——真到空字典那一刻就是崩溃，没必要为省一行冒这个险
             if cache.count >= cacheLimit, let oldest = cache.keys.first {
                 cache.removeValue(forKey: oldest)
@@ -64,14 +73,18 @@ final class Speaker: ObservableObject {
             cache[key] = data
             play(data, id: id)
         } catch {
-            // 朗读失败不该打断对话，静默处理，UI 上恢复成未播放即可
             speakingID = nil
+            lastError = error.localizedDescription
         }
     }
 
     private func play(_ data: Data, id: String) {
         do {
-            try AVAudioSession.sharedInstance().setActive(true)
+            // 每次播放前都重设一次类别：录音时会把会话切成 playAndRecord，
+            // 只在 init 里设一次的话，录完再朗读会从听筒出声甚至完全没声音
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playback, mode: .spokenAudio)
+            try session.setActive(true)
             let p = try AVAudioPlayer(data: data)
             p.prepareToPlay()
             p.play()
@@ -93,6 +106,7 @@ final class Speaker: ObservableObject {
             }
         } catch {
             speakingID = nil
+            lastError = "播放失败：\(error.localizedDescription)"
         }
     }
 }
