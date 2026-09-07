@@ -309,7 +309,7 @@ struct ChatView: View {
         if micGranted == false {
             // 区分"用户拒绝了"和"根本没弹过框"——后者几乎都是 Info.plist
             // 缺 NSMicrophoneUsageDescription，提示要指向不同的地方
-            return recorder.permissionState == .denied
+            return recorder.isPermissionDenied
                 ? "麦克风被拒绝，去 设置 → LangBuddy 打开"
                 : "拿不到麦克风权限（检查 Info 里的用途说明）"
         }

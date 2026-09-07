@@ -26,6 +26,14 @@ for (const [f, s] of Object.entries(src)) {
     issues.push(`${f} 用了 ObservableObject/@Published 但没有 import Combine`);
   }
 
+  // 撞过一次：视图里引用了 AVFoundation 的类型却没 import，报
+  // "not available due to missing import of defining module 'AVFAudio'"。
+  // 这类依赖本就不该漏到 UI 层，所以报出来是提醒去封装，而不是去补 import。
+  const usesAV = /\bAV(Audio|Capture|Speech)\w*/.test(s);
+  if (usesAV && !/^import AVFoundation$/m.test(s) && !/^import AVFAudio$/m.test(s)) {
+    issues.push(`${f} 引用了 AVFoundation 的类型但没 import（考虑改成不暴露 AV 类型）`);
+  }
+
   // actor 的成员从外部访问必须 await
   s.split('\n').forEach((l, i) => {
     if (l.includes('API.shared.') && !l.includes('await')) {

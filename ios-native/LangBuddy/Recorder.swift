@@ -23,9 +23,13 @@ final class Recorder: NSObject, ObservableObject {
 
     /// 当前授权状态。已经决定过的情况不必再走异步请求，直接返回结果，
     /// 也就不存在"卡在获取权限"这种状态。
-    var permissionState: AVAudioApplication.recordPermission {
+    private var permissionState: AVAudioApplication.recordPermission {
         AVAudioApplication.shared.recordPermission
     }
+
+    /// 给视图层用的布尔量。AVFAudio 的枚举不往外暴露，否则每个用到它的视图
+    /// 都得 import AVFoundation，纯粹是把音频框架的依赖扩散到 UI 里。
+    var isPermissionDenied: Bool { permissionState == .denied }
 
     func requestPermission() async -> Bool {
         switch permissionState {
