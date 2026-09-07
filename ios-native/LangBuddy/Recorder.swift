@@ -31,7 +31,21 @@ final class Recorder: NSObject, ObservableObject {
     /// 都得 import AVFoundation，纯粹是把音频框架的依赖扩散到 UI 里。
     var isPermissionDenied: Bool { permissionState == .denied }
 
+    /// Info.plist 里有没有配麦克风用途说明。
+    /// 没配就去请求权限的话，iOS 会直接终止进程——这个崩溃在代码里拦不住，
+    /// 只能提前检查、不要去撞它。
+    var hasUsageDescription: Bool {
+        let v = Bundle.main.object(forInfoDictionaryKey: "NSMicrophoneUsageDescription") as? String
+        return !(v ?? "").isEmpty
+    }
+
     func requestPermission() async -> Bool {
+        guard hasUsageDescription else {
+            lastError = "工程缺少麦克风用途说明（NSMicrophoneUsageDescription），"
+                      + "请在 Xcode 的 TARGETS → Info 里添加后重新运行"
+            return false
+        }
+
         switch permissionState {
         case .granted: return true
         case .denied: return false
