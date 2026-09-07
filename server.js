@@ -1053,6 +1053,13 @@ app.post('/api/translate', allowMemberOrFreeQuota('translate', { type: 'count', 
 const TTS_MODEL = process.env.TTS_MODEL || 'canopylabs/orpheus-v1-english';
 // 该模型仅接受这几个音色：autumn diana hannah austin daniel troy
 const TTS_VOICE = process.env.TTS_VOICE || 'hannah';
+// 允许按请求指定音色（App 里让用户自己挑）。必须白名单校验：
+// 模型只认这几个值，传别的会直接报错；而且这个值会拼进缓存 key，不校验等于让人随便撑爆缓存。
+const TTS_ALLOWED_VOICES = new Set(['autumn', 'diana', 'hannah', 'austin', 'daniel', 'troy']);
+function pickVoice(v) {
+  const name = String(v || '').trim().toLowerCase();
+  return TTS_ALLOWED_VOICES.has(name) ? name : TTS_VOICE;
+}
 const TTS_MAX_CHARS = 300;
 
 // 背单词场景同一个词会被反复点，缓存能省掉绝大部分重复合成。
@@ -1066,7 +1073,8 @@ app.post('/api/tts', requireAuth, rateLimit(30), async (req, res) => {
   if (text.length > TTS_MAX_CHARS) return res.status(400).json({ error: '文本过长' });
   if (!SF_API_KEY) return res.status(501).json({ error: '服务端朗读未配置' });
 
-  const cacheKey = `${TTS_MODEL}|${TTS_VOICE}|${text}`;
+  const voice = pickVoice(req.body?.voice);
+  const cacheKey = `${TTS_MODEL}|${voice}|${text}`;
   const cached = ttsCache.get(cacheKey);
   if (cached) {
     res.setHeader('Content-Type', 'audio/wav');
@@ -1077,7 +1085,7 @@ app.post('/api/tts', requireAuth, rateLimit(30), async (req, res) => {
     const resp = await fetch('https://api.groq.com/openai/v1/audio/speech', {
       method: 'POST',
       headers: { Authorization: `Bearer ${SF_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: TTS_MODEL, input: text, voice: TTS_VOICE, response_format: 'wav' }),
+      body: JSON.stringify({ model: TTS_MODEL, input: text, voice, response_format: 'wav' }),
     });
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));

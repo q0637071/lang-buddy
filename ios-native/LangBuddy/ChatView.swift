@@ -13,6 +13,10 @@ struct ChatView: View {
     @State private var replyLang = "en"
     @FocusState private var inputFocused: Bool
 
+    @StateObject private var speaker = Speaker.shared
+    @AppStorage("lb_tts_voice") private var voice = "hannah"
+    @AppStorage("lb_tts_auto") private var autoSpeak = true
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -27,6 +31,8 @@ struct ChatView: View {
         }
         .background(Color(red: 0.97, green: 0.97, blue: 0.98).ignoresSafeArea(edges: .bottom))
         .task { await load() }
+        // 离开对话页要停掉朗读，否则声音会跟着人跑到别的页面
+        .onDisappear { speaker.stop() }
     }
 
     // MARK: - 顶部
@@ -46,6 +52,13 @@ struct ChatView: View {
                 Text("AI 对话练习").font(.system(size: 16, weight: .semibold))
                 Spacer()
                 Menu {
+                    Toggle("自动朗读 AI 回复", isOn: $autoSpeak)
+                    Picker("朗读音色", selection: $voice) {
+                        ForEach(Speaker.voices, id: \.id) { v in
+                            Text(v.label).tag(v.id)
+                        }
+                    }
+                    Divider()
                     Button("清空对话", role: .destructive) { Task { await clear() } }
                 } label: {
                     Image(systemName: "ellipsis")
@@ -152,13 +165,36 @@ struct ChatView: View {
                     .background(Color.white)
                     .clipShape(Circle())
             }
-            Text(m.content)
-                .font(.system(size: 16))
-                .foregroundColor(m.isUser ? .white : Theme.text)
-                .padding(.horizontal, 14).padding(.vertical, 11)
-                .background(m.isUser ? Theme.primary : Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .textSelection(.enabled)
+            VStack(alignment: .leading, spacing: 5) {
+                Text(m.content)
+                    .font(.system(size: 16))
+                    .foregroundColor(m.isUser ? .white : Theme.text)
+                    .textSelection(.enabled)
+
+                // 朗读按钮只给 AI 那侧——用户自己写的句子没必要读
+                if !m.isUser {
+                    Button {
+                        Task { await speaker.speak(m.content, voice: voice, id: m.id) }
+                    } label: {
+                        HStack(spacing: 4) {
+                            if speaker.loadingID == m.id {
+                                ProgressView().scaleEffect(0.6).frame(width: 14, height: 14)
+                            } else {
+                                Image(systemName: speaker.speakingID == m.id
+                                      ? "speaker.wave.2.fill" : "speaker.wave.2")
+                                    .font(.system(size: 12))
+                            }
+                            Text(speaker.speakingID == m.id ? "停止" : "朗读")
+                                .font(.system(size: 12))
+                        }
+                        .foregroundColor(Theme.primary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 14).padding(.vertical, 11)
+            .background(m.isUser ? Theme.primary : Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             if !m.isUser { Spacer(minLength: 50) }
         }
     }
@@ -239,7 +275,12 @@ struct ChatView: View {
                 history: messages.dropLast().map { $0 },   // 不含刚发出的这条
                 inputLang: inputLang, replyLang: replyLang
             )
-            messages.append(ChatMessage(role: "ai", content: reply))
+            let aiMsg = ChatMessage(role: "ai", content: reply)
+            messages.append(aiMsg)
+            // 口语练习的核心就是听，默认回复完直接读出来，不用每条都手动点
+            if autoSpeak {
+                Task { await speaker.speak(reply, voice: voice, id: aiMsg.id) }
+            }
         } catch {
             app.showToast(error.localizedDescription)
             // 失败时把用户那条留在界面上，方便他直接复制重发，不要凭空消失

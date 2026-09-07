@@ -190,6 +190,33 @@ actor API {
                           body: ["sentence": sentence], as: GrammarCheckResponse.self).result
     }
 
+    // MARK: - 朗读
+
+    /// 返回的是 wav 二进制而不是 JSON，所以不能走上面那个泛型 request
+    func tts(text: String, voice: String) async throws -> Data {
+        guard let url = URL(string: baseURL.absoluteString + "/tts") else {
+            throw APIError(message: "请求地址不合法")
+        }
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.timeoutInterval = 30
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token { req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
+        req.httpBody = try JSONSerialization.data(withJSONObject: ["text": text, "voice": voice])
+
+        let (data, response) = try await URLSession.shared.data(for: req)
+        let code = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200..<300).contains(code) else {
+            // 失败时后端返回的是 JSON 错误，这里解出来给上层看
+            if let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let msg = obj["error"] as? String {
+                throw APIError(message: msg)
+            }
+            throw APIError(message: "朗读失败（\(code)）")
+        }
+        return data
+    }
+
     // MARK: - AI 视频通话
 
     func avatarStatus() async throws -> AvatarStatus {
