@@ -10,12 +10,15 @@ struct HomeView: View {
         let title: String
         let subtitle: String
         var featured = false
+        /// 已经做好的功能给一个目标路由；为 nil 表示还没做，点了给提示
+        var route: AppState.Route?
     }
 
-    // 第一版先把入口按"今天学什么"的顺序排出来，各功能页后面逐个做
+    // 按"今天学什么"的顺序排，做好一个接一个
     private let items: [PathItem] = [
-        .init(icon: "video.fill", title: "AI 视频通话", subtitle: "和 AI 私教面对面练口语", featured: true),
-        .init(icon: "bubble.left.and.bubble.right.fill", title: "AI 对话练习", subtitle: "打字或语音，随时开口"),
+        .init(icon: "bubble.left.and.bubble.right.fill", title: "AI 对话练习",
+              subtitle: "打字聊天，AI 按你的水平调整难度", featured: true, route: .chat),
+        .init(icon: "video.fill", title: "AI 视频通话", subtitle: "和 AI 私教面对面练口语"),
         .init(icon: "books.vertical.fill", title: "今日单词", subtitle: "按遗忘曲线安排复习"),
         .init(icon: "text.book.closed.fill", title: "语法精讲", subtitle: "一次讲透一个知识点"),
     ]
@@ -50,7 +53,8 @@ struct HomeView: View {
                 VStack(spacing: 12) {
                     ForEach(items) { item in
                         Button {
-                            app.showToast("这个功能正在做，敬请期待")
+                            if let r = item.route { app.route = r }
+                            else { app.showToast("这个功能正在做，敬请期待") }
                         } label: {
                             card(item)
                         }

@@ -86,6 +86,43 @@ struct PlacementResult: Codable {
     }
 }
 
+// MARK: - AI 对话
+
+/// 后端存的历史里 role 只有 "user" 和 "ai" 两种
+struct ChatMessage: Codable, Identifiable, Equatable {
+    var id: String = UUID().uuidString
+    let role: String
+    let content: String
+
+    var isUser: Bool { role == "user" }
+
+    // 后端返回的历史里没有 id 字段，解码时不要去找它，否则会失败
+    enum CodingKeys: String, CodingKey { case role, content }
+}
+
+struct ChatHistoryResponse: Codable {
+    let history: [ChatMessage]
+}
+
+struct ChatReply: Codable {
+    let reply: String
+}
+
+/// 只返回 { ok: true } 的接口用这个接住
+struct OKResponse: Codable {
+    let ok: Bool?
+}
+
+struct LanguageOption: Codable, Identifiable, Equatable {
+    let code: String
+    let name: String
+    var id: String { code }
+}
+
+struct LanguagesResponse: Codable {
+    let languages: [LanguageOption]
+}
+
 struct SendCodeResponse: Codable {
     let ok: Bool?
     // 后端没接短信服务商时会把验证码直接返回，方便内测阶段自测

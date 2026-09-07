@@ -114,4 +114,29 @@ actor API {
         try await request("placement/submit", method: "POST",
                           body: ["answers": answers], as: PlacementResult.self)
     }
+
+    // MARK: - AI 对话
+
+    func chatHistory() async throws -> [ChatMessage] {
+        try await request("chat/history", as: ChatHistoryResponse.self).history
+    }
+
+    /// history 只带最近若干轮，后端也会再截一次；带太多会撑爆上下文也更慢
+    func sendChat(message: String, history: [ChatMessage],
+                  inputLang: String, replyLang: String) async throws -> String {
+        let recent = history.suffix(10).map { ["role": $0.role, "content": $0.content] }
+        let r = try await request("chat", method: "POST",
+                                  body: ["message": message, "history": recent,
+                                         "inputLang": inputLang, "replyLang": replyLang],
+                                  as: ChatReply.self)
+        return r.reply
+    }
+
+    func clearChat() async throws {
+        _ = try await request("chat/clear", method: "POST", as: OKResponse.self)
+    }
+
+    func languages() async throws -> [LanguageOption] {
+        try await request("meta/languages", as: LanguagesResponse.self).languages
+    }
 }

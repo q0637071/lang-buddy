@@ -39,6 +39,8 @@ struct RootView: View {
                 PlacementResultView(result: r).transition(.opacity)
             case .home:
                 HomeView().transition(.opacity)
+            case .chat:
+                ChatView().transition(.move(edge: .trailing).combined(with: .opacity))
             }
 
             if let toast = app.toast {
@@ -70,6 +72,7 @@ struct RootView: View {
         case .placement: return "placement"
         case .result: return "result"
         case .home: return "home"
+        case .chat: return "chat"
         }
     }
 }
