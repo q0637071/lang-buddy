@@ -162,6 +162,25 @@ struct VocabWord: Codable, Identifiable, Equatable {
     }
 }
 
+/// 词根关联星球上的一颗词。relation 是 root（同词根）或 category（同主题），
+/// via 是具体的词根或分类名，用来告诉用户"为什么这个词会出现在这里"
+struct RelatedWord: Codable, Identifiable, Equatable {
+    let word: String
+    let pos: String?
+    let meaning_zh: String?
+    let root: String?
+    let relation: String?
+    let via: String?
+
+    var id: String { word }
+    var isRoot: Bool { relation == "root" }
+}
+
+struct RelatedResponse: Codable {
+    let center: VocabWord
+    let related: [RelatedWord]
+}
+
 struct VocabStats: Codable, Equatable {
     let total: Int
     let known: Int

@@ -27,7 +27,12 @@ actor API {
         body: [String: Any]? = nil,
         as type: T.Type
     ) async throws -> T {
-        var req = URLRequest(url: baseURL.appendingPathComponent(path))
+        // 不能用 appendingPathComponent：它会把查询串里的 ? 和 = 当成路径转义掉，
+        // 带 query 的接口（比如 vocab/related?word=x）会直接 404
+        guard let url = URL(string: baseURL.absoluteString + "/" + path) else {
+            throw APIError(message: "请求地址不合法")
+        }
+        var req = URLRequest(url: url)
         req.httpMethod = method
         req.timeoutInterval = 30   // 手机网络不稳时别无限等，否则用户只看到转圈
         if let body {
@@ -156,6 +161,12 @@ actor API {
     func skipWord(_ word: String) async throws {
         _ = try await request("vocab/review", method: "POST",
                               body: ["word": word, "skip": true], as: OKResponse.self)
+    }
+
+    /// 词根关联：同词根的词优先，不够再用同主题补齐
+    func relatedWords(_ word: String) async throws -> RelatedResponse {
+        let q = word.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? word
+        return try await request("vocab/related?word=\(q)", as: RelatedResponse.self)
     }
 
     // MARK: - 语法

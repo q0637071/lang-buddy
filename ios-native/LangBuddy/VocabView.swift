@@ -131,11 +131,27 @@ struct VocabView: View {
                     .font(.system(size: 20, weight: .semibold))
                     .padding(.top, 14)
 
-                // 词根词缀是这个功能的差异点，单独用色块突出
+                // 词根词缀是这个功能的差异点，单独用色块突出。
+                // 有词根的词才给"关联星球"入口——没词根点进去也是空的。
                 if let line = w.rootLine {
-                    HStack(alignment: .top, spacing: 6) {
-                        Text("🔍").font(.system(size: 13))
-                        Text(line).font(.system(size: 14)).foregroundColor(Theme.primaryDark)
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(alignment: .top, spacing: 6) {
+                            Text("🔍").font(.system(size: 13))
+                            Text(line).font(.system(size: 14)).foregroundColor(Theme.primaryDark)
+                        }
+                        if let r = w.root, !r.isEmpty {
+                            Button {
+                                app.route = .orbit(w.word)
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Text("🪐").font(.system(size: 12))
+                                    Text("看同词根的词").font(.system(size: 13, weight: .semibold))
+                                    Image(systemName: "chevron.right").font(.system(size: 10, weight: .bold))
+                                }
+                                .foregroundColor(Theme.primaryDark)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                     .padding(.horizontal, 12).padding(.vertical, 10)
                     .frame(maxWidth: .infinity, alignment: .leading)

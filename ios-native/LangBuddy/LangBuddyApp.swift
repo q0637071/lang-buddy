@@ -50,6 +50,8 @@ struct RootView: View {
                     .transition(.move(edge: .trailing).combined(with: .opacity))
             case .videoCall:
                 VideoCallView().transition(.opacity)
+            case .orbit(let w):
+                OrbitView(centerWord: w).transition(.opacity)
             }
 
             if let toast = app.toast {
@@ -87,6 +89,7 @@ struct RootView: View {
         // 详情带上 id，切换不同课程时才会触发过渡动画
         case .grammarDetail(let id): return "grammarDetail-" + id
         case .videoCall: return "videoCall"
+        case .orbit(let w): return "orbit-" + w
         }
     }
 }
