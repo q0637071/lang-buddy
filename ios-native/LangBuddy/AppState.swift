@@ -17,6 +17,7 @@ final class AppState: ObservableObject {
         case result(PlacementResult)
         case home
         case chat
+        case vocab
     }
 
     @Published var route: Route = .launching

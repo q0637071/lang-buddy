@@ -139,4 +139,22 @@ actor API {
     func languages() async throws -> [LanguageOption] {
         try await request("meta/languages", as: LanguagesResponse.self).languages
     }
+
+    // MARK: - 背单词
+
+    func vocabQueue() async throws -> VocabQueue {
+        try await request("vocab/review", as: VocabQueue.self)
+    }
+
+    /// rating 取 again / hard / good / easy，间隔计算全在后端（SM-2），前端不重复实现
+    func reviewWord(_ word: String, rating: String) async throws {
+        _ = try await request("vocab/review", method: "POST",
+                              body: ["word": word, "rating": rating], as: OKResponse.self)
+    }
+
+    /// 标记为已掌握，直接跳到 30 天后再复习
+    func skipWord(_ word: String) async throws {
+        _ = try await request("vocab/review", method: "POST",
+                              body: ["word": word, "skip": true], as: OKResponse.self)
+    }
 }

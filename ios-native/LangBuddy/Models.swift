@@ -123,6 +123,57 @@ struct LanguagesResponse: Codable {
     let languages: [LanguageOption]
 }
 
+// MARK: - 背单词
+
+/// 四种评价各自的"下次间隔"预览，后端算好直接给，前端不重复实现 SM-2
+struct VocabPreviews: Codable, Equatable {
+    let again: String?
+    let hard: String?
+    let good: String?
+    let easy: String?
+
+    func text(for rating: String) -> String {
+        switch rating {
+        case "again": return again ?? ""
+        case "hard": return hard ?? ""
+        case "good": return good ?? ""
+        default: return easy ?? ""
+        }
+    }
+}
+
+struct VocabWord: Codable, Identifiable, Equatable {
+    let word: String
+    let pos: String?
+    let meaning_zh: String?
+    let example_en: String?
+    let example_zh: String?
+    let level: String?
+    let category: String?
+    let root: String?
+    let note: String?
+    let previews: VocabPreviews?
+
+    var id: String { word }
+    /// 词根和助记是分开的两个字段，展示时拼一行，都为空就不显示
+    var rootLine: String? {
+        let parts = [root, note].compactMap { $0 }.filter { !$0.isEmpty }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+}
+
+struct VocabStats: Codable, Equatable {
+    let total: Int
+    let known: Int
+    let learning: Int
+    let new: Int
+}
+
+struct VocabQueue: Codable {
+    let words: [VocabWord]
+    let stats: VocabStats
+}
+
 struct SendCodeResponse: Codable {
     let ok: Bool?
     // 后端没接短信服务商时会把验证码直接返回，方便内测阶段自测

@@ -41,6 +41,8 @@ struct RootView: View {
                 HomeView().transition(.opacity)
             case .chat:
                 ChatView().transition(.move(edge: .trailing).combined(with: .opacity))
+            case .vocab:
+                VocabView().transition(.move(edge: .trailing).combined(with: .opacity))
             }
 
             if let toast = app.toast {
@@ -73,6 +75,7 @@ struct RootView: View {
         case .result: return "result"
         case .home: return "home"
         case .chat: return "chat"
+        case .vocab: return "vocab"
         }
     }
 }
