@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "note": "英语水平测评题库。tier 1-5 表示难度梯度，计分时按 tier 加权——答对难题比答对简单题更能说明水平。题目放服务端而非打包进 App，调整题目不需要重新发版。",
+  "questions": [
+    {
+      "id": "p01", "tier": 1, "skill": "grammar",
+      "question": "She ___ a doctor.",
+      "options": ["am", "is", "are", "be"],
+      "answerIndex": 1
+    },
+    {
+      "id": "p02", "tier": 1, "skill": "vocab",
+      "question": "选出与 “happy” 意思最接近的词",
+      "options": ["angry", "glad", "tired", "hungry"],
+      "answerIndex": 1
+    },
+    {
+      "id": "p03", "tier": 1, "skill": "grammar",
+      "question": "I ___ to school every day.",
+      "options": ["go", "goes", "going", "went"],
+      "answerIndex": 0
+    },
+    {
+      "id": "p04", "tier": 2, "skill": "grammar",
+      "question": "He ___ TV when I called him.",
+      "options": ["watches", "watched", "was watching", "has watched"],
+      "answerIndex": 2
+    },
+    {
+      "id": "p05", "tier": 2, "skill": "vocab",
+      "question": "The weather is very ___ today; take an umbrella.",
+      "options": ["dry", "wet", "warm", "clear"],
+      "answerIndex": 1
+    },
+    {
+      "id": "p06", "tier": 2, "skill": "grammar",
+      "question": "There ___ some milk in the fridge.",
+      "options": ["are", "is", "have", "be"],
+      "answerIndex": 1
+    },
+    {
+      "id": "p07", "tier": 3, "skill": "grammar",
+      "question": "If I ___ more time, I would learn another language.",
+      "options": ["have", "had", "will have", "am having"],
+      "answerIndex": 1
+    },
+    {
+      "id": "p08", "tier": 3, "skill": "vocab",
+      "question": "The manager decided to ___ the meeting until next week.",
+      "options": ["put off", "put on", "put up", "put out"],
+      "answerIndex": 0
+    },
+    {
+      "id": "p09", "tier": 3, "skill": "grammar",
+      "question": "This is the book ___ I told you about.",
+      "options": ["what", "which", "who", "whose"],
+      "answerIndex": 1
+    },
+    {
+      "id": "p10", "tier": 4, "skill": "grammar",
+      "question": "Not until he arrived home ___ that he had left his keys at work.",
+      "options": ["he realized", "did he realize", "he did realize", "realized he"],
+      "answerIndex": 1
+    },
+    {
+      "id": "p11", "tier": 4, "skill": "vocab",
+      "question": "Her explanation was so ___ that nobody knew what she actually meant.",
+      "options": ["ambiguous", "obvious", "precise", "sincere"],
+      "answerIndex": 0
+    },
+    {
+      "id": "p12", "tier": 4, "skill": "reading",
+      "question": "“The proposal was met with considerable skepticism.” 这句话的意思是？",
+      "options": ["提案受到了热烈欢迎", "提案遭到了相当大的质疑", "提案被完全忽视了", "提案还在等待审批"],
+      "answerIndex": 1
+    },
+    {
+      "id": "p13", "tier": 5, "skill": "grammar",
+      "question": "___ for the timely intervention, the project would have collapsed.",
+      "options": ["If it were not", "Had it not been", "Were it not being", "If not it had been"],
+      "answerIndex": 1
+    },
+    {
+      "id": "p14", "tier": 5, "skill": "vocab",
+      "question": "The committee's decision was widely seen as a ___ to public pressure.",
+      "options": ["capitulation", "celebration", "compilation", "cultivation"],
+      "answerIndex": 0
+    },
+    {
+      "id": "p15", "tier": 5, "skill": "reading",
+      "question": "“His arguments, while superficially compelling, ultimately rest on a flawed premise.” 作者的态度是？",
+      "options": ["完全赞同他的论点", "认为论点看似有力但根基有问题", "认为论点晦涩难懂", "对论点不置可否"],
+      "answerIndex": 1
+    }
+  ]
+}

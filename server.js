@@ -70,6 +70,7 @@ const DB_PATH = path.join(DATA_DIR, 'db.json');
 const VOCAB_PATH = path.join(DATA_DIR, 'vocab.json');
 const GRAMMAR_PATH = path.join(DATA_DIR, 'grammar.json');
 const COLLOQUIAL_PATH = path.join(DATA_DIR, 'colloquial.json');
+const PLACEMENT_PATH = path.join(DATA_DIR, 'placement-test.json');
 const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -2215,6 +2216,84 @@ app.get('/api/metrics', requireAuth, (req, res) => {
 function readGrammar() {
   return JSON.parse(fs.readFileSync(GRAMMAR_PATH, 'utf-8'));
 }
+
+// ==================== 英语水平测评（App 开场用）====================
+// 注册时 level 一律默认 beginner，而改它的入口藏在"我的"页面里，绝大多数人不会去改——
+// 结果就是 AI 对话的难度适配形同虚设。开场测一次，一次性把这件事解决掉。
+let placementCache = null;
+function readPlacement() {
+  if (!placementCache) placementCache = JSON.parse(fs.readFileSync(PLACEMENT_PATH, 'utf-8'));
+  return placementCache;
+}
+
+// 按 tier 加权：答对难题比答对简单题更能说明水平，纯数对题数会把
+// "全对简单题" 和 "答对几道难题" 判成一样。
+function scorePlacement(answers) {
+  const bank = readPlacement();
+  const maxScore = bank.questions.reduce((s, q) => s + q.tier, 0);
+  let score = 0, correct = 0;
+  const detail = bank.questions.map(q => {
+    const picked = answers && Object.prototype.hasOwnProperty.call(answers, q.id) ? answers[q.id] : null;
+    const ok = picked === q.answerIndex;
+    if (ok) { score += q.tier; correct++; }
+    return { id: q.id, tier: q.tier, skill: q.skill, picked, answerIndex: q.answerIndex, correct: ok };
+  });
+  const ratio = maxScore ? score / maxScore : 0;
+  // 三档要和后端其它地方用的 level 取值保持一致（beginner/intermediate/advanced）
+  const level = ratio >= 0.72 ? 'advanced' : ratio >= 0.4 ? 'intermediate' : 'beginner';
+  // CEFR 只用于展示，让结果比"初级/中级/高级"更有信息量
+  const cefr = ratio >= 0.88 ? 'C1' : ratio >= 0.72 ? 'B2' : ratio >= 0.55 ? 'B1' : ratio >= 0.4 ? 'A2+' : ratio >= 0.2 ? 'A2' : 'A1';
+  return { score, maxScore, ratio, correct, total: bank.questions.length, level, cefr, detail };
+}
+
+// 题目发给前端时必须去掉 answerIndex，否则答案直接暴露在网络响应里
+app.get('/api/placement/questions', requireAuth, (req, res) => {
+  const bank = readPlacement();
+  res.json({
+    version: bank.version,
+    questions: bank.questions.map(({ id, tier, skill, question, options }) => ({ id, tier, skill, question, options })),
+  });
+});
+
+app.post('/api/placement/submit', requireAuth, rateLimit(10), (req, res) => {
+  const { answers } = req.body || {};
+  if (!answers || typeof answers !== 'object') return res.status(400).json({ error: '缺少作答内容' });
+
+  const result = scorePlacement(answers);
+  const db = loadDB();
+  const user = db.users[req.session.userId];
+  user.level = result.level;
+  // 留存历史，方便以后做"水平变化曲线"，也便于排查判定是否合理
+  if (!Array.isArray(user.placementHistory)) user.placementHistory = [];
+  user.placementHistory.push({
+    at: Date.now(), score: result.score, maxScore: result.maxScore,
+    correct: result.correct, total: result.total, level: result.level, cefr: result.cefr,
+  });
+  if (user.placementHistory.length > 20) user.placementHistory = user.placementHistory.slice(-20);
+  user.placementDoneAt = Date.now();
+  saveDB(db);
+
+  res.json({
+    level: result.level, cefr: result.cefr,
+    correct: result.correct, total: result.total,
+    score: result.score, maxScore: result.maxScore,
+    detail: result.detail,
+  });
+});
+
+// App 启动时问一句：这个账号测过没有，要不要弹测评
+app.get('/api/placement/status', requireAuth, (req, res) => {
+  const db = loadDB();
+  const user = db.users[req.session.userId];
+  const last = (user.placementHistory || []).slice(-1)[0] || null;
+  res.json({
+    done: !!user.placementDoneAt,
+    doneAt: user.placementDoneAt || null,
+    level: user.level || 'beginner',
+    cefr: last ? last.cefr : null,
+    questionCount: readPlacement().questions.length,
+  });
+});
 
 app.get('/api/grammar/list', requireAuth, (req, res) => {
   const grammar = readGrammar();
