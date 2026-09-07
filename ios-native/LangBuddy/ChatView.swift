@@ -239,6 +239,7 @@ struct ChatView: View {
                     if voiceMode && micGranted == nil {
                         Task { micGranted = await recorder.requestPermission() }
                     }
+                    if !voiceMode { recorder.cancel() }   // 切回键盘时别让录音悬着
                 } label: {
                     Image(systemName: voiceMode ? "keyboard" : "mic")
                         .font(.system(size: 19))
@@ -305,7 +306,13 @@ struct ChatView: View {
 
     private var holdLabel: String {
         if transcribing { return "识别中…" }
-        if micGranted == false { return "麦克风权限未开启，去设置里打开" }
+        if micGranted == false {
+            // 区分"用户拒绝了"和"根本没弹过框"——后者几乎都是 Info.plist
+            // 缺 NSMicrophoneUsageDescription，提示要指向不同的地方
+            return recorder.permissionState == .denied
+                ? "麦克风被拒绝，去 设置 → LangBuddy 打开"
+                : "拿不到麦克风权限（检查 Info 里的用途说明）"
+        }
         if micGranted == nil { return "正在获取麦克风权限…" }
         guard recorder.isRecording else { return "按住说话" }
         return willCancel ? "松开取消" : "松开发送 · 上滑取消 \(recorder.seconds)s"

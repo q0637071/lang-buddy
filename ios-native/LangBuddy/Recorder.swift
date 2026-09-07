@@ -21,11 +21,36 @@ final class Recorder: NSObject, ObservableObject {
     /// 上限防止一直按着不放，也避免上传超过后端 10MB 限制
     let maxSeconds = 60
 
+    /// 当前授权状态。已经决定过的情况不必再走异步请求，直接返回结果，
+    /// 也就不存在"卡在获取权限"这种状态。
+    var permissionState: AVAudioApplication.recordPermission {
+        AVAudioApplication.shared.recordPermission
+    }
+
     func requestPermission() async -> Bool {
-        await withCheckedContinuation { cont in
-            AVAudioApplication.requestRecordPermission { granted in
-                cont.resume(returning: granted)
+        switch permissionState {
+        case .granted: return true
+        case .denied: return false
+        default: break      // undetermined，才需要真的去问
+        }
+
+        // 加超时兜底：Info.plist 里缺 NSMicrophoneUsageDescription 时这个回调
+        // 可能永远不来，没有超时的话界面就永久停在"正在获取权限"。
+        return await withTaskGroup(of: Bool?.self) { group in
+            group.addTask {
+                await withCheckedContinuation { cont in
+                    AVAudioApplication.requestRecordPermission { granted in
+                        cont.resume(returning: granted)
+                    }
+                }
             }
+            group.addTask {
+                try? await Task.sleep(nanoseconds: 10_000_000_000)
+                return nil      // 超时
+            }
+            let first = await group.next() ?? nil
+            group.cancelAll()
+            return first ?? false
         }
     }
 
