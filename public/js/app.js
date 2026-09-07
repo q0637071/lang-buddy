@@ -1,6 +1,10 @@
 (function () {
   'use strict';
 
+  // 给 index.html 里的启动兜底用：脚本跑起来了就打个标记。
+  // 标记一直没出现，说明 js 根本没加载（App 里最常见是 web 资源没同步）。
+  window.__LB_BOOTED__ = true;
+
   const state = {
     user: null,
     languages: [],

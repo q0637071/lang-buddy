@@ -959,6 +959,50 @@
 
 <div class="toast" id="toast" hidden></div>
 
+<!-- 启动阶段的错误兜底。在 App（WebView）里出错时页面就是一片黑，
+     没法像浏览器那样按 F12 看控制台，只能连 Safari 远程调试，很不方便。
+     这里把未捕获的异常直接画到屏幕上，黑屏立刻变成"看得见的报错"。
+     必须放在 app.js 之前，否则 app.js 自己抛错时这段还没注册上。 -->
+<script>
+(function () {
+  var shown = false;
+  function show(title, detail) {
+    if (shown) return;           // 只显示第一个错误，后续的往控制台丢就行
+    shown = true;
+    try {
+      var d = document.createElement('div');
+      d.setAttribute('style', 'position:fixed;inset:0;z-index:99999;background:#fff;color:#1a1d2b;'
+        + 'padding:24px;font:14px/1.6 -apple-system,system-ui,sans-serif;overflow:auto;-webkit-overflow-scrolling:touch');
+      d.innerHTML = '<div style="font-size:17px;font-weight:700;margin-bottom:10px">⚠️ 页面加载出错</div>'
+        + '<div style="color:#6b7280;margin-bottom:14px">把下面这段发给开发者即可定位问题。</div>'
+        + '<div style="font-weight:600;margin-bottom:6px"></div>'
+        + '<pre style="white-space:pre-wrap;word-break:break-all;background:#f7f7fc;padding:12px;border-radius:10px;margin:0"></pre>';
+      d.querySelector('div:nth-of-type(3)').textContent = title;
+      d.querySelector('pre').textContent = detail;
+      (document.body || document.documentElement).appendChild(d);
+    } catch (e) { /* 连兜底都失败就算了，至少控制台有记录 */ }
+  }
+  window.addEventListener('error', function (e) {
+    show(e.message || '脚本错误',
+      (e.filename || '') + (e.lineno ? ':' + e.lineno + ':' + e.colno : '')
+      + (e.error && e.error.stack ? '\n\n' + e.error.stack : ''));
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    var r = e.reason;
+    show('未处理的 Promise 异常', (r && (r.stack || r.message)) || String(r));
+  });
+  // 资源本身没加载出来（比如 App 里 web 资源没同步，js/css 404）也要能看出来
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      if (!window.__LB_BOOTED__ && !shown) {
+        show('脚本未能启动', 'js/app.js 可能没有加载成功。\n'
+          + '在 App 里最常见的原因是网页资源没有同步进工程，'
+          + '在项目目录执行 npx cap sync ios 后重新运行即可。');
+      }
+    }, 3000);
+  });
+})();
+</script>
 <script src="js/app.js"></script>
 </body>
 </html>
