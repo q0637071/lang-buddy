@@ -29,14 +29,23 @@ final class Recorder: NSObject, ObservableObject {
         }
     }
 
-    func start() {
-        guard !isRecording else { return }
+    /// 返回是否真的开始录了。失败原因放在 lastError 里，UI 要能告诉用户怎么回事，
+    /// 而不是按了没反应。
+    @Published private(set) var lastError: String?
+
+    @discardableResult
+    func start() -> Bool {
+        guard !isRecording else { return true }
+        lastError = nil
         let session = AVAudioSession.sharedInstance()
         do {
             // 录音期间必须切到 playAndRecord；Speaker 平时用的是 playback，录不了音
             try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
             try session.setActive(true)
-        } catch { return }
+        } catch {
+            lastError = "无法启用麦克风：\(error.localizedDescription)"
+            return false
+        }
 
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("lb_rec_\(UUID().uuidString).m4a")
@@ -56,8 +65,11 @@ final class Recorder: NSObject, ObservableObject {
             isRecording = true
             seconds = 0
             startMetering()
+            return true
         } catch {
             isRecording = false
+            lastError = "录音启动失败：\(error.localizedDescription)"
+            return false
         }
     }
 

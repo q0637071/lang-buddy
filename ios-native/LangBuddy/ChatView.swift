@@ -22,7 +22,10 @@ struct ChatView: View {
     @State private var voiceMode = false        // 输入栏切成"按住说话"
     @State private var willCancel = false       // 手指上滑到取消区
     @State private var transcribing = false
-    @State private var micDenied = false
+    // nil = 还没问过。权限必须在切到语音模式时就问，不能等按下去才问——
+    // 系统权限框是模态的，会把那一次按压的手势整个打断，表现就是"按住没反应"。
+    @State private var micGranted: Bool?
+    @State private var holding = false          // 防止 onChanged 连续触发时重复启动
 
     var body: some View {
         VStack(spacing: 0) {
@@ -232,6 +235,10 @@ struct ChatView: View {
                 Button {
                     voiceMode.toggle()
                     inputFocused = false
+                    // 切到语音模式就先把权限问掉，别等用户按下去才弹
+                    if voiceMode && micGranted == nil {
+                        Task { micGranted = await recorder.requestPermission() }
+                    }
                 } label: {
                     Image(systemName: voiceMode ? "keyboard" : "mic")
                         .font(.system(size: 19))
@@ -286,34 +293,41 @@ struct ChatView: View {
                 // "按住说话"就变成"按住并挪一下才说话"
                 DragGesture(minimumDistance: 0)
                     .onChanged { v in
-                        if !recorder.isRecording && !transcribing { Task { await beginHold() } }
+                        // onChanged 在按住期间会连续触发几十次，holding 保证只启动一次
+                        if !holding { holding = true; beginHold() }
                         // 上滑超过 60pt 进入取消区，和微信一致
                         willCancel = v.translation.height < -60
                     }
                     .onEnded { _ in Task { await endHold() } }
             )
-            .disabled(transcribing)
+            .disabled(transcribing || micGranted == false)
     }
 
     private var holdLabel: String {
         if transcribing { return "识别中…" }
-        if micDenied { return "麦克风权限未开启" }
+        if micGranted == false { return "麦克风权限未开启，去设置里打开" }
+        if micGranted == nil { return "正在获取麦克风权限…" }
         guard recorder.isRecording else { return "按住说话" }
         return willCancel ? "松开取消" : "松开发送 · 上滑取消 \(recorder.seconds)s"
     }
 
-    private func beginHold() async {
-        guard await recorder.requestPermission() else {
-            micDenied = true
-            app.showToast("请到 设置 → LangBuddy 里打开麦克风权限")
+    /// 同步启动：权限已经在切模式时问过了，这里不再 await，
+    /// 否则按下到真正开始录之间会有一段听不见的空档
+    private func beginHold() {
+        guard micGranted == true else {
+            app.showToast(micGranted == false
+                ? "请到 设置 → LangBuddy 里打开麦克风权限"
+                : "正在获取麦克风权限，请稍候再试")
             return
         }
-        micDenied = false
         speaker.stop()          // 录音前先停掉朗读，否则会把AI的声音一起录进去
-        recorder.start()
+        if !recorder.start(), let e = recorder.lastError {
+            app.showToast(e)    // 起不来要说明原因，不能按了没反应
+        }
     }
 
     private func endHold() async {
+        holding = false
         let cancelled = willCancel
         willCancel = false
         guard recorder.isRecording else { return }
