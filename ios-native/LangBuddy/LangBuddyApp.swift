@@ -39,8 +39,13 @@ struct RootView: View {
                 PlacementResultView(result: r).transition(.opacity)
             case .home:
                 HomeView().transition(.opacity)
-            case .chat:
-                ChatView().transition(.move(edge: .trailing).combined(with: .opacity))
+            case .chat(let s):
+                ChatView(scenario: s).transition(.move(edge: .trailing).combined(with: .opacity))
+            case .scenarios:
+                ScenarioPlanView().transition(.move(edge: .trailing).combined(with: .opacity))
+            case .scenarioBrief(let id):
+                ScenarioBriefView(scenarioId: id)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
             case .vocab:
                 VocabView().transition(.move(edge: .trailing).combined(with: .opacity))
             case .grammar:
@@ -83,7 +88,10 @@ struct RootView: View {
         case .placement: return "placement"
         case .result: return "result"
         case .home: return "home"
-        case .chat: return "chat"
+        // 带上场景 id，从一个场景切到另一个才会重建视图并触发过渡
+        case .chat(let s): return "chat-" + (s?.id ?? "free")
+        case .scenarios: return "scenarios"
+        case .scenarioBrief(let id): return "scenarioBrief-" + id
         case .vocab: return "vocab"
         case .grammar: return "grammar"
         // 详情带上 id，切换不同课程时才会触发过渡动画

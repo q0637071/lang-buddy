@@ -21,7 +21,9 @@ struct HomeView: View {
     // 按"今天学什么"的顺序排，做好一个接一个
     private let items: [PathItem] = [
         .init(icon: "bubble.left.and.bubble.right.fill", title: "AI 对话练习",
-              subtitle: "打字聊天，AI 按你的水平调整难度", featured: true, route: .chat),
+              subtitle: "打字或按住说话，AI 会朗读回复", featured: true, route: .chat(nil)),
+        .init(icon: "theatermasks.fill", title: "情景练习",
+              subtitle: "每天三个场景，练到能用出来", route: .scenarios),
         .init(icon: "video.fill", title: "AI 视频通话",
               subtitle: "和 AI 私教面对面练口语", route: .videoCall),
         .init(icon: "books.vertical.fill", title: "今日单词",

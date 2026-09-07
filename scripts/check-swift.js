@@ -36,7 +36,8 @@ for (const [f, s] of Object.entries(src)) {
 
   // actor 的成员从外部访问必须 await
   s.split('\n').forEach((l, i) => {
-    if (l.includes('API.shared.') && !l.includes('await')) {
+    // async let 的右边是延迟执行的，await 写在读取那一行，这里没有才对
+    if (l.includes('API.shared.') && !l.includes('await') && !/\basync\s+let\b/.test(l)) {
       issues.push(`${f}:${i + 1} 调用 actor 未加 await → ${l.trim().slice(0, 60)}`);
     }
   });

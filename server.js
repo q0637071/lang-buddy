@@ -71,6 +71,7 @@ const VOCAB_PATH = path.join(DATA_DIR, 'vocab.json');
 const GRAMMAR_PATH = path.join(DATA_DIR, 'grammar.json');
 const COLLOQUIAL_PATH = path.join(DATA_DIR, 'colloquial.json');
 const PLACEMENT_PATH = path.join(DATA_DIR, 'placement-test.json');
+const SCENARIOS_PATH = path.join(DATA_DIR, 'scenarios.json');
 const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -1343,7 +1344,7 @@ app.get('/api/meta/languages', (req, res) => {
 // ==================== AI 1对1 对话 ====================
 
 app.post('/api/chat', allowMemberOrFreeQuota('chat', { type: 'window', windowMs: 5 * 60 * 1000 }), rateLimit(15), async (req, res) => {
-  const { message, history, inputLang, replyLang } = req.body || {};
+  const { message, history, inputLang, replyLang, scenarioId } = req.body || {};
   if (!message || !String(message).trim()) return res.status(400).json({ error: '消息不能为空' });
   if (message.length > 500) return res.status(400).json({ error: '消息过长（最多500字符）' });
 
@@ -1365,6 +1366,17 @@ ${sameLang
 5. 不要长篇大论讲课，保持轻松的对话感。
 6. 极其重要：无论历史对话中出现过什么语言，你自己的每一句回复都必须整体用${replyLangName}书写（括号里的简短提示除外）。${sameLang ? '' : `绝不能整句改用${inputLangName}回复。`}`;
 
+  // 情景练习：给 AI 一个具体角色和要达成的事，它才不会聊两句就跑题。
+  // 放在通用提示词之后，因为它是对"当前这场对话"的追加约束，不是替换。
+  const scenario = scenarioId ? findScenario(scenarioId) : null;
+  const scenarioPrompt = scenario ? `
+本次是情景练习，不是自由聊天，请严格按以下设定进行：
+- 场景：${scenario.setting}
+- 你的角色：${scenario.aiRole}（全程保持这个身份，不要跳出来以"AI助教"的口吻说话）
+- 本次要帮学生达成：${scenario.goal}
+- 请自然地把对话往这个目标推进；目标达成后，用一两句话肯定学生做得好的地方，并指出一个可以改进的表达。
+- 学生卡住时，给一个提示或示范说法，不要直接替他说完。` : '';
+
   // 输入语言和回复语言相同时（比如都选英语），原来那句"不要用X回复整句话"会和
   // "必须用X回复"直接矛盾，模型会困惑甚至把纠结过程输出出来。这种情况下不加这半句。
   const languageReminder = sameLang
@@ -1372,7 +1384,7 @@ ${sameLang
     : `（提醒：接下来请只用${replyLangName}回复，不要用${inputLangName}回复整句话）`;
 
   const messages = [
-    { role: 'system', content: systemPrompt },
+    { role: 'system', content: systemPrompt + scenarioPrompt },
     ...(Array.isArray(history)
       ? history.slice(-10).map(h => ({
           role: h.role === 'ai' ? 'assistant' : 'user',
@@ -1392,6 +1404,20 @@ ${sameLang
     user.chatHistory.push({ role: 'user', content: String(message).trim() });
     user.chatHistory.push({ role: 'ai', content: reply });
     if (user.chatHistory.length > 60) user.chatHistory = user.chatHistory.slice(-60);
+
+    // 情景练习的完成记录。以"当天说过话"为准而不是等用户点完成——
+    // 没人会记得去点，那样的完成率数据也没意义
+    if (scenario) {
+      if (!user.scenarioLog) user.scenarioLog = {};
+      const today = dateKey(new Date());
+      const rec = user.scenarioLog[scenario.id] || { count: 0 };
+      user.scenarioLog[scenario.id] = {
+        count: (rec.count || 0) + 1,
+        lastAt: Date.now(),
+        lastDate: today,
+      };
+    }
+
     recordActivity(user);
     saveDB(db);
     res.json({ reply });
@@ -1655,6 +1681,91 @@ app.post('/api/avatar/end', requireAuth, async (req, res) => {
     catch (e) { console.error('结束数字人会话失败:', e.message); }
   }
   res.json({ ok: true, ...avatarQuota(db, user, getClientIp(req)) });
+});
+
+// ==================== 情景对话 ====================
+// 目的是把"随便聊"变成"有目标的练习"：每个场景给 AI 一个明确的角色和要达成的事，
+// 学生知道自己在练什么，AI 也不会聊着聊着跑题。
+
+let scenariosCache = null;
+function readScenarios() {
+  if (!scenariosCache) scenariosCache = JSON.parse(fs.readFileSync(SCENARIOS_PATH, 'utf-8'));
+  return scenariosCache.scenarios;
+}
+function findScenario(id) {
+  return readScenarios().find(s => s.id === id) || null;
+}
+
+// 每日计划要满足两个矛盾的要求：同一天内刷新页面得是同一批（否则像随机器），
+// 换一天要换一批（否则天天练同样的）。用"日期+用户名"做种子的伪随机就够了，
+// 不用落库，也不会因为重启丢失。
+function seededShuffle(list, seed) {
+  const out = list.slice();
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  for (let i = out.length - 1; i > 0; i--) {
+    h = (h * 1103515245 + 12345) >>> 0;
+    const j = h % (i + 1);
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+const DAILY_PLAN_SIZE = 3;
+
+app.get('/api/scenarios/list', requireAuth, (req, res) => {
+  const db = loadDB();
+  const user = db.users[req.session.userId];
+  const done = user.scenarioLog || {};
+  res.json({
+    scenarios: readScenarios().map(s => ({
+      id: s.id, emoji: s.emoji, title: s.title, brief: s.brief,
+      level: s.level, category: s.category, keyPhrases: s.keyPhrases,
+      doneCount: done[s.id]?.count || 0,
+      lastDoneAt: done[s.id]?.lastAt || null,
+    })),
+  });
+});
+
+app.get('/api/scenarios/daily', requireAuth, (req, res) => {
+  const db = loadDB();
+  const user = db.users[req.session.userId];
+  const level = user.level || 'beginner';
+  const all = readScenarios();
+
+  // 按水平取本档 + 相邻一档，太简单和太难都不该出现在今天的计划里
+  const wanted = level === 'beginner' ? ['basic', 'intermediate']
+    : level === 'advanced' ? ['intermediate', 'advanced']
+    : ['basic', 'intermediate', 'advanced'];
+  const pool = all.filter(s => wanted.includes(s.level));
+
+  const today = dateKey(new Date());
+  const picked = seededShuffle(pool, today + '|' + user.username).slice(0, DAILY_PLAN_SIZE);
+  const done = user.scenarioLog || {};
+
+  res.json({
+    date: today,
+    level,
+    plan: picked.map(s => ({
+      id: s.id, emoji: s.emoji, title: s.title, brief: s.brief,
+      level: s.level, category: s.category, keyPhrases: s.keyPhrases,
+      // 今天有没有练过这个场景，决定首页卡片打不打勾
+      doneToday: done[s.id]?.lastDate === today,
+    })),
+    doneToday: picked.filter(s => done[s.id]?.lastDate === today).length,
+    total: DAILY_PLAN_SIZE,
+  });
+});
+
+app.get('/api/scenarios/:id', requireAuth, (req, res) => {
+  const s = findScenario(req.params.id);
+  if (!s) return res.status(404).json({ error: '未找到该场景' });
+  // opener 要给前端：进场景时先由 AI 开口，学生才知道该接什么
+  res.json({ scenario: {
+    id: s.id, emoji: s.emoji, title: s.title, brief: s.brief,
+    level: s.level, category: s.category, goal: s.goal,
+    aiRole: s.aiRole, setting: s.setting, opener: s.opener, keyPhrases: s.keyPhrases,
+  } });
 });
 
 // ==================== 语法 AI 批改 ====================

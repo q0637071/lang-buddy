@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "note": "情景对话库。每个场景给 AI 一个明确的角色和目标，把'随便聊'变成'有目标的练习'。level 决定它出现在哪个水平的每日计划里；goal 是这次练习要达成的事，AI 会围着它推进对话。",
+  "scenarios": [
+    {
+      "id": "cafe-order", "emoji": "☕️", "level": "basic", "category": "日常生活",
+      "title": "在咖啡店点单",
+      "brief": "点一杯咖啡，说清楚规格和口味",
+      "aiRole": "一位友好的咖啡店店员",
+      "setting": "学生走进一家美式咖啡店，店里有点忙",
+      "goal": "让学生成功点到一杯饮品，并回答尺寸、冷热、是否加糖奶这几个追问",
+      "opener": "Hi there! Welcome in. What can I get started for you today?",
+      "keyPhrases": ["I'd like a...", "small / medium / large", "for here or to go", "with oat milk"]
+    },
+    {
+      "id": "self-intro", "emoji": "👋", "level": "basic", "category": "社交",
+      "title": "第一次见面自我介绍",
+      "brief": "介绍自己的名字、来处和职业",
+      "aiRole": "一位刚认识的同龄朋友",
+      "setting": "在一个语言交换活动上，两人刚坐到同一桌",
+      "goal": "让学生完整介绍自己，并至少反问对方一个问题",
+      "opener": "Hey, I don't think we've met! I'm Alex. What's your name?",
+      "keyPhrases": ["Nice to meet you", "I'm from...", "I work as...", "How about you?"]
+    },
+    {
+      "id": "ask-directions", "emoji": "🗺️", "level": "basic", "category": "出行",
+      "title": "在街上问路",
+      "brief": "问怎么去地铁站，并听懂对方的指路",
+      "aiRole": "一位热心的本地路人",
+      "setting": "学生在一条陌生的街上，想找最近的地铁站",
+      "goal": "让学生问清方向，并能复述一遍确认自己听懂了",
+      "opener": "You look a little lost — do you need help finding something?",
+      "keyPhrases": ["Excuse me, how do I get to...", "turn left / right", "go straight", "how far is it"]
+    },
+    {
+      "id": "restaurant", "emoji": "🍽️", "level": "basic", "category": "日常生活",
+      "title": "餐厅点餐",
+      "brief": "看菜单点餐，并提出一个特殊要求",
+      "aiRole": "一位专业的餐厅服务员",
+      "setting": "一家中档西餐厅的晚餐时段",
+      "goal": "让学生点完一份主菜和一杯饮料，并提出一个要求（比如不要洋葱）",
+      "opener": "Good evening! Have you had a chance to look at the menu?",
+      "keyPhrases": ["I'll have the...", "Could I get that without...", "What do you recommend?", "the check, please"]
+    },
+    {
+      "id": "hotel-checkin", "emoji": "🏨", "level": "intermediate", "category": "出行",
+      "title": "酒店入住",
+      "brief": "办理入住，并询问酒店设施",
+      "aiRole": "一位酒店前台接待",
+      "setting": "学生带着行李抵达酒店前台，已经在网上订过房",
+      "goal": "让学生完成入住，并问清早餐时间和 WiFi 密码",
+      "opener": "Good afternoon! Checking in? Could I have your name and ID, please?",
+      "keyPhrases": ["I have a reservation under...", "What time is breakfast?", "Is there a late checkout?", "Could I get a wake-up call?"]
+    },
+    {
+      "id": "doctor-visit", "emoji": "🏥", "level": "intermediate", "category": "生活应急",
+      "title": "看医生描述症状",
+      "brief": "说清楚哪里不舒服、持续多久",
+      "aiRole": "一位耐心的全科医生",
+      "setting": "学生因为感冒和喉咙痛来到诊所",
+      "goal": "让学生描述清楚症状、持续时间和严重程度，并听懂医嘱",
+      "opener": "Hi, come on in and have a seat. So, what brings you in today?",
+      "keyPhrases": ["I've had a sore throat for...", "It hurts when I...", "Do I need antibiotics?", "any side effects"]
+    },
+    {
+      "id": "phone-complaint", "emoji": "📞", "level": "intermediate", "category": "生活应急",
+      "title": "打电话投诉",
+      "brief": "网购的东西有问题，打电话要求退换",
+      "aiRole": "一位按流程办事但还算客气的客服",
+      "setting": "学生收到的耳机右声道没声音，打客服电话",
+      "goal": "让学生说清问题、提出诉求，并坚持到拿到一个明确的解决方案",
+      "opener": "Thank you for calling customer support. My name is Jordan. How can I help you today?",
+      "keyPhrases": ["I'd like to report a problem with...", "It stopped working after...", "I'd prefer a replacement", "Could you confirm that in writing?"]
+    },
+    {
+      "id": "small-talk-work", "emoji": "💼", "level": "intermediate", "category": "职场",
+      "title": "同事间的闲聊",
+      "brief": "在茶水间和同事聊周末和工作",
+      "aiRole": "一位友好健谈的同事",
+      "setting": "周一早上，两人在公司茶水间等咖啡机",
+      "goal": "让学生自然地接话并把对话延续三轮以上，不冷场",
+      "opener": "Morning! Long weekend, huh? Did you get up to anything fun?",
+      "keyPhrases": ["Not much, just...", "How was yours?", "That sounds great", "I know what you mean"]
+    },
+    {
+      "id": "job-interview", "emoji": "🎯", "level": "advanced", "category": "职场",
+      "title": "英文面试",
+      "brief": "回答自我介绍和优缺点这类经典问题",
+      "aiRole": "一位专业但友善的面试官",
+      "setting": "一家外企的第二轮面试，视频会议形式",
+      "goal": "让学生完成自我介绍，并用具体例子回答一个行为面试问题",
+      "opener": "Thanks for making the time today. To start, could you walk me through your background?",
+      "keyPhrases": ["I have X years of experience in...", "In my previous role, I...", "One example would be...", "What does success look like in this role?"]
+    },
+    {
+      "id": "negotiate-deadline", "emoji": "⏰", "level": "advanced", "category": "职场",
+      "title": "和上级协商延期",
+      "brief": "说明困难、提出替代方案、争取更多时间",
+      "aiRole": "一位讲道理但有压力的上级",
+      "setting": "项目原定周五交付，学生发现做不完",
+      "goal": "让学生说明原因、给出替代方案，并谈成一个双方接受的新时间",
+      "opener": "You wanted to talk about the Friday deadline? What's the situation?",
+      "keyPhrases": ["I want to flag a risk...", "What I can commit to is...", "Would it help if we...", "to be realistic about scope"]
+    },
+    {
+      "id": "debate-opinion", "emoji": "💭", "level": "advanced", "category": "表达观点",
+      "title": "表达并捍卫观点",
+      "brief": "就一个有争议的话题给出立场并回应反驳",
+      "aiRole": "一位喜欢刨根问底但不刻薄的辩论伙伴",
+      "setting": "两人在讨论「远程办公是不是更高效」",
+      "goal": "让学生给出明确立场、至少两条论据，并回应一次反驳",
+      "opener": "So — remote work. I think it kills team culture. Where do you land on that?",
+      "keyPhrases": ["I'd argue that...", "That's a fair point, but...", "The evidence suggests...", "It depends on whether..."]
+    },
+    {
+      "id": "airport", "emoji": "✈️", "level": "intermediate", "category": "出行",
+      "title": "机场值机与安检",
+      "brief": "办登机牌、托运行李、应对追问",
+      "aiRole": "一位效率很高的地勤人员",
+      "setting": "学生在国际航班的值机柜台，带一件托运行李",
+      "goal": "让学生完成值机，并处理一个意外（行李超重）",
+      "opener": "Good morning. May I see your passport and booking reference, please?",
+      "keyPhrases": ["I'm checking one bag", "Is there a window seat available?", "How much is the excess baggage fee?", "Which gate is it?"]
+    }
+  ]
+}

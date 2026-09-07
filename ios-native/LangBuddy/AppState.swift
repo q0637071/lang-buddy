@@ -16,7 +16,10 @@ final class AppState: ObservableObject {
         case placement
         case result(PlacementResult)
         case home
-        case chat
+        // 关联值是场景；nil 表示自由聊天
+        case chat(Scenario?)
+        case scenarios
+        case scenarioBrief(String)
         case vocab
         case grammar
         case grammarDetail(String)   // 关联值是课程 id

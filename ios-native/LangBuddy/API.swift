@@ -128,13 +128,28 @@ actor API {
 
     /// history 只带最近若干轮，后端也会再截一次；带太多会撑爆上下文也更慢
     func sendChat(message: String, history: [ChatMessage],
-                  inputLang: String, replyLang: String) async throws -> String {
+                  inputLang: String, replyLang: String,
+                  scenarioId: String? = nil) async throws -> String {
         let recent = history.suffix(10).map { ["role": $0.role, "content": $0.content] }
-        let r = try await request("chat", method: "POST",
-                                  body: ["message": message, "history": recent,
-                                         "inputLang": inputLang, "replyLang": replyLang],
-                                  as: ChatReply.self)
-        return r.reply
+        var body: [String: Any] = ["message": message, "history": recent,
+                                   "inputLang": inputLang, "replyLang": replyLang]
+        // 带上场景 id，后端会把角色和目标追加进系统提示词
+        if let scenarioId { body["scenarioId"] = scenarioId }
+        return try await request("chat", method: "POST", body: body, as: ChatReply.self).reply
+    }
+
+    // MARK: - 情景对话
+
+    func dailyPlan() async throws -> DailyPlan {
+        try await request("scenarios/daily", as: DailyPlan.self)
+    }
+
+    func scenarioList() async throws -> [Scenario] {
+        try await request("scenarios/list", as: ScenarioListResponse.self).scenarios
+    }
+
+    func scenario(_ id: String) async throws -> Scenario {
+        try await request("scenarios/\(id)", as: ScenarioResponse.self).scenario
     }
 
     func clearChat() async throws {

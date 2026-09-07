@@ -123,6 +123,50 @@ struct LanguagesResponse: Codable {
     let languages: [LanguageOption]
 }
 
+// MARK: - 情景对话
+
+struct Scenario: Codable, Identifiable, Equatable {
+    let id: String
+    let emoji: String
+    let title: String
+    let brief: String
+    let level: String
+    let category: String
+    let keyPhrases: [String]?
+    // 只有详情接口返回这几个；列表里是 nil
+    let goal: String?
+    let aiRole: String?
+    let setting: String?
+    let opener: String?
+    // 只有列表/计划接口返回
+    let doneToday: Bool?
+    let doneCount: Int?
+
+    var levelText: String {
+        switch level {
+        case "advanced": return "高级"
+        case "intermediate": return "进阶"
+        default: return "基础"
+        }
+    }
+}
+
+struct DailyPlan: Codable {
+    let date: String
+    let level: String
+    let plan: [Scenario]
+    let doneToday: Int
+    let total: Int
+}
+
+struct ScenarioListResponse: Codable {
+    let scenarios: [Scenario]
+}
+
+struct ScenarioResponse: Codable {
+    let scenario: Scenario
+}
+
 // MARK: - 背单词
 
 /// 四种评价各自的"下次间隔"预览，后端算好直接给，前端不重复实现 SM-2

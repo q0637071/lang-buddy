@@ -3,6 +3,8 @@ import SwiftUI
 /// AI 对话。原生版和网页版的区别就在这一屏：全屏气泡、键盘跟随、自动滚到底。
 struct ChatView: View {
     @EnvironmentObject var app: AppState
+    /// nil = 自由聊天；有值 = 情景练习，AI 会按这个角色和目标推进
+    var scenario: Scenario? = nil
 
     @State private var messages: [ChatMessage] = []
     @State private var draft = ""
@@ -61,7 +63,8 @@ struct ChatView: View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
                 Button {
-                    app.route = .home
+                    // 从场景进来的就退回场景列表，否则回首页
+                    app.route = scenario == nil ? .home : .scenarios
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 18, weight: .semibold))
@@ -69,7 +72,14 @@ struct ChatView: View {
                         .frame(width: 44, height: 44)
                 }
                 Spacer()
-                Text("AI 对话练习").font(.system(size: 16, weight: .semibold))
+                VStack(spacing: 1) {
+                    Text(scenario == nil ? "AI 对话练习" : scenario!.title)
+                        .font(.system(size: 16, weight: .semibold))
+                    if let s = scenario {
+                        Text(s.emoji + " 情景练习")
+                            .font(.system(size: 11)).foregroundColor(Theme.muted)
+                    }
+                }
                 Spacer()
                 Menu {
                     Toggle("自动朗读 AI 回复", isOn: $autoSpeak)
@@ -170,8 +180,11 @@ struct ChatView: View {
             Text("👋").font(.system(size: 40))
             Text("说点什么，开始练习吧")
                 .font(.system(size: 15)).foregroundColor(Theme.muted)
-            Text("AI 会按你的水平（\(app.user?.levelText ?? "初级")）调整难度")
+            Text(scenario.map { "目标：\($0.goal ?? $0.brief)" }
+                 ?? "AI 会按你的水平（\(app.user?.levelText ?? "初级")）调整难度")
                 .font(.system(size: 13)).foregroundColor(Theme.muted.opacity(0.8))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 30)
         }
     }
 
@@ -441,12 +454,24 @@ struct ChatView: View {
     // MARK: - 数据
 
     private func load() async {
-        async let h = try? await API.shared.chatHistory()
         async let l = try? await API.shared.languages()
-        messages = await h ?? []
+        // 情景练习每次都是一场新对话，不该把自由聊天的历史拉进来，
+        // 否则 AI 会被上一场的话题带跑
+        if scenario == nil {
+            messages = (try? await API.shared.chatHistory()) ?? []
+        } else {
+            messages = []
+        }
         languages = await l ?? []
         if let target = app.user?.targetLang, !target.isEmpty { replyLang = target }
         loading = false
+
+        // 场景由 AI 先开口，学生才知道该接什么——不然进来面对空白页会愣住
+        if let s = scenario, let opener = s.opener, !opener.isEmpty, messages.isEmpty {
+            let m = ChatMessage(role: "ai", content: opener)
+            messages = [m]
+            if autoSpeak { Task { await speaker.speak(opener, voice: voice, id: m.id) } }
+        }
     }
 
     private func send() async {
@@ -466,7 +491,8 @@ struct ChatView: View {
             let reply = try await API.shared.sendChat(
                 message: text,
                 history: messages.dropLast().map { $0 },   // 不含刚发出的这条
-                inputLang: inputLang, replyLang: replyLang
+                inputLang: inputLang, replyLang: replyLang,
+                scenarioId: scenario?.id
             )
             let aiMsg = ChatMessage(role: "ai", content: reply)
             messages.append(aiMsg)
