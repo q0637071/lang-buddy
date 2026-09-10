@@ -51,18 +51,37 @@ Xcode → **File → New → Project** → 选 **iOS** → **App** → Next
 
 ## 每次我更新代码后
 
-我改完推到 GitHub，你这边：
+我改完推到 GitHub，你这边跑一条：
 
 ```bash
-cd ~/lang-buddy && git pull
+~/Desktop/my_lang_project/lang-buddy/ios-native/sync-to-xcode.sh
 ```
 
-然后把 `ios-native/LangBuddy/` 里变动的文件重新拖进 Xcode 覆盖，
-或者直接在访达里复制过去覆盖同名文件。
+它会 `git pull`、把 `.swift` 拷进 Xcode 工程目录，并且告诉你有没有**新文件**
+需要手动拖进 Xcode。然后 Xcode 里 `Cmd+Shift+K` 清一下再 Run。
 
-> 更省事的做法：新建工程时把工程建在 `ios-native/` 旁边，然后用
-> **File → Add Files** 时**不勾** Copy items，这样文件是引用的，
-> `git pull` 之后 Xcode 里自动就是新的。第一次设置时可以直接这么选。
+工程不在默认位置的话：
+
+```bash
+XCODE_SRC=~/你的路径/LangBuddy/LangBuddy ~/.../ios-native/sync-to-xcode.sh
+```
+
+### ⚠️ 为什么不能只 `git pull`
+
+Xcode 工程里的 `.swift` 是**复制**进去的，不是引用仓库文件。只 pull 不拷贝，
+Xcode 编译的还是旧副本，报错会长这样 —— 看起来像代码写错了，其实是没同步：
+
+```
+Cannot find type 'Scenario' in scope
+Type 'AppState.Route' has no member 'scenarios'
+Value of type 'API' has no member 'dailyPlan'
+```
+
+**新增文件**光拷贝也不够，Xcode 不认识它，必须拖进去加入 target。脚本会提醒。
+
+拖的时候：**Copy items if needed 不要勾**（文件已经在工程目录里了），
+**Add to targets 勾上 LangBuddy**。勾了 Copy 会生成 `OrbitView 2.swift`
+这种副本，报 Invalid redeclaration。
 
 ---
 
