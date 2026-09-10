@@ -312,12 +312,19 @@ struct AvatarStatus: Codable {
     let remainingSeconds: Int?
     let maxCallSeconds: Int?
     let globalExhausted: Bool?
+    // 试用次数：每个 IP 每月 N 次，每次 maxCallSeconds
+    let monthlyCalls: Int?
+    let usedCalls: Int?
+    let remainingCalls: Int?
 
     /// -1 是后端给不限量账号的约定值
     var isUnlimited: Bool { unlimited == true || remainingSeconds == -1 }
+    /// 老后端不返回这个字段，当成还有得用，真打不了后端会自己拦
+    var callsLeft: Int { remainingCalls ?? 1 }
     var canStart: Bool {
-        guard enabled, isMember == true, globalExhausted != true else { return false }
-        return isUnlimited || (remainingSeconds ?? 0) > 0
+        // 不再要求会员：非会员也有试用次数，能不能打完全看额度
+        guard enabled, globalExhausted != true else { return false }
+        return isUnlimited || (callsLeft > 0 && (remainingSeconds ?? 0) > 0)
     }
 }
 

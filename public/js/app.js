@@ -1174,7 +1174,7 @@
     const parts = [
       `正在通话 ${a.activeCalls}/${a.maxConcurrent} 路`,
       `本月 ${a.distinctIps} 个 IP 用过`,
-      `每 IP 上限 ${a.perIpMinutes} 分钟`,
+      `每 IP 每月 ${a.perIpCalls} 次 / ${a.perIpMinutes} 分钟`,
     ];
     if (a.remainingSeconds <= 0) parts.push('⚠️ 额度已用尽，已停发新通话');
     $('#adminAvatarMeta').textContent = parts.join('　·　');
@@ -1183,7 +1183,7 @@
     const rows = a.topIps || [];
     wrap.hidden = rows.length === 0;
     $('#adminAvatarIpBody').innerHTML = rows
-      .map(r => `<tr><td>${escapeHtml(r.ip)}</td><td>${fmtSeconds(r.seconds)}</td></tr>`)
+      .map(r => `<tr><td>${escapeHtml(r.ip)}</td><td>${r.calls || 0}</td><td>${fmtSeconds(r.seconds)}</td></tr>`)
       .join('');
   }
 
@@ -1193,9 +1193,9 @@
     if (!cta || !btn) return;
     try {
       const s = await api('/avatar/status');
-      // 功能没开、或不是会员：整张卡片不出现（非会员由会员提示条负责引导，
-      // 这个功能的单位成本远高于会员费，不能放进免费额度）
-      if (!s.enabled || !s.isMember) { cta.hidden = true; return; }
+      // 现在非会员也能试用（每 IP 每月 2 次 × 1 分钟），所以不再按会员身份藏卡片。
+      // 挡成本的是后端那三道闸门，不是这里的显示逻辑。
+      if (!s.enabled) { cta.hidden = true; return; }
       cta.hidden = false;
       // 全站名额用尽是账单硬顶，管理员也一样打不了，要先判断
       if (s.globalExhausted) {
@@ -1218,12 +1218,16 @@
       }
       // 额度用完时不能让入口凭空消失——用户只会觉得"功能怎么突然没了"。
       // 卡片保留、按钮禁用，把原因写在副标题上。
-      const out = s.remainingSeconds <= 0;
+      // 次数和总时长任意一道用尽都打不了。次数是主要的展示口径——
+      // "还剩 1 次" 比 "还剩 73 秒" 直观，用户也才知道一次能讲多久。
+      const callsLeft = s.remainingCalls != null ? s.remainingCalls : 1;
+      const out = callsLeft <= 0 || s.remainingSeconds <= 0;
       btn.disabled = out;
-      btn.textContent = out ? '额度已用完' : '立即连接';
+      btn.textContent = out ? '试用次数已用完' : '免费试用';
+      const once = Math.round((s.maxCallSeconds || 60) / 60);
       $('#avatarCtaSub').textContent = out
-        ? `本月 ${s.monthlyMinutes} 分钟体验额度已用完，下月 1 日重置`
-        : `免费体验 ${fmtSeconds(s.remainingSeconds)}（每月 ${s.monthlyMinutes} 分钟）`;
+        ? `本月 ${s.monthlyCalls} 次免费试用已用完，下月 1 日重置`
+        : `免费试用还剩 ${callsLeft} 次，每次 ${once} 分钟（每月 ${s.monthlyCalls} 次）`;
     } catch {
       cta.hidden = true; // 状态查不到就当没开，不要给个点了报错的入口
     }

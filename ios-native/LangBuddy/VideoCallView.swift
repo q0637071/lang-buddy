@@ -109,10 +109,10 @@ struct VideoCallView: View {
                     Button("回首页") { app.route = .home }
                         .buttonStyle(PrimaryButtonStyle())
                 } else if status?.canStart == true {
-                    Button(starting ? "接通中…" : "开始通话") { Task { await start() } }
+                    Button(starting ? "接通中…" : "免费试用") { Task { await start() } }
                         .buttonStyle(PrimaryButtonStyle(enabled: !starting))
                         .disabled(starting)
-                    Text("通话按分钟计费，用完当月额度会自动停止")
+                    Text("到时间会自动结束，不会多扣次数")
                         .font(.system(size: 12)).foregroundColor(.white.opacity(0.5))
                 } else if !loading {
                     Button("回首页") { app.route = .home }
@@ -126,17 +126,18 @@ struct VideoCallView: View {
     private var subtitleText: String {
         guard let s = status else { return "" }
         if !s.enabled { return "这个功能还没开启" }
-        if s.isMember != true { return "视频通话是会员功能\n请先开通会员" }
         if s.globalExhausted == true { return "本月体验名额已满\n下月 1 日恢复" }
         if s.isUnlimited { return "管理员账号，不限时长" }
-        let left = s.remainingSeconds ?? 0
-        if left <= 0 { return "本月体验额度已用完\n下月 1 日重置" }
-        return "本月还可通话 \(fmt(left))\n说英语就行，AI 会按你的水平回应"
+        if s.callsLeft <= 0 || (s.remainingSeconds ?? 0) <= 0 {
+            return "本月 \(s.monthlyCalls ?? 2) 次免费试用已用完\n下月 1 日重置"
+        }
+        let once = max(1, (s.maxCallSeconds ?? 60) / 60)
+        return "免费试用还剩 \(s.callsLeft) 次，每次 \(once) 分钟\n说英语就行，AI 会按你的水平回应"
     }
 
     private var remainText: String {
         guard let s = status, !s.isUnlimited else { return "" }
-        return "本月剩余 \(fmt(max(0, s.remainingSeconds ?? 0)))"
+        return "本月还剩 \(max(0, s.callsLeft)) 次"
     }
 
     private var timeText: String {

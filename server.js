@@ -44,8 +44,11 @@ const TAVUS_BASE_URL = process.env.TAVUS_BASE_URL || 'https://tavusapi.com/v2';
 const TAVUS_FACE_ID = process.env.TAVUS_FACE_ID || process.env.TAVUS_REPLICA_ID; // 数字人形象
 const TAVUS_PAL_ID = process.env.TAVUS_PAL_ID || process.env.TAVUS_PERSONA_ID;   // 人设，可留空
 // 额度按登录 IP 记（不是按账号），同一 IP 注册小号也共用这一份。
-// 现阶段用户量小、Tavus 免费额度只有20分钟，先给每个 IP 1 分钟够体验就行。
-const AVATAR_MONTHLY_MINUTES = Number(process.env.AVATAR_MONTHLY_MINUTES || 1);
+// 试用规则：每个 IP 每月 2 次、每次 1 分钟。
+// 分成"次数"和"总秒数"两道是有意的：只限总秒数的话，用户可以每次讲十几秒就挂断，
+// 靠短通话把次数刷上去；而 Tavus 每场最低计 30 秒，场次越多越亏。
+const AVATAR_MONTHLY_CALLS = Number(process.env.AVATAR_MONTHLY_CALLS || 2);
+const AVATAR_MONTHLY_MINUTES = Number(process.env.AVATAR_MONTHLY_MINUTES || 2);
 // 全站每月总闸门。按 IP 限额只防得住"一个人用太多"，防不住"来的人太多"——
 // Tavus 套餐用超了会自动按 $0.37/分钟计费且没有上限，几百个新用户就能刷出一笔
 // 意料之外的账单。这道闸门就是账单的硬顶，设成你套餐包含的分钟数
@@ -57,7 +60,9 @@ const AVATAR_GLOBAL_MONTHLY_MINUTES = Number(process.env.AVATAR_GLOBAL_MONTHLY_M
 // Tavus 套餐的并发上限（Free/Starter 1、Builder 3、Growth 10、Business 15）。
 // 超了 Tavus 会直接拒绝建流，与其让用户撞上一个看不懂的报错，不如我们先拦住说清楚。
 const AVATAR_MAX_CONCURRENT = Number(process.env.AVATAR_MAX_CONCURRENT || 3);
-const AVATAR_MAX_CALL_SECONDS = Number(process.env.AVATAR_MAX_CALL_SECONDS || 300);
+// 单次通话上限。试用是"每次 1 分钟"，所以这里就是 60 秒——Tavus 侧也会按这个值
+// 设 max_call_duration，即使前端不挂断，Tavus 自己也会到点断开，不会超时烧钱。
+const AVATAR_MAX_CALL_SECONDS = Number(process.env.AVATAR_MAX_CALL_SECONDS || 60);
 // 通话期间前端每 20 秒报一次心跳。结算时按"最后一次心跳"算时长，而不是"到现在为止"——
 // 否则用户讲了30秒直接关页面，隔一会儿再回来会被按单次上限满额扣掉5分钟。
 // 宽限比心跳间隔略长，覆盖最后一次心跳到真正断开之间那一小段（这段 Tavus 是要收钱的）。
@@ -1147,6 +1152,7 @@ app.get('/api/health', (req, res) => {
     ...(avatarEnabled() ? {
       avatarGlobalMinutes: AVATAR_GLOBAL_MONTHLY_MINUTES,
       avatarPerIpMinutes: AVATAR_MONTHLY_MINUTES,
+      avatarPerIpCalls: AVATAR_MONTHLY_CALLS,
       avatarMaxCallSeconds: AVATAR_MAX_CALL_SECONDS,
       avatarMaxConcurrent: AVATAR_MAX_CONCURRENT,
     } : {}),
@@ -1481,8 +1487,10 @@ function avatarIpUsage(db, ip) {
   const thisMonth = monthKey(new Date());
   let rec = db.avatarIpUsage[key];
   if (!rec || rec.month !== thisMonth) {
-    rec = db.avatarIpUsage[key] = { month: thisMonth, seconds: 0 };
+    rec = db.avatarIpUsage[key] = { month: thisMonth, seconds: 0, calls: 0 };
   }
+  // calls 是后加的字段，老记录里没有，补 0 免得 NaN 一路传到额度判断里
+  if (typeof rec.calls !== 'number') rec.calls = 0;
   return rec;
 }
 
@@ -1523,9 +1531,20 @@ function avatarGlobalQuota(db) {
 function avatarQuota(db, user, ip) {
   if (!user.avatarUsage) user.avatarUsage = { active: null };
   const limit = AVATAR_MONTHLY_MINUTES * 60;
-  if (avatarUnlimited(user)) return { used: 0, limit: Infinity, remaining: Infinity, unlimited: true };
-  const used = avatarIpUsage(db, ip).seconds || 0;
-  return { used, limit, remaining: Math.max(0, limit - used), unlimited: false };
+  if (avatarUnlimited(user)) {
+    return {
+      used: 0, limit: Infinity, remaining: Infinity, unlimited: true,
+      calls: 0, callsLimit: Infinity, callsRemaining: Infinity,
+    };
+  }
+  const rec = avatarIpUsage(db, ip);
+  const used = rec.seconds || 0;
+  const calls = rec.calls || 0;
+  return {
+    used, limit, remaining: Math.max(0, limit - used), unlimited: false,
+    calls, callsLimit: AVATAR_MONTHLY_CALLS,
+    callsRemaining: Math.max(0, AVATAR_MONTHLY_CALLS - calls),
+  };
 }
 
 // 把上一场会话的用量落账。用户正常点结束会走这里；异常退出（关浏览器/断网）则等他
@@ -1546,7 +1565,13 @@ function settleAvatarSession(db, user, exact = false) {
   const charge = Math.max(elapsed, 30); // Tavus 每场最低计 30 秒，这是真实成本
 
   // 落到发起这通电话时记录的 IP 上（中途换网也算在起始 IP，避免切网重置额度）
-  if (!avatarUnlimited(user)) avatarIpUsage(db, u.active.ip).seconds += charge;
+  if (!avatarUnlimited(user)) {
+    const rec = avatarIpUsage(db, u.active.ip);
+    rec.seconds += charge;
+    // 次数和秒数一起记：走到这里说明有过心跳、人真的进去了。
+    // 点开就退 / 接通失败在上面已经 return 了，不算一次——"没用就不该扣"
+    rec.calls += 1;
+  }
   avatarGlobalUsage(db).seconds += charge; // 全站总量不分身份，管理员的也算
   u.active = null;
 }
@@ -1567,6 +1592,10 @@ app.get('/api/avatar/status', requireAuth, (req, res) => {
     usedSeconds: q.used,
     remainingSeconds: q.unlimited ? -1 : q.remaining,
     maxCallSeconds: AVATAR_MAX_CALL_SECONDS,
+    // 试用次数。前端主要展示这个——"还剩1次"比"还剩73秒"好懂
+    monthlyCalls: AVATAR_MONTHLY_CALLS,
+    usedCalls: q.unlimited ? 0 : q.calls,
+    remainingCalls: q.unlimited ? -1 : q.callsRemaining,
     globalExhausted: g.remaining <= 0,
     // 全站用量只给超级管理员看，普通用户没必要知道后台还剩多少
     ...(isSuperAdminName(user.username)
@@ -1575,7 +1604,10 @@ app.get('/api/avatar/status', requireAuth, (req, res) => {
   });
 });
 
-app.post('/api/avatar/conversation', requireMember, rateLimit(6), async (req, res) => {
+// 开放给所有登录用户试用（原来是 requireMember）。挡住成本的是下面三道闸门，
+// 不是会员身份：每 IP 每月 2 次 × 1 分钟、全站月度硬顶、并发上限。
+// 要收回成只给会员，把 requireAuth 改回 requireMember 就行。
+app.post('/api/avatar/conversation', requireAuth, rateLimit(6), async (req, res) => {
   if (!avatarEnabled()) return res.status(503).json({ error: 'AI 视频通话功能尚未开启' });
   const db = loadDB();
   const user = db.users[req.session.userId];
@@ -1592,6 +1624,11 @@ app.post('/api/avatar/conversation', requireMember, rateLimit(6), async (req, re
   }
 
   const q = avatarQuota(db, user, clientIp);
+  // 次数和总时长各判一道，先撞上哪道就说哪道——错误信息含糊会让用户反复重试
+  if (q.callsRemaining <= 0) {
+    saveDB(db);
+    return res.status(403).json({ error: `AI 视频通话每月试用 ${AVATAR_MONTHLY_CALLS} 次已用完，下月1日重置` });
+  }
   if (q.remaining <= 0) {
     saveDB(db);
     return res.status(403).json({ error: `AI 视频通话每月体验额度（${AVATAR_MONTHLY_MINUTES}分钟）已用完，下月1日重置` });
@@ -2792,7 +2829,7 @@ app.get('/api/admin/overview', requireAdmin, (req, res) => {
       const g = avatarGlobalQuota(db);
       const ipRows = Object.entries(db.avatarIpUsage || {})
         .filter(([, r]) => r.month === monthKey(new Date()) && r.seconds > 0)
-        .map(([ip, r]) => ({ ip, seconds: r.seconds }))
+        .map(([ip, r]) => ({ ip, seconds: r.seconds, calls: r.calls || 0 }))
         .sort((a, b) => b.seconds - a.seconds);
       return {
         enabled: true,
@@ -2802,6 +2839,7 @@ app.get('/api/admin/overview', requireAdmin, (req, res) => {
         activeCalls: countActiveAvatarCalls(db, false),
         maxConcurrent: AVATAR_MAX_CONCURRENT,
         perIpMinutes: AVATAR_MONTHLY_MINUTES,
+        perIpCalls: AVATAR_MONTHLY_CALLS,
         distinctIps: ipRows.length,
         // 具体 IP 属于个人信息，跟注册IP一样只给超级管理员
         topIps: canSeeIp ? ipRows.slice(0, 10) : [],
