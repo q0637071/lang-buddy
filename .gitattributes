@@ -1,0 +1,3 @@
+# 我在 Windows 上开发，用户在 macOS 上跑。shell 脚本一旦带上 CRLF，
+# macOS 会报 bad interpreter: /bin/bash^M，所以强制 LF。
+*.sh text eol=lf
