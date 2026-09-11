@@ -68,6 +68,23 @@
     : '/api';
   const TOKEN_KEY = 'lb_auth_token';
 
+  /// 请求断了之后探一次活，判断到底是"连不上服务器"还是"服务器活着、只是这一条断了"。
+  /// 探活用最轻的 /health，超时给短一点——用户已经在等一个错误提示了，不能再卡好几秒。
+  async function diagnoseNetworkError() {
+    try {
+      const c = new AbortController();
+      const t = setTimeout(() => c.abort(), 6000);
+      const r = await fetch(API_BASE + '/health', { signal: c.signal, cache: 'no-store' });
+      clearTimeout(t);
+      if (r.ok) {
+        // 服务器好好的，说明刚才那一下是偶发（常见于服务端正在发新版本、
+        // 或者移动网络切基站）。让用户直接重试，别去折腾网络设置。
+        return '刚才这次请求断了，服务器是正常的，请再点一次';
+      }
+    } catch { /* 探活也失败，那就是真的连不上 */ }
+    return '连不上服务器，请检查网络后重试';
+  }
+
   function getAuthToken() { return safeGetItem(TOKEN_KEY); }
   function setAuthToken(t) {
     if (t) safeSetItem(TOKEN_KEY, t);
@@ -100,7 +117,10 @@
     } catch (e) {
       clearTimeout(timer);
       if (e.name === 'AbortError') throw new Error('网络较慢，请求超时了，请重试');
-      throw new Error('网络连接失败，请检查网络后重试');
+      // fetch 直接抛错说明连响应都没拿到，可能是自己断网，也可能是服务端正好在重启、
+      // 把这一条连接掐了。两者的处理方式完全不同，笼统说一句"网络连接失败"
+      // 会让用户一直去查自己的网络。这里补一次探活，把两种情况分开。
+      throw new Error(await diagnoseNetworkError());
     } finally {
       clearTimeout(timer);
     }
