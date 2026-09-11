@@ -2088,11 +2088,15 @@
     return { verts, edges };
   }
 
-  /// canvas 上画一个匀速自转的线框球。opts: { level, color, spin, dot, lineWidth, alpha, radiusRatio }
+  // 焦距 = 半径 × 这个比例。线框球和挂在上面的功能节点必须共用同一个值，
+  // 否则两者的透视不一样，节点看着就是浮在球外面而不是贴在球面上。
+  const FOCAL_RATIO = 3.2;
+
+  /// canvas 上画一个匀速自转的线框球。opts: { level, color, spin, dot, lineWidth, alpha, radiusRatio, driven }
   function createWireSphere(canvas, opts = {}) {
     const o = {
       level: 2, color: '255,255,255', spin: 0.00022, dot: 1.5,
-      lineWidth: 1, alpha: 1, radiusRatio: 0.42, tilt: -0.42, ...opts,
+      lineWidth: 1, alpha: 1, radiusRatio: 0.42, tilt: -0.42, driven: false, ...opts,
     };
     const { verts, edges } = icosphere(o.level);
     const ctx = canvas.getContext('2d');
@@ -2120,13 +2124,17 @@
     // start() 得先同步画一帧，否则用户切回来之前这里是一块空白画布。
     function paint(dt) {
       if (!reduce) yaw += o.spin * dt;
+      paintWith(yaw, o.tilt, Math.min(w, h) * o.radiusRatio);
+    }
 
+    /// 按给定的角度和半径画。功能星球用这个接口把自己的 yaw/pitch/半径灌进来，
+    /// 两边用同一套参数算投影，节点才是真的贴在网格面上，而不是各转各的。
+    function paintWith(yawV, tiltV, R) {
       ctx.clearRect(0, 0, w, h);
       const cx = w / 2, cy = h / 2;
-      const R = Math.min(w, h) * o.radiusRatio;
-      const F = R * 3.2;                                  // 焦距跟着半径走，不同尺寸透视一致
-      const cY = Math.cos(yaw), sY = Math.sin(yaw);
-      const cX = Math.cos(o.tilt), sX = Math.sin(o.tilt);
+      const F = R * FOCAL_RATIO;                          // 焦距跟着半径走，不同尺寸透视一致
+      const cY = Math.cos(yawV), sY = Math.sin(yawV);
+      const cX = Math.cos(tiltV), sX = Math.sin(tiltV);
 
       for (let i = 0; i < verts.length; i++) {
         const v = verts[i];
@@ -2166,19 +2174,21 @@
     const ro = window.ResizeObserver ? new ResizeObserver(resize) : null;
     return {
       start() {
-        if (raf) return;
         resize();
         ro?.observe(canvas);
+        // driven=true 时由调用方每帧喂参数，自己不要再开一个 rAF，
+        // 否则两个循环各画各的，画面会抖
+        if (o.driven || raf) return;
         prev = 0;
         paint(0);                     // 先同步出图，后台标签页里也不会是空白
         raf = requestAnimationFrame(draw);
       },
-      resize,
       stop() {
         if (raf) { cancelAnimationFrame(raf); raf = null; }
         ro?.disconnect();
       },
-      nudge(v) { yaw += v; },      // 拖动功能星球时，背景球跟着一起转，才像同一个球
+      render: paintWith,           // driven 模式的入口：render(yaw, pitch, 半径)
+      get size() { return { w, h }; },
     };
   }
 
@@ -2192,7 +2202,7 @@
             const cv = document.getElementById('heroWire');
             if (!cv) return;
             sphere = createWireSphere(cv, {
-              level: 2, color: '198,240,255', spin: 0.00011, dot: 1.35,
+              level: 2, color: '198,240,255', spin: (Math.PI * 2) / 30000, dot: 1.35,
               alpha: 0.92, radiusRatio: 0.34, lineWidth: 0.9, tilt: -0.3,
             });
           }
@@ -2220,8 +2230,12 @@
       { nav: 'profile',    label: '我的',     desc: '会员、目标语言、学习设置',     color: '#94a3b8' },
     ];
 
-    const PERSPECTIVE = 620;          // 焦距：越小透视越夸张，620 大概是"看得出立体但不变形"
-    const AUTO_SPIN = 0.0032;         // 每毫秒的自转弧度，约 11 秒一圈
+    const RADIUS_RATIO = 0.44;        // 和线框球用同一个比例，两者半径才一致
+    // 自转速度统一按"多少秒一圈"来写，别直接写弧度——之前写 0.0032 rad/ms
+    // 看着像个小数，其实是 2 秒一圈，快得根本看不清哪个功能转到了前面。
+    // 背景线框球必须用同一个值，否则两层会互相打滑，一眼就看出不是同一颗球。
+    const SECONDS_PER_TURN = 30;
+    const AUTO_SPIN = (Math.PI * 2) / (SECONDS_PER_TURN * 1000);
     const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
     let nodes = [];                   // { f, bx,by,bz, el, x,y,scale,depth }
@@ -2293,7 +2307,7 @@
       links = edges.map(([a, b]) => ({ a, b, path: mk('fo-link', 1.4), cx: 0, cy: 0, vx: 0, vy: 0 }));
 
       wire = createWireSphere(document.getElementById('featOrbitWire'), {
-        level: 2, color: '150,240,235', spin: 0.00016, dot: 1.1, alpha: 0.5, radiusRatio: 0.44,
+        level: 2, color: '150,240,235', dot: 1.1, alpha: 0.5, driven: true,
       });
       wire.start();
 
@@ -2306,12 +2320,15 @@
     function geom() {
       const st = stage();
       const w = st.clientWidth, h = st.clientHeight;
-      // 半径跟着舞台走，两边留出节点胶囊的宽度，免得被裁掉
-      return { w, h, cx: w / 2, cy: h / 2, r: Math.max(74, Math.min(h * 0.40, w * 0.30)) };
+      // 半径必须和线框球算法完全一致（min(w,h) × 同一个比例），
+      // 差一点点节点就会浮在网格外面，看着像没贴上去
+      return { w, h, cx: w / 2, cy: h / 2, r: Math.min(w, h) * RADIUS_RATIO };
     }
 
     function project(dt) {
       const g = geom();
+      // 线框球用完全相同的 yaw / pitch / 半径重画，它和节点就是同一颗球
+      wire?.render(yaw, pitch, g.r);
       const cosY = Math.cos(yaw), sinY = Math.sin(yaw);
       const cosX = Math.cos(pitch), sinX = Math.sin(pitch);
       let bestZ = -Infinity, bestI = -1;
@@ -2324,7 +2341,7 @@
         const z2 = nd.by * sinX + z1 * cosX;
 
         const X = x1 * g.r, Y = y2 * g.r, Z = z2 * g.r;
-        const s = PERSPECTIVE / (PERSPECTIVE - Z);   // 近大远小
+        const s = (g.r * FOCAL_RATIO) / (g.r * FOCAL_RATIO - Z);   // 近大远小，和线框球同一套透视
         nd.x = g.cx + X * s;
         nd.y = g.cy + Y * s;
         nd.scale = s;
@@ -2439,7 +2456,6 @@
         const now = performance.now();
         const dt = Math.max(1, now - lastT);
         yaw += dx * 0.008;
-        wire?.nudge(dx * 0.008);
         pitch = Math.max(-0.7, Math.min(0.7, pitch + dy * 0.006));
         yawVel = (dx * 0.008) / dt * 16.7;           // 换算成"每帧"的速度，松手后当惯性用
         pitchVel = 0;
