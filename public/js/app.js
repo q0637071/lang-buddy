@@ -134,7 +134,7 @@
   }
 
   // ---------- 视图切换 ----------
-  const VIEWS = ['landing', 'dashboard', 'tutor', 'vocab', 'grammar', 'translate', 'colloquial', 'mistakes', 'essay', 'profile', 'admin'];
+  const VIEWS = ['landing', 'dashboard', 'tutor', 'facetime', 'vocab', 'grammar', 'translate', 'colloquial', 'mistakes', 'essay', 'profile', 'admin'];
 
   function showView(name) {
     if (!state.user && name !== 'landing') name = 'landing';
@@ -151,6 +151,7 @@
     featOrbit.setActive(name === 'dashboard');
     heroWire.setActive(name === 'landing');
     if (name === 'tutor') renderTutor();
+    if (name === 'facetime') refreshAvatarButton();
     if (name === 'vocab') {
       state.vocabMode = 'review';
       $all('#vocabModeToggle .chip').forEach(c => c.classList.toggle('active', c.dataset.mode === 'review'));
@@ -559,7 +560,6 @@
       '🎁 非会员每天可免费体验 5 分钟 AI 对话，开通会员畅享无限时长。',
       '🎁 当前可试用 1 分钟 AI 对话，在"我的"页面验证手机号即可解锁每天 5 分钟。');
     $('#tutorPanel').hidden = false;
-    refreshAvatarButton();
 
     const toggle = $('#autoSpeakToggle');
     toggle.checked = state.autoSpeak;
@@ -1184,55 +1184,67 @@
   }
 
   async function refreshAvatarButton() {
-    const cta = $('#avatarCta');
-    const btn = $('#btnAvatarCall');
-    if (!cta || !btn) return;
+    const btn = $safe('#btnAvatarCall');
+    const sub = $safe('#ftSub');
+    const note = $safe('#ftNote');
+    if (!btn || !sub) return;
+    const say = (subText, noteText = '') => {
+      sub.textContent = subText;
+      if (note) note.textContent = noteText;
+    };
     try {
       const s = await api('/avatar/status');
-      // 现在非会员也能试用（每 IP 每月 2 次 × 1 分钟），所以不再按会员身份藏卡片。
+      // 现在非会员也能试用（每 IP 每月 2 次 × 1 分钟），不按会员身份挡。
       // 挡成本的是后端那三道闸门，不是这里的显示逻辑。
-      if (!s.enabled) { cta.hidden = true; return; }
-      cta.hidden = false;
+      if (!s.enabled) {
+        btn.disabled = true;
+        btn.textContent = '暂未开放';
+        say('这个功能还没开启，先用「对话」页练也一样有效。');
+        return;
+      }
       // 全站名额用尽是账单硬顶，管理员也一样打不了，要先判断
       if (s.globalExhausted) {
         btn.disabled = true;
         btn.textContent = '本月名额已满';
-        $('#avatarCtaSub').textContent = s.globalLimitSeconds
+        say(s.globalLimitSeconds
           ? `全站额度 ${Math.round(s.globalLimitSeconds / 60)} 分钟已用尽，下月 1 日恢复`
-          : '本月体验名额已满，下月 1 日恢复';
+          : '本月体验名额已满，下月 1 日恢复');
         return;
       }
       // 超级管理员不限量，用于演示和排查
       if (s.unlimited) {
         btn.disabled = false;
         btn.textContent = '立即连接';
-        // 管理员顺带看一眼全站用了多少，好判断离套餐上限还有多远
-        $('#avatarCtaSub').textContent = s.globalLimitSeconds
-          ? `管理员不限时长 · 全站本月已用 ${fmtSeconds(s.globalUsedSeconds)} / ${Math.round(s.globalLimitSeconds / 60)} 分钟`
-          : '管理员账号，不限时长';
+        say('管理员账号，不限时长',
+          s.globalLimitSeconds
+            ? `全站本月已用 ${fmtSeconds(s.globalUsedSeconds)} / ${Math.round(s.globalLimitSeconds / 60)} 分钟`
+            : '');
         return;
       }
       // 额度用完时不能让入口凭空消失——用户只会觉得"功能怎么突然没了"。
-      // 卡片保留、按钮禁用，把原因写在副标题上。
-      // 次数和总时长任意一道用尽都打不了。次数是主要的展示口径——
-      // "还剩 1 次" 比 "还剩 73 秒" 直观，用户也才知道一次能讲多久。
+      // 页面保留、按钮禁用，把原因写清楚。
+      // 次数是主要的展示口径——"还剩 1 次"比"还剩 73 秒"直观，
+      // 用户也才知道一次能讲多久。
       const callsLeft = s.remainingCalls != null ? s.remainingCalls : 1;
       const out = callsLeft <= 0 || s.remainingSeconds <= 0;
+      const once = Math.round((s.maxCallSeconds || 60) / 60);
       btn.disabled = out;
       btn.textContent = out ? '试用次数已用完' : '免费试用';
-      const once = Math.round((s.maxCallSeconds || 60) / 60);
-      $('#avatarCtaSub').textContent = out
+      say(out
         ? `本月 ${s.monthlyCalls} 次免费试用已用完，下月 1 日重置`
-        : `免费试用还剩 ${callsLeft} 次，每次 ${once} 分钟（每月 ${s.monthlyCalls} 次）`;
+        : `免费试用还剩 ${callsLeft} 次，每次 ${once} 分钟`,
+        out ? '' : `每个月 ${s.monthlyCalls} 次，下月 1 日重置`);
     } catch {
-      cta.hidden = true; // 状态查不到就当没开，不要给个点了报错的入口
+      btn.disabled = true;
+      btn.textContent = '暂时打不开';
+      say('额度查询失败，请稍后再试。');
     }
   }
 
   async function startAvatarCall() {
     const btn = $('#btnAvatarCall');
     btn.disabled = true;
-    $('#avatarStatus').textContent = '正在接通AI 视频通话…';
+    $('#avatarCallStatus').textContent = '正在接通AI 视频通话…';
     $('#avatarStage').innerHTML = '';
     $('#avatarOverlay').hidden = false;
     try {
@@ -1253,9 +1265,9 @@
       avatarPingTimer = setInterval(() => {
         api('/avatar/ping', { method: 'POST' }).catch(() => {});
       }, 20000);
-      $('#avatarStatus').textContent = '接通后请允许摄像头和麦克风权限。';
+      $('#avatarCallStatus').textContent = '接通后请允许摄像头和麦克风权限。';
     } catch (err) {
-      $('#avatarStatus').textContent = '⚠️ ' + err.message;
+      $('#avatarCallStatus').textContent = '⚠️ ' + err.message;
       toast(err.message);
       $('#avatarOverlay').hidden = true;
     } finally {
@@ -2221,6 +2233,7 @@
   const featOrbit = (() => {
     const FEATURES = [
       { nav: 'tutor',      label: 'AI 对话',  desc: '打字或语音，AI 按你的水平陪练', color: '#0ABAB5' },
+      { nav: 'facetime',   label: '面对面',   desc: '和 AI 私教视频通话，看得见表情', color: '#22d3ee' },
       { nav: 'translate',  label: '同声传译', desc: '说一句，立刻听到另一种语言',   color: '#38bdf8' },
       { nav: 'vocab',      label: '背单词',   desc: '按遗忘曲线复习，顺带记词根',   color: '#f59e0b', badge: 'vocabDue' },
       { nav: 'grammar',    label: '语法精讲', desc: '一次讲透一个点，带 AI 批改',   color: '#a78bfa' },
@@ -2275,7 +2288,14 @@
           + (f.badge ? `<span class="fo-badge" data-badge="${f.badge}" hidden></span>` : '');
         el.addEventListener('click', () => pick(i));
         host.appendChild(el);
-        return { f, el, bx: ring * Math.cos(theta), by, bz: ring * Math.sin(theta) };
+        // front 是"这个节点转到正前方时 yaw 应该等于多少"。
+        // 推导：z1 = ring·sin(theta − yaw)，最大值在 theta − yaw = π/2，即 yaw = theta − π/2
+        return {
+          f, el, by,
+          bx: ring * Math.cos(theta),
+          bz: ring * Math.sin(theta),
+          front: theta - Math.PI / 2,
+        };
       });
 
       // 连线：每个节点连它在球面上最近的两个邻居，去重后大约十来条。
@@ -2327,6 +2347,10 @@
 
     function project(dt) {
       const g = geom();
+      // 舞台还没有尺寸（首页刚被隐藏、或本帧早于布局）时 r=0，
+      // 透视那一步会算出 0/0 = NaN，再顺着弹簧一路污染到 <path d>，
+      // 控制台会刷出几百条 "Expected number, MNaN,NaN"。这一帧直接跳过。
+      if (!(g.r > 0)) return;
       // 线框球用完全相同的 yaw / pitch / 半径重画，它和节点就是同一颗球
       wire?.render(yaw, pitch, g.r);
       const cosY = Math.cos(yaw), sinY = Math.sin(yaw);
@@ -2345,8 +2369,15 @@
         nd.x = g.cx + X * s;
         nd.y = g.cy + Y * s;
         nd.scale = s;
-        nd.depth = z2;                                // -1 最远，1 最近
-        if (z2 > bestZ) { bestZ = z2; bestI = i; }
+        nd.depth = z2;                                // -1 最远，1 最近。只用来做景深
+        // 选中判定比的是"方位角离正前方有多近"，不是"谁的 z 最大"。
+        // 用 z 的话，靠近南北极的节点环半径小（0.77 vs 1.00），z 天然比不过赤道上的，
+        // 实测 9 个节点里最上和最下那两个只在 3.1° 的窗口里当选——30 秒一圈时
+        // 只有 0.26 秒，转过去基本停不住，等于选不中。
+        // 改成比方位角之后每个节点各占一份，最窄窗口 26°（约 2.2 秒），
+        // 而且和俯仰完全无关，怎么上下拖都不影响。
+        const off = Math.abs(Math.atan2(Math.sin(yaw - nd.front), Math.cos(yaw - nd.front)));
+        if (-off > bestZ) { bestZ = -off; bestI = i; }
       });
 
       nodes.forEach((nd, i) => {
@@ -2432,8 +2463,9 @@
     function anglesFor(i) {
       const nd = nodes[i];
       const targetPitch = Math.max(-0.7, Math.min(0.7, -Math.asin(nd.by)));
-      const targetYaw = Math.atan2(nd.bx, nd.bz);
-      return { yaw: targetYaw, pitch: targetPitch };
+      // 直接用 build 时算好的 front。原来写的是 atan2(bx, bz)，那是 π/2 − theta，
+      // 正好是 theta − π/2 的相反数——会把节点转到正后方去
+      return { yaw: nd.front, pitch: targetPitch };
     }
 
     function pick(i) {

@@ -637,33 +637,9 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--p
   .avatar-stage { flex: 1; aspect-ratio: auto; max-height: none; }
 }
 
-/* AI 视频通话：主打功能，入口做成醒目卡片放在对话页顶部 */
-.avatar-cta {
-  display: flex; align-items: center; gap: 14px;
-  padding: 16px 18px; margin-bottom: 16px;
-  border-radius: var(--radius);
-  background: var(--gradient-primary);
-  box-shadow: var(--shadow-primary);
-  color: #fff;
-}
-.avatar-cta-icon { font-size: 30px; line-height: 1; flex: none; }
-.avatar-cta-text { flex: 1; min-width: 0; }
-.avatar-cta-title { font-weight: 700; font-size: 16px; }
-.avatar-cta-sub { font-size: 13px; opacity: .9; margin-top: 2px; }
-/* 卡片本身是主色渐变，按钮再用主色就糊成一片，这里反白更跳 */
-.avatar-cta .btn-primary {
-  flex: none; background: #fff; color: var(--primary-dark);
-  border-color: #fff; box-shadow: none;
-}
-.avatar-cta .btn-primary:hover:not(:disabled) { background: #f2fffe; }
-.avatar-cta .btn-primary:disabled { background: rgba(255,255,255,.55); color: var(--primary-dark); }
-@media (max-width: 600px) {
-  .avatar-cta { flex-wrap: wrap; gap: 10px; }
-  .avatar-cta-text { flex-basis: calc(100% - 48px); }
-  .avatar-cta .btn-primary { width: 100%; }
-}
+/* 原来对话页顶部那张 .avatar-cta 卡片已经整块搬进「面对面」独立页，样式一并删掉 */
 
-/* 首页把视频通话卡片做成主推 */
+/* 落地页把视频通话卡片做成主推 */
 .feature-card-highlight {
   position: relative;
   border: 2px solid var(--primary);
@@ -690,6 +666,54 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--p
 
 /* ============ 导航改版 ============ */
 /* 顶部菜单加图标，10个纯文字项扫读太费力 */
+
+/* ============ 与 AI 私教面对面 ============ */
+.ft-hero {
+  position: relative; overflow: hidden; border-radius: 22px; margin-bottom: 20px;
+  padding: 40px 28px 34px; text-align: center; color: #eaf3ff;
+  background: linear-gradient(160deg, #0d1020, #15203c 60%, #0b2230);
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 22px 50px -30px rgba(10,20,50,.8);
+}
+/* 两团光斑，让深色块不至于死板 */
+.ft-hero-bg { position: absolute; inset: 0; pointer-events: none; }
+.ft-hero-bg::before, .ft-hero-bg::after {
+  content: ""; position: absolute; border-radius: 50%; filter: blur(64px); opacity: .5;
+}
+.ft-hero-bg::before { width: 300px; height: 300px; background: var(--primary); top: -130px; left: -60px; }
+.ft-hero-bg::after { width: 260px; height: 260px; background: #38bdf8; bottom: -140px; right: -50px; }
+.ft-hero-inner { position: relative; }
+.ft-hero-badge {
+  display: inline-block; font-size: 11.5px; font-weight: 700; letter-spacing: .06em;
+  color: #7ef0ea; padding: 4px 11px; border-radius: 999px;
+  background: rgba(10,186,181,.16); border: 1px solid rgba(126,240,234,.3);
+}
+.ft-hero-title { font-size: 26px; font-weight: 800; margin: 14px 0 8px; letter-spacing: -.01em; }
+.ft-hero-sub { font-size: 14.5px; color: rgba(234,243,255,.72); margin-bottom: 20px; }
+.ft-hero-note { font-size: 12px; color: rgba(234,243,255,.45); margin-top: 12px; min-height: 1em; }
+
+.ft-points { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
+.ft-point {
+  display: flex; gap: 11px; padding: 16px; background: #fff;
+  border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow-xs);
+}
+.ft-point-icon { font-size: 20px; line-height: 1.2; flex: none; }
+.ft-point strong { display: block; font-size: 14px; margin-bottom: 4px; }
+.ft-point p { font-size: 12.5px; color: var(--text-muted); line-height: 1.6; }
+
+.ft-tips {
+  padding: 16px 18px; border-radius: 14px;
+  background: var(--primary-light); border: 1px solid rgba(10,186,181,.18);
+}
+.ft-tips strong { font-size: 13px; color: var(--primary-dark); }
+.ft-tips ul { margin: 8px 0 0; padding-left: 18px; }
+.ft-tips li { font-size: 13px; line-height: 1.8; color: var(--text); }
+
+@media (max-width: 720px) {
+  .ft-hero { padding: 30px 18px 26px; }
+  .ft-hero-title { font-size: 21px; }
+  .ft-points { grid-template-columns: 1fr; }
+}
 
 /* ============ 落地页的自转线框球 ============ */
 /* 只有没登录时能看到。整块改成深色：线框球在浅底上几乎看不见，
@@ -797,9 +821,8 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--p
   .feat-orbit-node { font-size: 12.5px; padding: 7px 11px 7px 8px; }
 }
 
-/* 关掉动效时不自转，也不做弹性回弹——但球还是能拖、功能照常能进 */
-@media (prefers-reduced-motion: reduce) {
-}
+/* 关掉动效时不自转、不做弹性回弹，这两件事在 JS 里判断（reduceMotion），
+   CSS 这边已经没有需要覆盖的动画了，所以不再留空的 media 块 */
 
 /* 首页功能宫格已换成上面的功能星球，宫格样式整块删掉了 */
 

@@ -22,6 +22,7 @@
     <nav class="main-nav" id="mainNav" hidden>
       <button class="nav-item" data-nav="dashboard">首页</button>
       <button class="nav-item" data-nav="tutor" title="AI 对话练习">对话</button>
+      <button class="nav-item" data-nav="facetime" title="与 AI 私教面对面视频通话">面授</button>
       <button class="nav-item" data-nav="translate" title="同声传译">同传</button>
       <button class="nav-item" data-nav="vocab" title="背单词">单词</button>
       <button class="nav-item" data-nav="grammar" title="语法精讲">语法</button>
@@ -106,8 +107,6 @@
     <div class="container">
       <h2 class="page-title">欢迎回来，<span id="dashNickname"></span> 👋</h2>
 
-      <!-- 功能宫格。以前首页只有状态卡片，所有功能都只能从顶部菜单进；
-           手机上菜单要横滑，第5个之后基本没人发现得了。 -->
       <!-- 功能星球：所有功能挂在一个可旋转的球面上，转到最前面的那个就是当前选中项。
            节点由 JS 生成（位置要按球面算），这里只留舞台和说明。 -->
       <section class="feat-orbit" id="featOrbit">
@@ -183,15 +182,6 @@
       <h2 class="page-title">AI 1对1 对话练习</h2>
       <div class="tts-notice" id="ttsNoticeTutor" hidden></div>
 
-      <!-- 主打功能，放在最显眼的位置：标题正下方、其余内容之前 -->
-      <div class="avatar-cta" id="avatarCta" hidden>
-        <div class="avatar-cta-icon">📹</div>
-        <div class="avatar-cta-text">
-          <div class="avatar-cta-title">和 AI 私教面对面视频通话</div>
-          <div class="avatar-cta-sub" id="avatarCtaSub"></div>
-        </div>
-        <button type="button" class="btn btn-primary" id="btnAvatarCall">立即连接</button>
-      </div>
       <div id="tutorPaywall" class="paywall paywall-banner" hidden>
         <p>🎁 非会员每天可免费体验 5 分钟 AI 对话，开通会员畅享无限时长。</p>
         <button class="btn btn-primary btn-sm" id="btnTutorUpgrade">立即开通会员</button>
@@ -310,6 +300,58 @@
           <button type="submit" class="btn btn-primary" id="chatSendBtn">发送</button>
         </form>
         <p class="hint" id="voiceHint"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 与 AI 私教面对面（数字人视频通话）。原来只是 AI 对话页顶部的一张卡片，
+       藏得太深，现在单独成一个功能页。 -->
+  <section class="view" id="view-facetime" hidden>
+    <div class="container container-narrow">
+      <h2 class="page-title">与 AI 私教面对面</h2>
+
+      <div class="ft-hero">
+        <div class="ft-hero-bg" aria-hidden="true"></div>
+        <div class="ft-hero-inner">
+          <div class="ft-hero-badge">真人形象 · 实时视频</div>
+          <h3 class="ft-hero-title">看得见表情，听得见语气</h3>
+          <p class="ft-hero-sub" id="ftSub">正在查询可用额度…</p>
+          <button type="button" class="btn btn-primary btn-lg" id="btnAvatarCall">开始通话</button>
+          <p class="ft-hero-note" id="ftNote"></p>
+        </div>
+      </div>
+
+      <div class="ft-points">
+        <div class="ft-point">
+          <span class="ft-point-icon">🗣️</span>
+          <div>
+            <strong>像跟真人上课</strong>
+            <p>AI 私教会看着你说话、点头、追问，比打字更接近真实对话的压力。</p>
+          </div>
+        </div>
+        <div class="ft-point">
+          <span class="ft-point-icon">🎯</span>
+          <div>
+            <strong>按你的水平出题</strong>
+            <p>接通前会把你的测评等级和目标语言带过去，难度自动贴合，不会一上来就听不懂。</p>
+          </div>
+        </div>
+        <div class="ft-point">
+          <span class="ft-point-icon">⏱️</span>
+          <div>
+            <strong>到点自动结束</strong>
+            <p>每次通话有固定时长，时间到了会自己挂断，不会多扣你的次数。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="ft-tips">
+        <strong>开始之前</strong>
+        <ul>
+          <li>浏览器会请求摄像头和麦克风权限，点「允许」才能接通。</li>
+          <li>建议戴耳机，避免 AI 的声音被麦克风收进去形成回声。</li>
+          <li>说错了不用停，直接往下讲，AI 会在回应里顺手帮你改。</li>
+        </ul>
       </div>
     </div>
   </section>
@@ -921,8 +963,10 @@
       <span class="avatar-quota-hint" id="avatarQuotaHint"></span>
       <button type="button" class="btn btn-danger btn-sm" id="btnAvatarEnd">结束通话</button>
     </div>
+    <!-- 这里原来也叫 avatarStatus，和 AI 对话页那个"待机中"撞了 id，
+         $('#avatarStatus') 永远取到前一个，接通提示全写错了地方 -->
     <div class="avatar-stage" id="avatarStage"></div>
-    <p class="form-hint" id="avatarStatus"></p>
+    <p class="form-hint" id="avatarCallStatus"></p>
   </div>
 </div>
 
