@@ -413,6 +413,51 @@ function isAdminName(username) {
   return isSuperAdminName(username) || (!!ADMIN_USERNAME && username === ADMIN_USERNAME);
 }
 
+// 管理员用户名是保留字，谁都不能注册。
+// 只靠注册接口那句"用户名已被注册"是不够的：那是因为账号恰好存在才挡住的，
+// 一旦管理员账号因为换库/迁移/手工改数据而消失，这个名字就空出来了，
+// 谁先抢注谁就直接是超级管理员——权限判定只看用户名字符串。
+//
+// 比较前先归一化，否则 "Administrator"、"ADMINISTRATOR"、"admin-istrator"
+// 以及首字母换成西里尔字母 а 的 "аdministrator" 都能绕过去。这些名字拿不到管理员
+// 权限（判定是严格 === ），但足够在界面上冒充管理员骗人。
+const HOMOGLYPHS = {
+  'а': 'a', 'ᴀ': 'a', 'е': 'e', 'о': 'o', 'ο': 'o', 'р': 'p', 'ρ': 'p',
+  'с': 'c', 'ϲ': 'c', 'у': 'y', 'х': 'x', 'ѕ': 's', 'і': 'i', 'ι': 'i',
+  'ј': 'j', 'ԁ': 'd', 'ɡ': 'g', 'ν': 'v', 'τ': 't', 'α': 'a', 'ε': 'e',
+  'κ': 'k', 'μ': 'm', 'η': 'n', 'ⅿ': 'm', 'ⅼ': 'l', 'ｒ': 'r', 'ｔ': 't',
+};
+// 会被忽略的分隔符/不可见字符。光去 ASCII 连字符不够：实测 admin‐istrator
+// （U+2010 连字符，肉眼和普通减号一模一样）能绕过去，所以 Unicode 短横、全角标点、
+// 零宽字符都要一起去掉。写成转义是刻意的——源码里放不可见字符没人看得出来。
+const SEPARATORS = /[\s._\-\u00AD\u2010\u2011\u2012\u2013\u2014\u2015\u2212\uFF0D\uFF3F\uFF0E\u200B\u200C\u200D\u2060]/g;
+
+function normalizeUsername(name) {
+  return String(name || '')
+    .trim()
+    .toLowerCase()
+    .replace(SEPARATORS, '')                             // admin-istrator → administrator
+    .replace(/[^\x00-\x7F]/g, ch => HOMOGLYPHS[ch] || ch); // 同形异体字折回拉丁
+}
+
+// 除了两个配置里的管理员名，再挡一批容易被拿来冒充官方的名字
+const RESERVED_USERNAMES = new Set([
+  'admin', 'administrator', 'root', 'superadmin', 'sysadmin', 'system',
+  'official', 'staff', 'support', 'service', 'langbuddy',
+  '管理员', '超级管理员', '官方', '客服',
+].map(normalizeUsername));
+
+/// allowAdminNames=true 用于超管后台建号：本人可以重建自己的管理员账号，
+/// 但通用保留字（root/官方/客服这些）仍然挡住
+function isReservedUsername(name, allowAdminNames = false) {
+  const n = normalizeUsername(name);
+  if (RESERVED_USERNAMES.has(n)) return true;
+  if (allowAdminNames) return false;
+  if (SUPER_ADMIN_USERNAME && n === normalizeUsername(SUPER_ADMIN_USERNAME)) return true;
+  if (ADMIN_USERNAME && n === normalizeUsername(ADMIN_USERNAME)) return true;
+  return false;
+}
+
 // 普通管理员及以上都能过
 function requireAdmin(req, res, next) {
   if (!req.session.userId) return res.status(401).json({ error: '请先登录' });
@@ -596,6 +641,10 @@ app.post('/api/register', rateLimit(10), async (req, res) => {
   }
   if (typeof password !== 'string' || password.length < 6) {
     return res.status(400).json({ error: '密码至少需要6位' });
+  }
+  // 保留字先于"是否已存在"判断：不能让攻击者靠错误信息区分"这个管理员账号在不在"
+  if (isReservedUsername(username)) {
+    return res.status(400).json({ error: '该用户名不可注册，请换一个' });
   }
   if (!isValidPhone(phone)) return res.status(400).json({ error: '请输入正确的11位手机号' });
   if (!code || !String(code).trim()) return res.status(400).json({ error: '请输入验证码' });
@@ -2912,6 +2961,11 @@ app.post('/api/admin/users', requireSuperAdmin, async (req, res) => {
   }
   if (typeof password !== 'string' || password.length < 6) {
     return res.status(400).json({ error: '密码至少需要6位' });
+  }
+  // 超管本人可以重建自己的管理员账号（换库、误删后恢复），但 root/官方/客服
+  // 这类通用保留字照样挡住，免得后台顺手建出一个能冒充官方的号
+  if (isReservedUsername(username, true)) {
+    return res.status(400).json({ error: '该用户名是保留字，不能创建' });
   }
   const db = loadDB();
   if (db.users[username]) return res.status(400).json({ error: '用户名已被注册' });
