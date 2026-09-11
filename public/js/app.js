@@ -147,6 +147,9 @@
     window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
 
     if (name === 'dashboard') renderDashboard();
+    // 两颗球都只在自己那一页转。离开就停掉 rAF，否则会在后台一直跑，白耗电
+    featOrbit.setActive(name === 'dashboard');
+    heroWire.setActive(name === 'landing');
     if (name === 'tutor') renderTutor();
     if (name === 'vocab') {
       state.vocabMode = 'review';
@@ -186,7 +189,6 @@
     const authArea = $safe('#authArea');
     setHidden('#mainNav', false);
     setHidden('#navAdmin', !state.user.isAdmin);
-    setHidden('#dashNavAdmin', !state.user.isAdmin);
     const av = state.user.avatar;
     const avatarHtml = av?.type === 'image'
       ? `<img class="topbar-avatar" src="${escapeHtml(av.value)}" alt="">`
@@ -427,10 +429,7 @@
     try {
       const data = await api('/vocab/review');
       $('#dashDueWords').textContent = data.words.length;
-      // 宫格上直接标出待复习数量，不用点进去才知道今天有没有活儿
-      const due = $('#fnVocabDue');
-      due.hidden = data.words.length === 0;
-      due.textContent = data.words.length + ' 待复习';
+      featOrbit.setBadge('vocabDue', data.words.length ? String(data.words.length) : '');
     } catch { $('#dashDueWords').textContent = '-'; }
     renderMetrics();
   }
@@ -2041,6 +2040,459 @@
     loadVocabQueue();
     renderMetrics();
   });
+
+  // ---------- 线框星球（canvas） ----------
+  // 细分二十面体（测地球），就是足球那种网格。用 canvas 不用 SVG：
+  // level 2 有 480 条棱，每帧改 480 个 DOM 节点的属性会明显掉帧，canvas 重画很轻松。
+  function icosphere(level) {
+    const t = (1 + Math.sqrt(5)) / 2;
+    const norm = v => { const L = Math.hypot(v[0], v[1], v[2]); return [v[0]/L, v[1]/L, v[2]/L]; };
+    const verts = [
+      [-1,t,0],[1,t,0],[-1,-t,0],[1,-t,0],[0,-1,t],[0,1,t],
+      [0,-1,-t],[0,1,-t],[t,0,-1],[t,0,1],[-t,0,-1],[-t,0,1],
+    ].map(norm);
+    let faces = [
+      [0,11,5],[0,5,1],[0,1,7],[0,7,10],[0,10,11],[1,5,9],[5,11,4],
+      [11,10,2],[10,7,6],[7,1,8],[3,9,4],[3,4,2],[3,2,6],[3,6,8],
+      [3,8,9],[4,9,5],[2,4,11],[6,2,10],[8,6,7],[9,8,1],
+    ];
+    for (let s = 0; s < level; s++) {
+      const mid = new Map(), next = [];
+      const midpoint = (a, b) => {
+        const key = a < b ? a + ',' + b : b + ',' + a;
+        if (mid.has(key)) return mid.get(key);
+        verts.push(norm([
+          (verts[a][0] + verts[b][0]) / 2,
+          (verts[a][1] + verts[b][1]) / 2,
+          (verts[a][2] + verts[b][2]) / 2,
+        ]));
+        mid.set(key, verts.length - 1);
+        return verts.length - 1;
+      };
+      for (const [a, b, c] of faces) {
+        const ab = midpoint(a, b), bc = midpoint(b, c), ca = midpoint(c, a);
+        next.push([a, ab, ca], [b, bc, ab], [c, ca, bc], [ab, bc, ca]);
+      }
+      faces = next;
+    }
+    const seen = new Set(), edges = [];
+    for (const f of faces) {
+      for (let i = 0; i < 3; i++) {
+        const a = f[i], b = f[(i + 1) % 3];
+        const key = a < b ? a + '-' + b : b + '-' + a;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        edges.push([a, b]);
+      }
+    }
+    return { verts, edges };
+  }
+
+  /// canvas 上画一个匀速自转的线框球。opts: { level, color, spin, dot, lineWidth, alpha, radiusRatio }
+  function createWireSphere(canvas, opts = {}) {
+    const o = {
+      level: 2, color: '255,255,255', spin: 0.00022, dot: 1.5,
+      lineWidth: 1, alpha: 1, radiusRatio: 0.42, tilt: -0.42, ...opts,
+    };
+    const { verts, edges } = icosphere(o.level);
+    const ctx = canvas.getContext('2d');
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    let w = 0, h = 0, raf = null, yaw = 0, prev = 0;
+    const px = new Float32Array(verts.length);
+    const py = new Float32Array(verts.length);
+    const pz = new Float32Array(verts.length);
+
+    function resize() {
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      w = canvas.clientWidth; h = canvas.clientHeight;
+      canvas.width = Math.max(1, Math.round(w * dpr));
+      canvas.height = Math.max(1, Math.round(h * dpr));
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function draw(now) {
+      paint(Math.min(48, prev ? now - prev : 16));
+      prev = now;
+      raf = requestAnimationFrame(draw);
+    }
+
+    // 画一帧。拆出来是因为标签页在后台时 requestAnimationFrame 根本不触发，
+    // start() 得先同步画一帧，否则用户切回来之前这里是一块空白画布。
+    function paint(dt) {
+      if (!reduce) yaw += o.spin * dt;
+
+      ctx.clearRect(0, 0, w, h);
+      const cx = w / 2, cy = h / 2;
+      const R = Math.min(w, h) * o.radiusRatio;
+      const F = R * 3.2;                                  // 焦距跟着半径走，不同尺寸透视一致
+      const cY = Math.cos(yaw), sY = Math.sin(yaw);
+      const cX = Math.cos(o.tilt), sX = Math.sin(o.tilt);
+
+      for (let i = 0; i < verts.length; i++) {
+        const v = verts[i];
+        const x1 = v[0] * cY + v[2] * sY;
+        const z1 = -v[0] * sY + v[2] * cY;
+        const y2 = v[1] * cX - z1 * sX;
+        const z2 = v[1] * sX + z1 * cX;
+        const s = F / (F - z2 * R);
+        px[i] = cx + x1 * R * s;
+        py[i] = cy + y2 * R * s;
+        pz[i] = z2;
+      }
+
+      ctx.lineWidth = o.lineWidth;
+      for (let e = 0; e < edges.length; e++) {
+        const a = edges[e][0], b = edges[e][1];
+        // 背面的棱压暗，不做剔除——半透明的背面正是"看得穿的玻璃球"那种感觉
+        const d = (pz[a] + pz[b]) / 2;
+        const t = (d + 1) / 2;
+        ctx.strokeStyle = `rgba(${o.color},${(o.alpha * (0.05 + t * t * 0.55)).toFixed(3)})`;
+        ctx.beginPath();
+        ctx.moveTo(px[a], py[a]);
+        ctx.lineTo(px[b], py[b]);
+        ctx.stroke();
+      }
+      if (o.dot > 0) {
+        for (let i = 0; i < verts.length; i++) {
+          const t = (pz[i] + 1) / 2;
+          ctx.fillStyle = `rgba(${o.color},${(o.alpha * (0.08 + t * t * 0.85)).toFixed(3)})`;
+          ctx.beginPath();
+          ctx.arc(px[i], py[i], o.dot * (0.55 + t * 0.65), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    const ro = window.ResizeObserver ? new ResizeObserver(resize) : null;
+    return {
+      start() {
+        if (raf) return;
+        resize();
+        ro?.observe(canvas);
+        prev = 0;
+        paint(0);                     // 先同步出图，后台标签页里也不会是空白
+        raf = requestAnimationFrame(draw);
+      },
+      resize,
+      stop() {
+        if (raf) { cancelAnimationFrame(raf); raf = null; }
+        ro?.disconnect();
+      },
+      nudge(v) { yaw += v; },      // 拖动功能星球时，背景球跟着一起转，才像同一个球
+    };
+  }
+
+  // 落地页背景那颗球。比首页那颗大、慢、更亮一点——它纯粹是氛围，不承担点击
+  const heroWire = (() => {
+    let sphere = null;
+    return {
+      setActive(on) {
+        if (on) {
+          if (!sphere) {
+            const cv = document.getElementById('heroWire');
+            if (!cv) return;
+            sphere = createWireSphere(cv, {
+              level: 2, color: '198,240,255', spin: 0.00011, dot: 1.35,
+              alpha: 0.92, radiusRatio: 0.34, lineWidth: 0.9, tilt: -0.3,
+            });
+          }
+          sphere.start();
+        } else {
+          sphere?.stop();
+        }
+      },
+    };
+  })();
+
+  // ---------- 首页功能星球 ----------
+  // 八个功能挂在球面上，转到最前面的那个就是当前选中项。
+  // 投影自己算（不用 CSS preserve-3d）：连接线要画进 SVG，而 SVG 进不了 3D 空间；
+  // 自己算的好处是节点和线能共用同一套景深，深浅一致才有立体感。
+  const featOrbit = (() => {
+    const FEATURES = [
+      { nav: 'tutor',      label: 'AI 对话',  desc: '打字或语音，AI 按你的水平陪练', color: '#0ABAB5' },
+      { nav: 'translate',  label: '同声传译', desc: '说一句，立刻听到另一种语言',   color: '#38bdf8' },
+      { nav: 'vocab',      label: '背单词',   desc: '按遗忘曲线复习，顺带记词根',   color: '#f59e0b', badge: 'vocabDue' },
+      { nav: 'grammar',    label: '语法精讲', desc: '一次讲透一个点，带 AI 批改',   color: '#a78bfa' },
+      { nav: 'colloquial', label: '美式口语', desc: '地道说法，跟读对比发音',       color: '#fb7185' },
+      { nav: 'mistakes',   label: '错题本',   desc: '错过的题自动归拢，反复清零',   color: '#34d399' },
+      { nav: 'essay',      label: '作文批改', desc: '逐句改，讲清为什么这么改',     color: '#60a5fa' },
+      { nav: 'profile',    label: '我的',     desc: '会员、目标语言、学习设置',     color: '#94a3b8' },
+    ];
+
+    const PERSPECTIVE = 620;          // 焦距：越小透视越夸张，620 大概是"看得出立体但不变形"
+    const AUTO_SPIN = 0.0032;         // 每毫秒的自转弧度，约 11 秒一圈
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+    let nodes = [];                   // { f, bx,by,bz, el, x,y,scale,depth }
+    let links = [];                   // { a, b, path, cx, cy, vx, vy }
+    let wire = null;                  // 衬在后面的线框球
+    let yaw = 0, pitch = -0.18;
+    let yawVel = 0, pitchVel = 0;
+    let dragging = false, moved = false, lastX = 0, lastY = 0, lastT = 0;
+    let snapTo = null;                // 点了后排节点时的目标角度
+    let raf = null, prevT = 0, active = false, built = false;
+    let frontIndex = -1;
+
+    const stage = () => document.getElementById('featOrbitStage');
+
+    function build() {
+      const host = document.getElementById('featOrbitNodes');
+      const svg = document.getElementById('featOrbitLinks');
+      if (!host || !svg) return false;
+
+      const n = FEATURES.length;
+      host.innerHTML = '';
+      svg.innerHTML = '';
+      nodes = FEATURES.map((f, i) => {
+        // 斐波那契螺旋，但高度压在 ±0.72 的带子里，不铺满整个球。
+        // 铺满球时靠近南北极的两个功能永远转不到最前面——它们的 z 再大也比不过
+        // 赤道上的点，光左右转只有 6/8 能被选中，跟"转到哪个选哪个"是矛盾的。
+        // 实测 band=0.72 时 8 个全部可达，节点间距也还够开（最近邻 0.97）。
+        // 分子用 (i+0.5) 而不是 i/(n-1)：后者会让第 0 个点落在带子边缘并挤在一起。
+        const by = (1 - 2 * (i + 0.5) / n) * 0.72;
+        const ring = Math.sqrt(Math.max(0, 1 - by * by));
+        const theta = Math.PI * (1 + Math.sqrt(5)) * (i + 0.5);
+        const el = document.createElement('button');
+        el.type = 'button';
+        el.className = 'feat-orbit-node';
+        el.style.setProperty('--fo-color', f.color);
+        el.innerHTML = `<span class="fo-dot"></span>${escapeHtml(f.label)}`
+          + (f.badge ? `<span class="fo-badge" data-badge="${f.badge}" hidden></span>` : '');
+        el.addEventListener('click', () => pick(i));
+        host.appendChild(el);
+        return { f, el, bx: ring * Math.cos(theta), by, bz: ring * Math.sin(theta) };
+      });
+
+      // 连线：每个节点连它在球面上最近的两个邻居，去重后大约十来条。
+      // 全连是 28 条，糊成一团；只连最近的，转起来才看得出是个球面网格。
+      const seen = new Set();
+      const edges = [];
+      nodes.forEach((a, i) => {
+        const near = nodes.map((b, j) => ({ j, d: dist3(a, b) }))
+          .filter(o => o.j !== i).sort((p, q) => p.d - q.d).slice(0, 2);
+        near.forEach(({ j }) => {
+          const key = i < j ? `${i}-${j}` : `${j}-${i}`;
+          if (seen.has(key)) return;
+          seen.add(key);
+          edges.push([i, j]);
+        });
+      });
+
+      const mk = (cls, width) => {
+        const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        p.setAttribute('fill', 'none');
+        p.setAttribute('stroke-width', width);
+        p.setAttribute('stroke-linecap', 'round');
+        p.setAttribute('class', cls);
+        svg.appendChild(p);
+        return p;
+      };
+      // 不连中心：选中的节点本来就投影在正中间，再放个实心核会正好被压住。
+      // 参考的足球线框图也是纯网格没有核心，去掉反而更干净。
+      links = edges.map(([a, b]) => ({ a, b, path: mk('fo-link', 1.4), cx: 0, cy: 0, vx: 0, vy: 0 }));
+
+      wire = createWireSphere(document.getElementById('featOrbitWire'), {
+        level: 2, color: '150,240,235', spin: 0.00016, dot: 1.1, alpha: 0.5, radiusRatio: 0.44,
+      });
+      wire.start();
+
+      built = true;
+      return true;
+    }
+
+    const dist3 = (a, b) => Math.hypot(a.bx - b.bx, a.by - b.by, a.bz - b.bz);
+
+    function geom() {
+      const st = stage();
+      const w = st.clientWidth, h = st.clientHeight;
+      // 半径跟着舞台走，两边留出节点胶囊的宽度，免得被裁掉
+      return { w, h, cx: w / 2, cy: h / 2, r: Math.max(74, Math.min(h * 0.40, w * 0.30)) };
+    }
+
+    function project(dt) {
+      const g = geom();
+      const cosY = Math.cos(yaw), sinY = Math.sin(yaw);
+      const cosX = Math.cos(pitch), sinX = Math.sin(pitch);
+      let bestZ = -Infinity, bestI = -1;
+
+      nodes.forEach((nd, i) => {
+        // 先绕 Y 转（拖左右），再绕 X 转（拖上下）
+        const x1 = nd.bx * cosY + nd.bz * sinY;
+        const z1 = -nd.bx * sinY + nd.bz * cosY;
+        const y2 = nd.by * cosX - z1 * sinX;
+        const z2 = nd.by * sinX + z1 * cosX;
+
+        const X = x1 * g.r, Y = y2 * g.r, Z = z2 * g.r;
+        const s = PERSPECTIVE / (PERSPECTIVE - Z);   // 近大远小
+        nd.x = g.cx + X * s;
+        nd.y = g.cy + Y * s;
+        nd.scale = s;
+        nd.depth = z2;                                // -1 最远，1 最近
+        if (z2 > bestZ) { bestZ = z2; bestI = i; }
+      });
+
+      nodes.forEach((nd, i) => {
+        const t = (nd.depth + 1) / 2;                 // 0 最远 1 最近
+        nd.el.style.transform =
+          `translate3d(${nd.x.toFixed(1)}px, ${nd.y.toFixed(1)}px, 0) translate(-50%, -50%) scale(${nd.scale.toFixed(3)})`;
+        nd.el.style.opacity = (0.3 + t * 0.7).toFixed(3);
+        // 背面的节点稍微虚化，景深比单纯调透明度更"立体"
+        nd.el.style.filter = nd.depth < 0 ? `blur(${((-nd.depth) * 1.6).toFixed(2)}px)` : 'none';
+        nd.el.style.zIndex = String(100 + Math.round(nd.depth * 50));
+        // 转到背面的节点别抢点击：那时它被核心挡住，点了会让人莫名其妙跳走
+        nd.el.style.pointerEvents = nd.depth < -0.55 ? 'none' : 'auto';
+        nd.el.classList.toggle('is-front', i === bestI);
+      });
+
+      if (bestI !== frontIndex) {
+        frontIndex = bestI;
+        const f = FEATURES[bestI];
+        const nameEl = document.getElementById('featOrbitName');
+        const descEl = document.getElementById('featOrbitDesc');
+        if (nameEl) nameEl.textContent = f.label;
+        if (descEl) descEl.textContent = f.desc;
+      }
+
+      drawLinks(g, dt);
+    }
+
+    // 弹性连线：控制点用弹簧去追两端的中点，追不上就被甩在后面，
+    // 转得越快弓得越开，停下来再晃两下收回去——"线是有弹性的"就是这么来的。
+    function spring(link, tx, ty, dt) {
+      const k = reduceMotion ? 1 : 0.16;
+      const damp = reduceMotion ? 0 : Math.pow(0.86, dt / 16.7);
+      link.vx = (link.vx + (tx - link.cx) * k) * damp;
+      link.vy = (link.vy + (ty - link.cy) * k) * damp;
+      link.cx += link.vx;
+      link.cy += link.vy;
+      if (reduceMotion) { link.cx = tx; link.cy = ty; }
+    }
+
+    function drawLinks(g, dt) {
+      const paint = (l, ax, ay, az, bx, by, bz, baseAlpha) => {
+        spring(l, (ax + bx) / 2, (ay + by) / 2, dt);
+        l.path.setAttribute('d', `M${ax.toFixed(1)},${ay.toFixed(1)} Q${l.cx.toFixed(1)},${l.cy.toFixed(1)} ${bx.toFixed(1)},${by.toFixed(1)}`);
+        const t = ((az + bz) / 2 + 1) / 2;
+        l.path.setAttribute('stroke', `rgba(120,230,225,${(baseAlpha * (0.18 + t * 0.82)).toFixed(3)})`);
+      };
+      links.forEach(l => {
+        const a = nodes[l.a], b = nodes[l.b];
+        paint(l, a.x, a.y, a.depth, b.x, b.y, b.depth, 0.55);
+      });
+    }
+
+    function tick(now) {
+      const dt = Math.min(48, prevT ? now - prevT : 16);
+      prevT = now;
+
+      if (snapTo !== null) {
+        // 点了背面的节点：把它转到正前方，用缓动靠近而不是瞬移
+        const dy = shortestAngle(snapTo.yaw - yaw);
+        const dp = snapTo.pitch - pitch;
+        yaw += dy * 0.16;
+        pitch += dp * 0.16;
+        if (Math.abs(dy) < 0.004 && Math.abs(dp) < 0.004) {
+          yaw = snapTo.yaw; pitch = snapTo.pitch;
+          const go = snapTo.nav; snapTo = null;
+          if (go) showView(go);
+        }
+      } else if (!dragging) {
+        yaw += yawVel + (reduceMotion ? 0 : AUTO_SPIN * dt);
+        pitch += pitchVel;
+        yawVel *= 0.94;                 // 松手后的惯性，慢慢收住
+        pitchVel *= 0.94;
+        pitch = Math.max(-0.7, Math.min(0.7, pitch));
+      }
+
+      project(dt);
+      raf = requestAnimationFrame(tick);
+    }
+
+    const shortestAngle = a => Math.atan2(Math.sin(a), Math.cos(a));
+
+    // 把第 i 个节点转到正前方需要的角度：正前方是 z 轴朝向观察者
+    function anglesFor(i) {
+      const nd = nodes[i];
+      const targetPitch = Math.max(-0.7, Math.min(0.7, -Math.asin(nd.by)));
+      const targetYaw = Math.atan2(nd.bx, nd.bz);
+      return { yaw: targetYaw, pitch: targetPitch };
+    }
+
+    function pick(i) {
+      if (moved) return;                            // 拖动结束那一下不算点击
+      if (i === frontIndex) { showView(FEATURES[i].nav); return; }
+      const a = anglesFor(i);
+      snapTo = { yaw: a.yaw, pitch: a.pitch, nav: FEATURES[i].nav };
+    }
+
+    function bind() {
+      const st = stage();
+      if (!st || st.__bound) return;
+      st.__bound = true;
+
+      const down = (x, y) => { dragging = true; moved = false; lastX = x; lastY = y; lastT = performance.now(); yawVel = pitchVel = 0; snapTo = null; };
+      const move = (x, y) => {
+        if (!dragging) return;
+        const dx = x - lastX, dy = y - lastY;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+        const now = performance.now();
+        const dt = Math.max(1, now - lastT);
+        yaw += dx * 0.008;
+        wire?.nudge(dx * 0.008);
+        pitch = Math.max(-0.7, Math.min(0.7, pitch + dy * 0.006));
+        yawVel = (dx * 0.008) / dt * 16.7;           // 换算成"每帧"的速度，松手后当惯性用
+        pitchVel = 0;
+        lastX = x; lastY = y; lastT = now;
+      };
+      const up = () => { dragging = false; setTimeout(() => { moved = false; }, 0); };
+
+      st.addEventListener('pointerdown', e => { st.setPointerCapture?.(e.pointerId); down(e.clientX, e.clientY); });
+      st.addEventListener('pointermove', e => move(e.clientX, e.clientY));
+      st.addEventListener('pointerup', up);
+      st.addEventListener('pointercancel', up);
+      st.addEventListener('pointerleave', up);
+
+      // 键盘：左右转，回车进入当前选中的功能
+      st.addEventListener('keydown', e => {
+        if (e.key === 'ArrowLeft')  { yaw -= 0.22; snapTo = null; e.preventDefault(); }
+        if (e.key === 'ArrowRight') { yaw += 0.22; snapTo = null; e.preventDefault(); }
+        if (e.key === 'Enter' || e.key === ' ') {
+          if (frontIndex >= 0) showView(FEATURES[frontIndex].nav);
+          e.preventDefault();
+        }
+      });
+
+      const enter = document.getElementById('featOrbitEnter');
+      if (enter) enter.addEventListener('click', () => {
+        if (frontIndex >= 0) showView(FEATURES[frontIndex].nav);
+      });
+    }
+
+    return {
+      setActive(on) {
+        if (on) {
+          if (!built && !build()) return;
+          bind();
+          active = true;
+          wire?.start();
+          if (!raf) { prevT = 0; raf = requestAnimationFrame(tick); }
+        } else {
+          active = false;
+          if (raf) { cancelAnimationFrame(raf); raf = null; }
+          wire?.stop();
+        }
+      },
+      // 背单词的待复习数量直接标在节点上，不用点进去才知道今天有没有活儿
+      setBadge(key, text) {
+        const el = document.querySelector(`.fo-badge[data-badge="${key}"]`);
+        if (!el) return;
+        el.hidden = !text;
+        el.textContent = text || '';
+      },
+      get isActive() { return active; },
+    };
+  })();
 
   // ---------- 词根关联星球 ----------
   // 把和当前单词共享词根/主题的词摆成一个可拖动旋转的球，靠"一族词一起记"来加深印象。

@@ -41,7 +41,9 @@
 
   <!-- 落地页 -->
   <section class="view" id="view-landing">
-    <section class="hero">
+    <section class="hero hero-space">
+      <!-- 未登录时的那颗自转线框球。纯装饰，aria-hidden，不进无障碍树 -->
+      <canvas class="hero-wire" id="heroWire" aria-hidden="true"></canvas>
       <div class="hero-inner">
         <h1>跟 AI 私教<br>1对1 练出真实的外语能力</h1>
         <p class="hero-sub">AI 视频通话 · 打字对话 · 语音练习 · 背单词 · 语法精讲，一站式外语学习平台</p>
@@ -106,37 +108,22 @@
 
       <!-- 功能宫格。以前首页只有状态卡片，所有功能都只能从顶部菜单进；
            手机上菜单要横滑，第5个之后基本没人发现得了。 -->
-      <div class="feature-nav-grid">
-        <button type="button" class="feature-nav" data-nav="tutor">
-          <span class="fn-icon">💬</span><span class="fn-label">AI 对话</span>
-          <span class="fn-tag">含视频通话</span>
-        </button>
-        <button type="button" class="feature-nav" data-nav="translate">
-          <span class="fn-icon">🎧</span><span class="fn-label">同声传译</span>
-        </button>
-        <button type="button" class="feature-nav" data-nav="vocab">
-          <span class="fn-icon">📚</span><span class="fn-label">背单词</span>
-          <span class="fn-tag" id="fnVocabDue" hidden></span>
-        </button>
-        <button type="button" class="feature-nav" data-nav="grammar">
-          <span class="fn-icon">📖</span><span class="fn-label">语法精讲</span>
-        </button>
-        <button type="button" class="feature-nav" data-nav="colloquial">
-          <span class="fn-icon">🗣️</span><span class="fn-label">美式口语</span>
-        </button>
-        <button type="button" class="feature-nav" data-nav="mistakes">
-          <span class="fn-icon">📝</span><span class="fn-label">错题本</span>
-        </button>
-        <button type="button" class="feature-nav" data-nav="essay">
-          <span class="fn-icon">✍️</span><span class="fn-label">作文批改</span>
-        </button>
-        <button type="button" class="feature-nav" data-nav="profile">
-          <span class="fn-icon">👤</span><span class="fn-label">我的</span>
-        </button>
-        <button type="button" class="feature-nav" data-nav="admin" id="dashNavAdmin" hidden>
-          <span class="fn-icon">⚙️</span><span class="fn-label">管理后台</span>
-        </button>
-      </div>
+      <!-- 功能星球：所有功能挂在一个可旋转的球面上，转到最前面的那个就是当前选中项。
+           节点由 JS 生成（位置要按球面算），这里只留舞台和说明。 -->
+      <section class="feat-orbit" id="featOrbit">
+        <div class="feat-orbit-stage" id="featOrbitStage"
+             role="application" aria-label="功能星球，左右拖动旋转，回车进入选中的功能" tabindex="0">
+          <canvas class="feat-orbit-wire" id="featOrbitWire" aria-hidden="true"></canvas>
+          <svg class="feat-orbit-links" id="featOrbitLinks" aria-hidden="true"></svg>
+          <div class="feat-orbit-nodes" id="featOrbitNodes"></div>
+        </div>
+        <div class="feat-orbit-panel">
+          <div class="feat-orbit-name" id="featOrbitName">AI 对话</div>
+          <div class="feat-orbit-desc" id="featOrbitDesc">和 AI 私教练口语</div>
+          <button type="button" class="btn btn-primary btn-sm" id="featOrbitEnter">进入</button>
+          <div class="feat-orbit-hint">拖动旋转 · 点节点直接进入</div>
+        </div>
+      </section>
 
       <div class="dash-grid">
         <div class="dash-card">

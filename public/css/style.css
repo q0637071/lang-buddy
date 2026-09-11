@@ -691,36 +691,117 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--p
 /* ============ 导航改版 ============ */
 /* 顶部菜单加图标，10个纯文字项扫读太费力 */
 
-/* 首页功能宫格：所有功能的总入口，保证任何功能最多两步可达 */
-.feature-nav-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
-  gap: 12px; margin-bottom: 26px;
+/* ============ 落地页的自转线框球 ============ */
+/* 只有没登录时能看到。整块改成深色：线框球在浅底上几乎看不见，
+   而且"太空感"本来就要靠暗背景托。 */
+.hero-space {
+  background:
+    radial-gradient(1100px 520px at 50% -12%, rgba(10,186,181,.22), transparent 62%),
+    radial-gradient(700px 400px at 85% 110%, rgba(99,102,241,.20), transparent 60%),
+    linear-gradient(180deg, #090c1a, #0e1428 55%, #0b1524);
+  color: #e8eefb;
 }
-.feature-nav {
-  position: relative; display: flex; flex-direction: column; align-items: center; gap: 7px;
-  padding: 18px 8px 14px; background: #fff; border: 1px solid var(--border);
-  border-radius: var(--radius); cursor: pointer; box-shadow: var(--shadow-xs);
-  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+.hero-space::before { background: var(--primary); opacity: .18; }
+.hero-space::after { background: var(--accent); opacity: .16; }
+.hero-wire {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: min(760px, 116%); height: min(760px, 116%);
+  z-index: 0; pointer-events: none; opacity: .85;
+  /* 边缘淡出，不然球会被 section 的直角边切出一条硬线 */
+  mask-image: radial-gradient(closest-side, #000 62%, transparent 100%);
+  -webkit-mask-image: radial-gradient(closest-side, #000 62%, transparent 100%);
 }
-.feature-nav:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--primary); }
-.feature-nav:active { transform: translateY(0); }
-.fn-icon { font-size: 26px; line-height: 1; }
-.fn-label { font-size: 13.5px; font-weight: 700; color: var(--text); }
-.fn-tag {
-  position: absolute; top: 7px; right: 7px; background: var(--primary-light);
-  color: var(--primary-dark); font-size: 10px; font-weight: 700;
-  padding: 2px 6px; border-radius: 999px; white-space: nowrap;
+.hero-space h1 {
+  background: linear-gradient(135deg, #ffffff, #7ef0ea 130%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.hero-space .hero-sub { color: rgba(232,238,251,.72); }
+/* 深底上原来的浅色描边按钮几乎看不见，翻成亮边 */
+.hero-space .btn-outline {
+  color: #eaf6ff; border-color: rgba(255,255,255,.38); background: rgba(255,255,255,.04);
+}
+.hero-space .btn-outline:hover { border-color: #fff; background: rgba(255,255,255,.12); }
+
+/* ============ 首页功能星球 ============ */
+/* 投影是在 JS 里算的，不用 CSS 的 preserve-3d：连接线要画在 SVG 里，
+   而 SVG 进不了 preserve-3d 的 3D 空间。自己算投影反而能同时控制节点和线的景深。 */
+.feat-orbit {
+  position: relative; display: grid; grid-template-columns: 1fr 232px;
+  gap: 18px; align-items: center; margin-bottom: 26px;
+  padding: 18px; border-radius: 22px; overflow: hidden;
+  background:
+    radial-gradient(120% 120% at 18% 0%, rgba(10,186,181,.14), transparent 55%),
+    radial-gradient(90% 90% at 100% 100%, rgba(99,102,241,.13), transparent 55%),
+    linear-gradient(160deg, #0d1020, #141a33 58%, #0c1a2b);
+  border: 1px solid rgba(255,255,255,.07);
+  box-shadow: 0 22px 50px -28px rgba(10,20,50,.8);
+}
+/* 细网格铺底，给球一个"空间"而不是浮在纯色上 */
+.feat-orbit::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+  background-size: 46px 46px;
+  mask-image: radial-gradient(70% 70% at 35% 45%, #000, transparent 75%);
+  -webkit-mask-image: radial-gradient(70% 70% at 35% 45%, #000, transparent 75%);
 }
 
-@media (max-width: 768px) {
-  /* 手机端保持顶部菜单（上面 max-width:768 那段里的横向滚动样式），
-     底部标签栏试过之后撤掉了 */
-  .feature-nav-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
-  .feature-nav { padding: 14px 4px 11px; gap: 5px; border-radius: 12px; }
-  .fn-icon { font-size: 22px; }
-  .fn-label { font-size: 11.5px; }
-  .fn-tag { display: none; } /* 手机上宫格太窄，角标会压住文字 */
+.feat-orbit-stage {
+  position: relative; height: 320px; touch-action: none; cursor: grab;
+  outline: none;
 }
+.feat-orbit-stage:active { cursor: grabbing; }
+.feat-orbit-stage:focus-visible { box-shadow: 0 0 0 2px var(--primary); border-radius: 18px; }
+.feat-orbit-wire { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.feat-orbit-links { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.feat-orbit-nodes { position: absolute; inset: 0; }
+
+
+/* 节点：位置/缩放/透明度都由 JS 按 z 值写进 style，这里只管长相 */
+.feat-orbit-node {
+  position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 7px;
+  padding: 8px 13px 8px 9px; border-radius: 999px; white-space: nowrap;
+  font-size: 13.5px; font-weight: 600; color: #eaf6ff;
+  background: rgba(22,30,58,.78); border: 1px solid rgba(255,255,255,.14);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  cursor: pointer; will-change: transform, opacity;
+  transition: background .2s ease, border-color .2s ease, color .2s ease;
+}
+.feat-orbit-node .fo-dot {
+  width: 9px; height: 9px; border-radius: 50%; flex: none;
+  background: var(--fo-color, #0ABAB5);
+  box-shadow: 0 0 10px var(--fo-color, #0ABAB5);
+}
+/* 转到最前面的那个：这是"选中"，所以要明显跳出来 */
+.feat-orbit-node.is-front {
+  color: #06201f; background: #fff; border-color: #fff;
+  box-shadow: 0 0 0 4px rgba(10,186,181,.28), 0 10px 26px -8px rgba(0,0,0,.7);
+}
+.feat-orbit-node:hover { border-color: rgba(255,255,255,.45); }
+.feat-orbit-node:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.fo-badge {
+  margin-left: 2px; padding: 1px 6px; border-radius: 999px;
+  font-size: 10.5px; font-weight: 800; color: #06201f; background: #ffd166;
+}
+
+.feat-orbit-panel { position: relative; color: #dfe8f5; }
+.feat-orbit-name { font-size: 19px; font-weight: 800; color: #fff; letter-spacing: -.01em; }
+.feat-orbit-desc { font-size: 13px; opacity: .68; margin: 5px 0 13px; line-height: 1.5; }
+.feat-orbit-hint { font-size: 11.5px; opacity: .42; margin-top: 11px; }
+
+@media (max-width: 720px) {
+  .feat-orbit { grid-template-columns: 1fr; gap: 6px; padding: 14px; }
+  .feat-orbit-stage { height: 268px; }
+  .feat-orbit-panel { text-align: center; }
+  .feat-orbit-node { font-size: 12.5px; padding: 7px 11px 7px 8px; }
+}
+
+/* 关掉动效时不自转，也不做弹性回弹——但球还是能拖、功能照常能进 */
+@media (prefers-reduced-motion: reduce) {
+}
+
+/* 首页功能宫格已换成上面的功能星球，宫格样式整块删掉了 */
 
 .nav-item { white-space: nowrap; }
 .brand-name { white-space: nowrap; }
