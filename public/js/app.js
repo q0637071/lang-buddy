@@ -185,8 +185,6 @@
   function renderLoggedInTopbar() {
     const authArea = $safe('#authArea');
     setHidden('#mainNav', false);
-    // has-sidebar 给桌面左侧栏让出宽度，只在 >=769px 生效
-    document.body.classList.add('has-sidebar');
     setHidden('#navAdmin', !state.user.isAdmin);
     setHidden('#dashNavAdmin', !state.user.isAdmin);
     const av = state.user.avatar;
@@ -205,7 +203,6 @@
         renderLoggedInTopbar();
       } else {
         setHidden('#mainNav', true);
-        document.body.classList.remove('has-sidebar');
         rebuildAuthButtons();
       }
     } catch (e) {

@@ -16,26 +16,26 @@
       <span class="brand-name">LangBuddy 语伴</span>
     </div>
 
-    <div class="auth-area" id="authArea"></div>
+    <!-- 导航就放在顶栏里，一行全部铺开。标签统一压到两个字：长短一致才扫得快，
+         也才装得下——加了图标和四字标签的那版在 1100px 里会折行。
+         title 补全全称，缩写猜不出来时鼠标停一下就知道。 -->
+    <nav class="main-nav" id="mainNav" hidden>
+      <button class="nav-item" data-nav="dashboard">首页</button>
+      <button class="nav-item" data-nav="tutor" title="AI 对话练习">对话</button>
+      <button class="nav-item" data-nav="translate" title="同声传译">同传</button>
+      <button class="nav-item" data-nav="vocab" title="背单词">单词</button>
+      <button class="nav-item" data-nav="grammar" title="语法精讲">语法</button>
+      <button class="nav-item" data-nav="colloquial" title="美式口语">口语</button>
+      <button class="nav-item" data-nav="essay" title="作文批改">作文</button>
+      <button class="nav-item" data-nav="mistakes" title="错题本">错题</button>
+      <button class="nav-item" data-nav="admin" id="navAdmin" hidden>后台</button>
+    </nav>
+
+    <!-- 头像本身就是"我的"入口，不再单独占一个菜单位。data-nav 必须挂在这个
+         常驻容器上：里面的内容登录后才重新渲染，挂在子节点上绑不到事件。 -->
+    <div class="auth-area" id="authArea" data-nav="profile" title="我的"></div>
   </div>
 </header>
-
-<!-- 桌面端的左侧悬浮导航（手机端隐藏，改用下面的底部标签栏）。
-     必须放在 header 外面：.topbar 有 backdrop-filter，而 backdrop-filter 会成为
-     固定定位子元素的定位基准——放在里面时 left/bottom 是相对顶栏而不是视口，
-     侧边栏会被压成顶栏那么高（实测只有 82px）。 -->
-<nav class="main-nav" id="mainNav" hidden>
-  <button class="nav-item" data-nav="dashboard"><span class="nav-icon">🏠</span>首页</button>
-  <button class="nav-item" data-nav="translate"><span class="nav-icon">🎧</span>同声传译</button>
-  <button class="nav-item" data-nav="tutor"><span class="nav-icon">💬</span>AI对话</button>
-  <button class="nav-item" data-nav="vocab"><span class="nav-icon">📚</span>背单词</button>
-  <button class="nav-item" data-nav="mistakes"><span class="nav-icon">📝</span>错题本</button>
-  <button class="nav-item" data-nav="essay"><span class="nav-icon">✍️</span>作文批改</button>
-  <button class="nav-item" data-nav="grammar"><span class="nav-icon">📖</span>语法</button>
-  <button class="nav-item" data-nav="colloquial"><span class="nav-icon">🗣️</span>美式口语</button>
-  <button class="nav-item" data-nav="profile"><span class="nav-icon">👤</span>我的</button>
-  <button class="nav-item" data-nav="admin" id="navAdmin" hidden><span class="nav-icon">⚙️</span>管理后台</button>
-</nav>
 
 <main id="app">
 

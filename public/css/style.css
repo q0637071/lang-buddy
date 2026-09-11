@@ -74,14 +74,36 @@ p { line-height: 1.6; color: var(--text-muted); }
 
 /* Topbar */
 .topbar { position: sticky; top: 0; z-index: 50; background: rgba(255,255,255,.78); backdrop-filter: blur(14px) saturate(160%); -webkit-backdrop-filter: blur(14px) saturate(160%); border-bottom: 1px solid rgba(23,24,53,.06); box-shadow: 0 1px 0 rgba(23,24,53,.03); }
-.topbar-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; }
-.brand { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 800; font-size: 17px; letter-spacing: -.01em; }
-.brand-mark { width: 30px; height: 30px; border-radius: 9px; background: var(--gradient-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; box-shadow: var(--shadow-primary); }
-.main-nav { display: flex; gap: 4px; }
-.nav-item { background: transparent; border: none; padding: 8px 14px; border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: background .15s ease, color .15s ease; }
-.nav-item:hover { background: #f0f1f7; color: var(--text); }
-.nav-item.active { background: var(--primary-light); color: var(--primary); }
-.auth-area { display: flex; gap: 10px; align-items: center; }
+.topbar-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; gap: 20px; padding: 10px 24px; }
+/* 品牌比导航轻一点，让"现在在哪一页"成为顶栏里最显眼的东西 */
+.brand { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 16px; letter-spacing: -.01em; flex: none; }
+.brand-mark { width: 27px; height: 27px; border-radius: 8px; background: var(--gradient-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; box-shadow: var(--shadow-primary); }
+/* 导航：只有文字，没有图标也没有底色块。
+   十个带 emoji 的胶囊挤在一起时，先看到的是一排彩色方块，得逐个读才知道是什么；
+   去掉装饰之后眼睛直接落在字上，反而更快。选中态用一条从中间展开的下划线——
+   比换背景色安静，但位置感更明确。 */
+.main-nav { display: flex; align-items: center; gap: 2px; flex: 1; justify-content: center; }
+.nav-item {
+  position: relative; background: transparent; border: none;
+  padding: 9px 15px 10px; font-size: 14px; font-weight: 500;
+  letter-spacing: .02em; color: var(--text-muted); cursor: pointer;
+  transition: color .18s ease;
+}
+.nav-item:hover { color: var(--text); }
+.nav-item.active { color: var(--text); font-weight: 600; }
+.nav-item::after {
+  content: ""; position: absolute; bottom: 2px; height: 2px;
+  left: 50%; right: 50%;                       /* 收成一个点，选中时往两边展开 */
+  background: var(--primary); border-radius: 2px;
+  transition: left .24s cubic-bezier(.2,.8,.3,1), right .24s cubic-bezier(.2,.8,.3,1);
+}
+.nav-item.active::after { left: 13px; right: 13px; }
+/* 键盘 Tab 到导航时要看得见焦点，但不要和选中态的下划线混淆 */
+.nav-item:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; border-radius: 8px; }
+
+.auth-area { display: flex; gap: 8px; align-items: center; cursor: pointer; padding: 4px 6px; border-radius: 999px; transition: background .15s ease; }
+.auth-area:hover { background: #f0f1f7; }
+.auth-area:empty { display: none; }           /* 未登录时不留一块可点的空白 */
 
 /* Layout */
 .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
@@ -581,14 +603,9 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--p
   .mistake-list { grid-template-columns: 1fr; }
   .mistake-detail-header { flex-direction: column; }
   .hero h1 { font-size: 30px; }
-  .topbar-inner { flex-wrap: wrap; gap: 8px; }
-  .main-nav {
-    order: 3; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
-    mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent 100%);
-    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent 100%);
-  }
-  .main-nav::-webkit-scrollbar { display: none; }
-  .nav-item { flex-shrink: 0; padding: 10px 14px; }
+  /* 导航的手机端样式统一放在下面 max-width:768 那一段，这里不要再写一遍——
+     之前这里留了个右侧渐隐遮罩，现在 8 个标签本来就排得下，遮罩只会把"错题"
+     白白淡掉，看起来像坏了。 */
   .btn-sm { padding: 9px 14px; }
   .mic-btn { width: 44px; height: 44px; }
   .btn-icon { width: 44px; height: 44px; }
@@ -673,8 +690,6 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--p
 
 /* ============ 导航改版 ============ */
 /* 顶部菜单加图标，10个纯文字项扫读太费力 */
-.nav-item { display: inline-flex; align-items: center; gap: 5px; }
-.nav-icon { font-size: 15px; line-height: 1; }
 
 /* 首页功能宫格：所有功能的总入口，保证任何功能最多两步可达 */
 .feature-nav-grid {
@@ -707,43 +722,25 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--p
   .fn-tag { display: none; } /* 手机上宫格太窄，角标会压住文字 */
 }
 
-/* 加了图标后 10 个菜单项在 1100px 容器里放不下，会被挤到折行（每项高 70px）。
-   收紧内边距并禁止折行；769~1000px 这个窄区间放不下时退化成横向滚动。 */
-.nav-item { white-space: nowrap; padding: 8px 10px; font-size: 13.5px; }
-.main-nav { overflow-x: auto; scrollbar-width: none; }
-.main-nav::-webkit-scrollbar { display: none; }
-/* 顶栏容器比正文宽一点，给 10 个菜单项腾地方；品牌名不允许折行 */
-.topbar-inner { max-width: 1240px; }
+.nav-item { white-space: nowrap; }
 .brand-name { white-space: nowrap; }
 
-/* ============ 桌面端：左侧悬浮导航栏 ============ */
-/* 只在 >=769px 生效。手机端保持底部标签栏——左边缘手势会和浏览器的"返回"
-   打架，而且藏起来的菜单本身就违背"容易找到"这个目标。 */
-@media (min-width: 769px) {
+/* ============ 手机端：导航换到第二行，横向滚动 ============ */
+/* 试过左侧悬浮栏和底部标签栏，都撤掉了：悬停才展开的菜单等于把功能藏起来，
+   跟"一眼看清有哪些功能"是反的。现在手机上就是顶栏下面一条能滑的文字导航。 */
+@media (max-width: 768px) {
+  .topbar-inner { flex-wrap: wrap; gap: 0 12px; padding: 8px 16px 0; }
+  .brand { flex: 1; min-width: 0; }
+  .brand-name { font-size: 15px; }
+  /* 导航条做成通栏：左右各往外顶掉顶栏的 16px 内边距，再用自己的 padding 把
+     首尾对齐回内容边缘。多出来的这 32px 刚好够 8 个两字标签在常见机型上一次排开，
+     不用滑；窄屏放不下时仍然可以横滑，不会挤成两行。 */
   .main-nav {
-    position: fixed; left: 0; top: 0; bottom: 0; z-index: 70;
-    display: flex; flex-direction: column; gap: 4px;
-    width: 64px; padding: 66px 8px 16px;    /* 顶部留出顶栏的高度 */
-    background: #fff; border-right: 1px solid var(--border);
-    overflow-x: hidden; overflow-y: auto;
-    transition: width .22s cubic-bezier(.2,.8,.3,1), box-shadow .22s ease;
+    order: 3; flex-basis: 100%; justify-content: flex-start;
+    margin: 4px -16px 0; padding: 0 13px;
+    overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
   }
-  /* 鼠标移上去展开显示文字；折叠时靠 overflow 把文字裁掉，
-     不用 display:none，这样宽度动画才是连续的 */
-  .main-nav:hover { width: 208px; box-shadow: var(--shadow-lg); }
-  .main-nav::-webkit-scrollbar { width: 0; }
-
-  .nav-item {
-    width: 100%; justify-content: flex-start; flex-shrink: 0;
-    padding: 11px 12px; gap: 12px; font-size: 14px;
-  }
-  .nav-icon { font-size: 19px; width: 22px; text-align: center; flex: none; }
-
-  /* 侧边栏是固定定位，整页要往右让出它的宽度 */
-  body.has-sidebar { padding-left: 64px; }
-  /* 展开时不推挤内容，让它浮在上面——否则每次 hover 整页都会跳动 */
-}
-/* 键盘用户没有 hover，用 Tab 键走到导航里时也要能展开，否则只能看图标猜 */
-@media (min-width: 769px) {
-  .main-nav:focus-within { width: 208px; box-shadow: var(--shadow-lg); }
+  .main-nav::-webkit-scrollbar { display: none; }
+  .nav-item { padding: 8px 7px 10px; font-size: 13.5px; flex: none; }
+  .nav-item.active::after { left: 6px; right: 6px; }
 }
