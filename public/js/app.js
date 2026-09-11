@@ -3706,8 +3706,57 @@
       toast(err.message);
     }
   }
+  // 筛选是纯前端的：200 条已经在内存里，不用为了换个筛选再跑一趟服务器
+  $safe('#adminAuthFilter')?.addEventListener('change', paintAdminAuthRows);
+
   $('#authLogClose').addEventListener('click', () => { $('#authLogOverlay').hidden = true; });
   $('#authLogOverlay').addEventListener('click', (e) => { if (e.target.id === 'authLogOverlay') $('#authLogOverlay').hidden = true; });
+
+  let adminAuthRows = [];
+
+  async function renderAdminAuthLog(isSuper) {
+    const sec = $safe('#adminAuthSection');
+    if (!sec) return;
+    sec.hidden = !isSuper;
+    if (!isSuper) return;            // 普通管理员连请求都不发，接口那边也会 403
+    try {
+      const data = await api('/admin/auth-recent?limit=200');
+      adminAuthRows = data.rows || [];
+      $('#adminAuthNote').textContent =
+        `显示最近 ${adminAuthRows.length} 条，共 ${data.total} 条。`
+        + '每个账号只保留最近 50 条日志，更早的记录已被覆盖；标「推算」的是按注册时间补的。';
+      paintAdminAuthRows();
+    } catch (err) {
+      $('#adminAuthBody').innerHTML =
+        `<tr><td colspan="5">读取失败：${escapeHtml(err.message)}</td></tr>`;
+    }
+  }
+
+  function paintAdminAuthRows() {
+    const mode = $safe('#adminAuthFilter')?.value || 'all';
+    const rows = adminAuthRows.filter(r => {
+      if (mode === 'all') return true;
+      if (mode === 'register') return r.method === 'register';
+      // 「只看登录」不含注册那一条，否则新用户会同时出现在两个筛选里
+      if (mode === 'login') return r.type === 'login' && r.method !== 'register';
+      return r.type === mode;
+    });
+    $('#adminAuthBody').innerHTML = rows.map(r => {
+      const isReg = r.method === 'register';
+      const action = isReg
+        ? '<span class="auth-tag auth-tag-reg">新注册</span>'
+        : r.type === 'login'
+          ? '<span class="auth-tag auth-tag-in">登录</span>'
+          : '<span class="auth-tag auth-tag-out">登出</span>';
+      return `<tr>
+        <td>${fmtDateTime(r.at)}</td>
+        <td>${escapeHtml(r.nickname)} <span class="auth-uname">${escapeHtml(r.username)}</span>${r.isMember ? ' <span class="auth-tag auth-tag-vip">会员</span>' : ''}</td>
+        <td>${action}${r.inferred ? ' <span class="auth-inferred">推算</span>' : ''}</td>
+        <td>${escapeHtml(AUTH_METHOD_ZH[r.method] || r.method || '-')}</td>
+        <td>${escapeHtml(r.ip || '-')}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="5">暂无记录</td></tr>';
+  }
 
   async function renderAdmin() {
     if (!state.user?.isAdmin) return;
@@ -3733,6 +3782,8 @@
       $('#adminRoleHint').textContent = isSuper
         ? '当前身份：超级管理员（可查看注册IP/归属地，可新增、删除用户和重置密码）'
         : '当前身份：普通管理员（可查看用户与统计、开通/取消会员；IP归属地等敏感信息仅超级管理员可见）';
+
+      renderAdminAuthLog(isSuper);
 
       $('#adminRegionBody').innerHTML = (overview.regionBreakdown || []).map(r => `
         <tr><td>${escapeHtml(r.region)}</td><td>${r.count}</td></tr>

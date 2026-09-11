@@ -668,6 +668,24 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--p
 /* ============ 导航改版 ============ */
 /* 顶部菜单加图标，10个纯文字项扫读太费力 */
 
+/* ============ 后台：最近登录 ============ */
+.admin-auth-filter {
+  padding: 7px 11px; border: 1px solid var(--border); border-radius: 9px;
+  font-size: 13px; background: #fff; color: var(--text); cursor: pointer;
+}
+.auth-tag {
+  display: inline-block; padding: 1px 7px; border-radius: 999px;
+  font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.auth-tag-in  { background: var(--primary-light); color: var(--primary-dark); }
+.auth-tag-reg { background: #fff4d6; color: #8a5a00; }
+.auth-tag-out { background: #f1f2f6; color: #6b7280; }
+.auth-tag-vip { background: #ede9fe; color: #6d28d9; }
+.auth-uname { color: var(--text-muted); font-size: 12px; }
+/* 这条不是真实日志，是按注册时间补出来的，标出来免得被当成确凿记录 */
+.auth-inferred { font-size: 10.5px; color: var(--text-muted); }
+.admin-auth-note { font-size: 12px; color: var(--text-muted); margin-top: 8px; line-height: 1.7; }
+
 /* ============ 与 AI 私教面对面 ============ */
 .ft-hero {
   position: relative; overflow: hidden; border-radius: 22px; margin-bottom: 20px;

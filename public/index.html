@@ -766,6 +766,27 @@
         </div>
       </div>
 
+      <!-- 最近登录动态。整块只有超级管理员看得到，接口本身也是 requireSuperAdmin，
+           不是靠前端 hidden 挡——前端挡不住直接调接口的人。 -->
+      <div id="adminAuthSection" hidden>
+        <div class="admin-users-header">
+          <h3 class="section-title">最近登录</h3>
+          <select class="admin-auth-filter" id="adminAuthFilter">
+            <option value="all">全部动态</option>
+            <option value="login">只看登录</option>
+            <option value="register">只看新注册</option>
+            <option value="logout">只看登出</option>
+          </select>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>时间</th><th>用户</th><th>动作</th><th>方式</th><th>IP</th></tr></thead>
+            <tbody id="adminAuthBody"></tbody>
+          </table>
+        </div>
+        <p class="admin-auth-note" id="adminAuthNote"></p>
+      </div>
+
       <div id="adminRegionSection" hidden>
         <h3 class="section-title">注册地区分布</h3>
         <div class="admin-table-wrap">

@@ -2939,6 +2939,49 @@ app.get('/api/admin/users', requireAdmin, (req, res) => {
   res.json({ users, canSeeIp });
 });
 
+// 全站最近的登录/注册动态，按时间倒序汇总到一条时间线上。
+// 只有超级管理员能看：这里同时暴露了"谁、什么时候、从哪个 IP"，
+// 比用户列表里的单项还敏感，普通管理员一律不给。
+app.get('/api/admin/auth-recent', requireSuperAdmin, (req, res) => {
+  const limit = Math.min(500, Math.max(10, Number(req.query.limit) || 100));
+  const db = loadDB();
+  const rows = [];
+
+  for (const u of Object.values(db.users || {})) {
+    const log = Array.isArray(u.authLog) ? u.authLog : [];
+    for (const e of log) {
+      rows.push({
+        username: u.username,
+        nickname: u.nickname || u.username,
+        type: e.type,                       // login / logout
+        method: e.method || '',
+        at: e.at,
+        ip: e.ip || '',
+        isMember: isActiveMember(u),
+      });
+    }
+    // 每人的 authLog 只留最近 50 条，老用户的注册那条早被挤掉了。
+    // 用户要的是"包括已经注册的用户"，所以日志里没有注册记录时，
+    // 按 createdAt 补一条，保证每个账号至少在时间线上出现一次。
+    const hasRegister = log.some(e => e.method === 'register');
+    if (!hasRegister && u.createdAt) {
+      rows.push({
+        username: u.username,
+        nickname: u.nickname || u.username,
+        type: 'login',
+        method: 'register',
+        at: u.createdAt,
+        ip: u.registrationIp && u.registrationIp !== '-' ? u.registrationIp : '',
+        isMember: isActiveMember(u),
+        inferred: true,                     // 由注册时间推出来的，不是真实日志
+      });
+    }
+  }
+
+  rows.sort((a, b) => b.at - a.at);
+  res.json({ total: rows.length, rows: rows.slice(0, limit) });
+});
+
 // 某个用户的完整登录/登出记录，只有超级管理员能看
 app.get('/api/admin/users/:username/auth-log', requireSuperAdmin, (req, res) => {
   const db = loadDB();
