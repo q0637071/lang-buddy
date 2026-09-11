@@ -68,20 +68,37 @@
     : '/api';
   const TOKEN_KEY = 'lb_auth_token';
 
-  /// 请求断了之后探一次活，判断到底是"连不上服务器"还是"服务器活着、只是这一条断了"。
-  /// 探活用最轻的 /health，超时给短一点——用户已经在等一个错误提示了，不能再卡好几秒。
+  /// 请求断了之后做一次分诊。"网络连接失败"这一句话盖住了好几种完全不同的故障，
+  /// 用户只能一遍遍重试或者去查自己根本没问题的网络。这里分三档：
+  ///   设备离线 / 网站能连但接口被挡 / 整站连不上
+  /// 第二档最容易被忽略：页面是静态文件，接口是动态请求，中间的代理、安全软件、
+  /// 浏览器插件、公司网关都可能只拦后者——表现就是"页面好好的，一点按钮就失败"。
   async function diagnoseNetworkError() {
-    try {
+    if (navigator.onLine === false) return '设备当前没有联网，请连上网络后重试';
+
+    const ping = async (url, opts) => {
       const c = new AbortController();
       const t = setTimeout(() => c.abort(), 6000);
-      const r = await fetch(API_BASE + '/health', { signal: c.signal, cache: 'no-store' });
-      clearTimeout(t);
-      if (r.ok) {
-        // 服务器好好的，说明刚才那一下是偶发（常见于服务端正在发新版本、
-        // 或者移动网络切基站）。让用户直接重试，别去折腾网络设置。
-        return '刚才这次请求断了，服务器是正常的，请再点一次';
+      try {
+        const r = await fetch(url, { ...opts, signal: c.signal, cache: 'no-store' });
+        return r.ok;
+      } catch {
+        return false;
+      } finally {
+        clearTimeout(t);
       }
-    } catch { /* 探活也失败，那就是真的连不上 */ }
+    };
+
+    if (await ping(API_BASE + '/health')) {
+      // 服务器好好的，说明刚才那一下是偶发（常见于服务端正在发新版本、
+      // 或者移动网络切基站）。让用户直接重试，别去折腾网络设置。
+      return '刚才这次请求断了，服务器是正常的，请再点一次';
+    }
+    // 静态资源能拿到、接口拿不到 —— 说明网络是通的，被挡住的只有接口
+    if (await ping('css/style.css?ping=' + Date.now())) {
+      return '网站能打开，但接口请求被挡住了。常见原因是浏览器插件（广告拦截）、'
+        + '代理或公司网络拦了 /api 请求，换个网络或用无痕窗口再试一次';
+    }
     return '连不上服务器，请检查网络后重试';
   }
 
