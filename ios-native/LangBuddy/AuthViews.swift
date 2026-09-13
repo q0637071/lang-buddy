@@ -39,6 +39,7 @@ struct WelcomeView: View {
             .padding(.horizontal, 22)
             .padding(.bottom, 16)
         }
+        .background(WireSphereBackdrop().ignoresSafeArea())
     }
 }
 
@@ -83,6 +84,7 @@ struct LoginView: View {
             }
             .padding(.horizontal, 22).padding(.bottom, 16)
         }
+        .background(WireSphereBackdrop().ignoresSafeArea())
     }
 
     private func doLogin() async {
@@ -165,6 +167,7 @@ struct RegisterView: View {
                 .disabled(busy)
                 .padding(.horizontal, 22).padding(.bottom, 16)
         }
+        .background(WireSphereBackdrop().ignoresSafeArea())
     }
 
     private func sendCode() async {

@@ -90,8 +90,12 @@ enum OrbitCanvas {
 
     // MARK: - 绘制
 
+    /// satellites=false 时只画线框球本身，用于登录页那种纯背景装饰。
+    /// color 让浅色界面也能用：网页版那颗是亮线画在深色太空上，
+    /// 直接拿到 App 的白底登录页上会完全看不见。
     static func draw(in gc: GraphicsContext, center: CGPoint, radius: CGFloat,
-                     yaw: Double, pitch: Double, focalRatio: Double, time: Double) {
+                     yaw: Double, pitch: Double, focalRatio: Double, time: Double,
+                     satellites: Bool = true, color: Color = Theme.primary) {
         let cY = cos(yaw), sY = sin(yaw), cX = cos(pitch), sX = sin(pitch)
 
         func project(_ v: SIMD3<Double>) -> (p: CGPoint, z: Double, scale: Double) {
@@ -117,15 +121,17 @@ enum OrbitCanvas {
         }
         for (k, path) in buckets.enumerated() {
             let t = (Double(k) + 0.5) / 5
-            gc.stroke(path, with: .color(Theme.primary.opacity(0.05 + t * t * 0.42)), lineWidth: 1)
+            gc.stroke(path, with: .color(color.opacity(0.05 + t * t * 0.42)), lineWidth: 1)
         }
         // 顶点上的小亮点
         for pr in projected {
             let t = (pr.z + 1) / 2
             let r = 1.1 * (0.55 + t * 0.65)
             gc.fill(Path(ellipseIn: CGRect(x: pr.p.x - r, y: pr.p.y - r, width: r * 2, height: r * 2)),
-                    with: .color(Theme.primary.opacity(0.08 + t * t * 0.75)))
+                    with: .color(color.opacity(0.08 + t * t * 0.75)))
         }
+
+        guard satellites else { return }
 
         // ---- 卫星 ----
         // 轨道面内的一点 → 世界坐标。轨道线和卫星本体共用，两者必须同一套变换，
@@ -176,5 +182,48 @@ enum OrbitCanvas {
                         center: CGPoint(x: b.pr.p.x - size * 0.35, y: b.pr.p.y - size * 0.4),
                         startRadius: 0, endRadius: size * 1.3))
         }
+    }
+}
+
+/// 登录/注册页背后那颗慢慢自转的线框球，纯装饰。
+/// 和网页版落地页是同一颗：同样的测地球网格、同样 30 秒一圈、同样的倾角。
+/// 区别只有颜色——网页那边是深色太空底配亮线，App 这几页是白底，
+/// 亮线会完全看不见，所以改用品牌色。
+///
+/// 特意放在 OrbitCanvas.swift 里而不是新开一个文件：新文件得手动拖进 Xcode，
+/// 这一步已经出过两次岔子了，能省则省。
+struct WireSphereBackdrop: View {
+    var color: Color = Theme.primary
+    var opacity: Double = 0.5
+    /// 半径占短边的比例。0.46 让球比屏幕略满一点，边缘自然被裁掉，更像背景而不是一个图标
+    var radiusRatio: CGFloat = 0.46
+    var secondsPerTurn: Double = 30
+
+    @State private var startedAt = Date()
+
+    var body: some View {
+        GeometryReader { geo in
+            TimelineView(.animation) { ctx in
+                let t = ctx.date.timeIntervalSince(startedAt)
+                Canvas { gc, size in
+                    OrbitCanvas.draw(
+                        in: gc,
+                        center: CGPoint(x: size.width / 2, y: size.height / 2),
+                        radius: min(size.width, size.height) * radiusRatio,
+                        yaw: t * (.pi * 2 / secondsPerTurn),
+                        pitch: -0.3,
+                        focalRatio: 3.2,
+                        time: t,
+                        satellites: false,
+                        color: color
+                    )
+                }
+                .frame(width: geo.size.width, height: geo.size.height)
+            }
+        }
+        .opacity(opacity)
+        // 纯装饰：不能挡住下面的输入框和按钮
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }

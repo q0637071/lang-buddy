@@ -1703,10 +1703,13 @@ app.post('/api/avatar/conversation', requireAuth, rateLimit(6), async (req, res)
 
   const replyLangName = LANG_NAME[user.targetLang] || '英语';
   const levelZh = LEVEL_ZH[user.level] || '初级';
+  // 视频老师和文字对话用同一批"对话对象"，不然用户要在两个地方各选一次人
+  const persona = findPersona(req.body?.personaId);
+  const personaLine = persona ? `\n你的角色设定：${persona.prompt}` : '';
   const context = `你是一位耐心友好的${replyLangName}私教，正在和一位${levelZh}水平的中国学生做面对面口语练习。
 请全程使用${replyLangName}交流，难度贴合${levelZh}水平。学生说错时先温和纠正再继续话题。
 每次回应简短自然（不超过60个词），多用提问引导学生开口，不要长篇讲课。
-学生的昵称是${user.nickname || user.username}。`;
+学生的昵称是${user.nickname || user.username}。${personaLine}`;
 
   // 单次时长取"本月剩余"和"单次上限"的小值，防止一场就把剩余额度全部吃掉还超支
   // 单次时长取"剩余额度"和"单次上限"的小值，防止一场就把剩余额度全部吃掉还超支。
@@ -1718,12 +1721,14 @@ app.post('/api/avatar/conversation', requireAuth, rateLimit(6), async (req, res)
     q.unlimited ? Infinity : q.remaining,
   );
 
+  const face = personaFace(persona);
+
   try {
     const data = await tavusFetch('/conversations', {
       method: 'POST',
       body: JSON.stringify({
-        face_id: TAVUS_FACE_ID,
-        ...(TAVUS_PAL_ID ? { pal_id: TAVUS_PAL_ID } : {}),
+        face_id: face.faceId,
+        ...(face.palId ? { pal_id: face.palId } : {}),
         conversation_name: `LangBuddy-${user.username}`,
         conversational_context: context,
         properties: {
@@ -1804,12 +1809,38 @@ function findPersona(id) {
   return readPersonas().find(p => p.id === id) || null;
 }
 
+// 视频通话用哪个数字人形象。Tavus 的 face 是绑在账号上的资源，ID 不能写死在仓库里，
+// 所以按人设 id 去读环境变量：TAVUS_FACE_DANIEL=r1234... 就能把 Daniel 换成另一张脸。
+// 没单独配的人设一律退回默认的 TAVUS_FACE_ID——这样只有一个形象时功能照常可用，
+// 只是几位老师长得一样、但性格和说话方式不同。
+function personaFace(persona) {
+  if (!persona) return { faceId: TAVUS_FACE_ID, palId: TAVUS_PAL_ID };
+  const key = persona.id.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+  return {
+    faceId: process.env[`TAVUS_FACE_${key}`] || TAVUS_FACE_ID,
+    palId: process.env[`TAVUS_PAL_${key}`] || TAVUS_PAL_ID,
+  };
+}
+
+/// 这个人设是不是有自己的专属形象（而不是跟别人共用默认那张脸）
+function personaHasOwnFace(persona) {
+  const key = persona.id.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+  return !!process.env[`TAVUS_FACE_${key}`];
+}
+
 // 列表里不带 prompt：那是提示词，属于内部实现，没必要发给前端
 app.get('/api/personas', requireAuth, (req, res) => {
   const list = readPersonas();
   res.json({
-    personas: list.map(({ prompt, ...rest }) => rest),
+    personas: list.map(({ prompt, ...rest }) => ({
+      ...rest,
+      // 有没有专属的数字人形象。没有的话视频通话里几位老师长得一样，
+      // 前端据此决定要不要提示"形象相同、性格不同"
+      hasOwnFace: personaHasOwnFace(rest),
+    })),
     defaultId: list[0]?.id || null,   // 前端没存过选择时用这个
+    // 一共配了几张脸。1 表示还只有默认形象
+    distinctFaces: new Set(list.map(p => personaFace(p).faceId).filter(Boolean)).size,
   });
 });
 
