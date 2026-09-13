@@ -359,9 +359,12 @@ struct Persona: Codable, Identifiable, Equatable {
     let photo: String?
 
     var displayName: String { name + " · " + title }
-    /// 后端给的是相对路径，App 要拼成完整地址才能加载
+    /// photo 有两种：本地放的图是相对路径（img/personas/xxx.jpg），
+    /// 从 Tavus 取回来的缩略图是完整的 http 地址。别无脑拼前缀，
+    /// 否则会拼出 https://langbuddy.org/https://... 这种废地址。
     var photoURL: URL? {
         guard let photo, !photo.isEmpty else { return nil }
+        if photo.hasPrefix("http://") || photo.hasPrefix("https://") { return URL(string: photo) }
         return URL(string: "https://langbuddy.org/" + photo)
     }
 }

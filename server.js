@@ -1850,14 +1850,59 @@ function personaPhoto(id) {
   return personaPhotoCache[String(id).toLowerCase()] || null;
 }
 
+// 没有本地照片时，直接问 Tavus 要这个形象的缩略图——用户就不用一张张截图存文件了。
+// 字段名不确定（各版本叫过 thumbnail_url / thumbnail_image_url / preview_url…），
+// 所以不写死：把返回对象里所有"名字里带 thumbnail/image/preview 且值是图片链接"的
+// 字段挑出来，取第一个。找不到就返回 null，前端退回 emoji。
+let tavusThumbCache = null;      // { faceId: url | null }
+function looksLikeImageURL(v) {
+  return typeof v === 'string' && /^https?:\/\//.test(v) && /\.(jpe?g|png|webp|gif)(\?|$)/i.test(v);
+}
+function findThumb(obj, depth = 0) {
+  if (!obj || typeof obj !== 'object' || depth > 3) return null;
+  for (const [k, v] of Object.entries(obj)) {
+    if (looksLikeImageURL(v) && /thumb|image|preview|poster|avatar/i.test(k)) return v;
+  }
+  // 第一轮没命中就放宽：任何图片链接都收
+  for (const v of Object.values(obj)) {
+    if (looksLikeImageURL(v)) return v;
+    if (v && typeof v === 'object') {
+      const hit = findThumb(v, depth + 1);
+      if (hit) return hit;
+    }
+  }
+  return null;
+}
+
+async function loadTavusThumbs(personas) {
+  if (tavusThumbCache) return tavusThumbCache;
+  tavusThumbCache = {};
+  if (!TAVUS_API_KEY) return tavusThumbCache;
+  // 八个请求并发发出去，串行会让第一次打开人设列表卡好几秒
+  await Promise.all(personas.map(async p => {
+    const faceId = personaFace(p).faceId;
+    if (!faceId) return;
+    for (const base of ['/faces/', '/replicas/']) {
+      try {
+        const data = await tavusFetch(base + encodeURIComponent(faceId));
+        const url = findThumb(data);
+        if (url) { tavusThumbCache[faceId] = url; return; }
+      } catch { /* 这个路径不通就试下一个 */ }
+    }
+  }));
+  return tavusThumbCache;
+}
+
 // 列表里不带 prompt：那是提示词，属于内部实现，没必要发给前端
-app.get('/api/personas', requireAuth, (req, res) => {
+app.get('/api/personas', requireAuth, async (req, res) => {
   const list = readPersonas();
+  // 本地照片优先（自己放的想怎么裁怎么裁），没有就用 Tavus 的形象缩略图。
+  // 拉不到也不影响，前端退回 emoji。
+  const thumbs = await loadTavusThumbs(list).catch(() => ({}));
   res.json({
     personas: list.map(({ prompt, ...rest }) => ({
       ...rest,
-      // 有照片就给路径，没有前端会退回 emoji
-      photo: personaPhoto(rest.id),
+      photo: personaPhoto(rest.id) || thumbs[personaFace(rest).faceId] || null,
       // 有没有专属的数字人形象。没有的话视频通话里几位老师长得一样，
       // 前端据此决定要不要提示"形象相同、性格不同"
       hasOwnFace: personaHasOwnFace(rest),
