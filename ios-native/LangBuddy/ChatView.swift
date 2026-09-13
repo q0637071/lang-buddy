@@ -18,7 +18,7 @@ struct ChatView: View {
     @StateObject private var speaker = Speaker.shared
     // 存的是"跟谁聊"。音色不再单独设——选了人就等于选了声音，
     // 分两处设置只会让用户困惑（选了严格教练却配着甜美女声）。
-    @AppStorage("lb_persona") private var personaId = "hannah"
+    @AppStorage("lb_persona") private var personaId = "olivia"
     @State private var personas: [Persona] = []
     /// 当前人设对应的音色；人设还没加载出来时退回默认
     private var voice: String {
@@ -559,18 +559,7 @@ struct PersonaPicker: View {
                         } label: {
                             VStack(spacing: 3) {
                                 // 有照片显示照片，没有退回 emoji；加载中先占位，别让整排跳动
-                                if let url = p.photoURL {
-                                    AsyncImage(url: url) { img in
-                                        img.resizable().scaledToFill()
-                                    } placeholder: {
-                                        Color(white: 0.90)
-                                    }
-                                    .frame(width: 34, height: 34)
-                                    .clipShape(Circle())
-                                    .overlay(Circle().stroke(on ? Theme.primary : .clear, lineWidth: 2))
-                                } else {
-                                    Text(p.emoji).font(.system(size: 20))
-                                }
+                                PersonaAvatar(persona: p, size: 34, highlighted: on)
                                 Text(p.name).font(.system(size: 11, weight: on ? .bold : .medium))
                                 Text(p.title).font(.system(size: 9.5))
                                     .foregroundColor(on ? Theme.primaryDark : Theme.muted)
@@ -604,5 +593,49 @@ struct PersonaPicker: View {
             }
         }
         .padding(.vertical, 8)
+    }
+}
+
+/// 老师头像。照片、加载中、加载失败三种状态都要有确定的样子——
+/// 之前用 AsyncImage 的 placeholder 写法，失败时会永远停在一个灰圈上，
+/// 看起来就是"没有预览图"，还分不清是没配照片还是没加载出来。
+/// 现在用 phase 版本：失败一律退回 emoji，至少永远有东西可看。
+struct PersonaAvatar: View {
+    let persona: Persona
+    var size: CGFloat = 34
+    var highlighted: Bool = false
+
+    var body: some View {
+        Group {
+            if let url = persona.photoURL {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let img):
+                        img.resizable().scaledToFill()
+                    case .failure:
+                        fallback           // 网络不通、地址失效、格式不认——都退回 emoji
+                    case .empty:
+                        ZStack {
+                            Color(white: 0.92)
+                            ProgressView().scaleEffect(0.55)
+                        }
+                    @unknown default:
+                        fallback
+                    }
+                }
+            } else {
+                fallback
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+        .overlay(Circle().stroke(highlighted ? Theme.primary : .clear, lineWidth: 2))
+    }
+
+    private var fallback: some View {
+        ZStack {
+            Theme.primaryLight
+            Text(persona.emoji).font(.system(size: size * 0.55))
+        }
     }
 }

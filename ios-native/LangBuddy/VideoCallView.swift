@@ -16,7 +16,7 @@ struct VideoCallView: View {
     @State private var ended = false
     @State private var errorText: String?
     // 和文字对话共用同一批"对话对象"，选一次到处生效
-    @AppStorage("lb_persona") private var personaId = "hannah"
+    @AppStorage("lb_persona") private var personaId = "olivia"
     @State private var personas: [Persona] = []
     @State private var sameFaceForAll = true
 
@@ -88,9 +88,19 @@ struct VideoCallView: View {
                 Text(remainText).font(.system(size: 14)).foregroundColor(.white.opacity(0.7))
                     .padding(.top, 4)
             } else {
-                Text("🧑‍🏫").font(.system(size: 54))
+                // 显示当前选中的老师，不要放通用卡通图标——
+                // 接通后看到的是谁，这里就该是谁
+                if let p = personas.first(where: { $0.id == personaId }) {
+                    PersonaAvatar(persona: p, size: 88, highlighted: true)
+                    Text(p.name + " · " + p.title)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding(.top, 10)
+                } else {
+                    Text("🧑‍🏫").font(.system(size: 54))
+                }
                 Text("和 AI 私教面对面").font(.system(size: 22, weight: .bold)).foregroundColor(.white)
-                    .padding(.top, 14)
+                    .padding(.top, 10)
                 Text(subtitleText)
                     .font(.system(size: 14))
                     .foregroundColor(.white.opacity(0.75))
