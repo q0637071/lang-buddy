@@ -1300,6 +1300,21 @@
         renderPersonaRow(containerId, isCall);   // 重画一次，更新选中态和说明
       });
     });
+    if (isCall) renderCallFace();
+  }
+
+  /// 面授页顶部那张大头像。选谁显示谁——接通后看到的应该是同一张脸，
+  /// 原来放的是个通用卡通图标，跟实际通话对象没关系。
+  function renderCallFace() {
+    const box = $safe('#ftFace');
+    if (!box) return;
+    const p = personaList.find(x => x.id === currentPersonaId());
+    if (!p) { box.hidden = true; return; }
+    box.hidden = false;
+    box.innerHTML = p.photo
+      ? `<img src="${escapeHtml(p.photo)}" alt="${escapeHtml(p.name)}">`
+      : `<span class="ft-face-emoji">${escapeHtml(p.emoji)}</span>`;
+    box.title = p.name + ' · ' + p.title;
   }
 
   async function refreshAvatarButton() {

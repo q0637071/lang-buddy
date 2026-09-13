@@ -5,12 +5,16 @@
 
 | 老师 | 文件名（三选一） |
 |---|---|
-| 👩‍🏫 Hannah 耐心的老师 | `hannah.jpg` / `hannah.png` / `hannah.webp` |
-| 👩‍💼 Diana 职场同事 | `diana.jpg` … |
-| 🧑‍🎤 Autumn 闲聊的朋友 | `autumn.jpg` … |
-| 🧑 Austin 健谈的男生 | `austin.jpg` … |
-| 🕴️ Daniel 面试官 | `daniel.jpg` … |
-| 🧔 Troy 严格的教练 | `troy.jpg` … |
+| 👩‍🏫 Janet 耐心的老师 | `janet.jpg` / `janet.png` / `janet.webp` |
+| 👩‍⚕️ Dr. Adams 医生 | `dradams.jpg` … |
+| 👩‍💼 Priya 职场同事 | `priya.jpg` … |
+| 🧑‍🎤 Julia 闲聊的朋友 | `julia.jpg` … |
+| 🕴️ James 面试官 | `james.jpg` … |
+| 🧔 Thomas 严格的教练 | `thomas.jpg` … |
+| 🧑 Raj 健谈的邻居 | `raj.jpg` … |
+| 🧑‍🎓 Danny 同龄学生 | `danny.jpg` … |
+
+照片直接从 Tavus 形象库那一页截图裁一下就行——列表里看到谁，接通后就是谁。
 
 没放照片的老师会继续显示 emoji，不会出错。
 

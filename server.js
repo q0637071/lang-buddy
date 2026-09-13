@@ -1813,19 +1813,23 @@ function findPersona(id) {
 // 所以按人设 id 去读环境变量：TAVUS_FACE_DANIEL=r1234... 就能把 Daniel 换成另一张脸。
 // 没单独配的人设一律退回默认的 TAVUS_FACE_ID——这样只有一个形象时功能照常可用，
 // 只是几位老师长得一样、但性格和说话方式不同。
+// 优先级：环境变量 > personas.json 里的 faceId > 默认的 TAVUS_FACE_ID。
+// faceId 写进仓库是可以的，因为那是 Tavus 公共形象库（Stock Replica）的 ID，
+// 各账号通用、也不是密钥。留环境变量这一层是为了两种情况：
+// 想换成自己录的形象，或者哪天 Stock 的 ID 变了不用改代码。
 function personaFace(persona) {
   if (!persona) return { faceId: TAVUS_FACE_ID, palId: TAVUS_PAL_ID };
   const key = persona.id.toUpperCase().replace(/[^A-Z0-9]/g, '_');
   return {
-    faceId: process.env[`TAVUS_FACE_${key}`] || TAVUS_FACE_ID,
-    palId: process.env[`TAVUS_PAL_${key}`] || TAVUS_PAL_ID,
+    faceId: process.env[`TAVUS_FACE_${key}`] || persona.faceId || TAVUS_FACE_ID,
+    palId: process.env[`TAVUS_PAL_${key}`] || persona.palId || TAVUS_PAL_ID,
   };
 }
 
-/// 这个人设是不是有自己的专属形象（而不是跟别人共用默认那张脸）
+/// 这个人设是不是有自己的形象（而不是跟别人共用默认那张脸）
 function personaHasOwnFace(persona) {
   const key = persona.id.toUpperCase().replace(/[^A-Z0-9]/g, '_');
-  return !!process.env[`TAVUS_FACE_${key}`];
+  return !!(process.env[`TAVUS_FACE_${key}`] || persona.faceId);
 }
 
 // 老师照片：文件名就是人设 id，放在 public/img/personas/ 下面就自动生效，
