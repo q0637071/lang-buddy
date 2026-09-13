@@ -197,6 +197,10 @@
 
   function showView(name) {
     if (!state.user && name !== 'landing') name = 'landing';
+    // 已登录就不该再看到落地页——那上面是"免费开始学习""已有账号，登录"，
+    // 对一个已经登录的人毫无意义，还容易顺手又去注册一个号。
+    // 点品牌 logo 对已登录用户就是"回首页"，这也是通行做法。
+    if (state.user && name === 'landing') name = 'dashboard';
     if (name === 'admin' && !state.user?.isAdmin) name = 'dashboard';
     if (name !== 'tutor' && state.voiceCallActive) stopVoiceCall();
     VIEWS.forEach(v => {
@@ -291,6 +295,9 @@
 
   // ---------- 认证弹窗 ----------
   function openAuthModal(mode) {
+    // 已经登录了就别再弹登录/注册。除了上面那道 showView 的守卫，这里也拦一道：
+    // 缓存的旧页面、外部链接、返回键都可能绕过前者直接调到这里。
+    if (state.user) { showView('dashboard'); return; }
     state.authMode = mode;
     $('#authModalOverlay').hidden = false;
     $('#authError').textContent = '';

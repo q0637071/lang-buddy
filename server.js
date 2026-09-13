@@ -635,6 +635,14 @@ async function callChatAPI(opts) {
 // 注册必须同时提供手机号+验证码，杜绝"只填用户名密码"就能无限开小号防刷免费额度的漏洞——
 // 一个手机号只能注册一个账号，验证码复用 /api/auth/phone/send-code 发送的那套（一次性使用）
 app.post('/api/register', rateLimit(10), async (req, res) => {
+  // 已经登录的人不该再注册——前端已经拦了一道，但那只是体验；
+  // 真正的约束得在这里，否则缓存的旧页面、外部链接、直接打接口都能绕过去。
+  // 必须确认这个 session 指向的用户真的还在：账号被删过的话 cookie 还留着，
+  // 那种情况要放他去注册，不能把人卡死在这儿。
+  if (req.session.userId && loadDB().users[req.session.userId]) {
+    return res.status(400).json({ error: '你已经登录了，要注册新账号请先退出当前账号' });
+  }
+
   const { username, password, nickname, phone, code } = req.body || {};
   if (!username || !password) return res.status(400).json({ error: '用户名和密码不能为空' });
   if (typeof username !== 'string' || username.length < 3 || username.length > 30) {
