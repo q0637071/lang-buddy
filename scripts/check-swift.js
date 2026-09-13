@@ -54,6 +54,26 @@ for (const [name, fs_] of Object.entries(declared)) {
   if (fs_.length > 1) issues.push(`类型 ${name} 在多处定义: ${fs_.join(', ')}`);
 }
 
+// Theme.xxx 必须在 Theme.swift 里真的定义过。
+// 我在 Windows 上写 Swift 没法编译，写视图时顺手用了个 Theme.orbitBackdrop、
+// 忘了它还不存在——这类"引用了不存在的成员"只有编译器才会报，所以在这里补一道。
+const theme = src['Theme.swift'] || '';
+const themeMembers = new Set(
+  [...theme.matchAll(/^\s*(?:public |private )?static (?:let|var) (\w+)/gm)].map(m => m[1])
+);
+if (themeMembers.size) {
+  for (const [f, s] of Object.entries(src)) {
+    if (f === 'Theme.swift') continue;
+    s.split('\n').forEach((l, i) => {
+      for (const m of l.matchAll(/\bTheme\.(\w+)/g)) {
+        if (!themeMembers.has(m[1])) {
+          issues.push(`${f}:${i + 1} Theme.${m[1]} 在 Theme.swift 里没有定义`);
+        }
+      }
+    });
+  }
+}
+
 // route 的每个 case 都要在 RootView 的 switch 和 routeKey 里出现，漏一个编译不过
 const state = src['AppState.swift'] || '';
 const app = src['LangBuddyApp.swift'] || '';

@@ -38,7 +38,9 @@ struct RootView: View {
             case .result(let r):
                 PlacementResultView(result: r).transition(.opacity)
             case .home:
-                HomeView().transition(.opacity)
+                // 首页换成功能星球：所有功能挂在球面上，转到最前面的就是选中项。
+                // 原来那份卡片列表留在 HomeView.swift 里没删，想换回去改这一行就行。
+                FeatureOrbitView().transition(.opacity)
             case .chat(let s):
                 ChatView(scenario: s).transition(.move(edge: .trailing).combined(with: .opacity))
             case .scenarios:

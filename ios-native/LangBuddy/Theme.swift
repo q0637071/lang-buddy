@@ -11,6 +11,17 @@ enum Theme {
     static let border = Color(red: 232 / 255, green: 233 / 255, blue: 240 / 255)
     static let danger = Color(red: 220 / 255, green: 38 / 255, blue: 38 / 255)
 
+    /// 功能星球那一屏的深色底。线框球在浅底上几乎看不见，
+    /// "太空感"本来就要靠暗背景托。
+    static let orbitBackdrop = LinearGradient(
+        colors: [
+            Color(red: 0.04, green: 0.05, blue: 0.10),
+            Color(red: 0.07, green: 0.10, blue: 0.19),
+            Color(red: 0.04, green: 0.10, blue: 0.16),
+        ],
+        startPoint: .top, endPoint: .bottom
+    )
+
     static let brandGradient = LinearGradient(
         colors: [primary, accent],
         startPoint: .topLeading, endPoint: .bottomTrailing

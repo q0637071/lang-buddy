@@ -341,6 +341,55 @@ struct SendCodeResponse: Codable {
     let devCode: String?
 }
 
+// MARK: - 作文批改
+
+struct EssayCorrection: Codable, Identifiable, Equatable {
+    let original: String
+    let corrected: String
+    let explanation: String
+    // 后端没给 id，用内容拼一个。同一条修改的三段文字凑在一起足够唯一，
+    // 用数组下标当 id 会在列表变化时错位
+    var id: String { original + "→" + corrected }
+}
+
+struct EssayRubric: Codable, Equatable {
+    let content: String
+    let organization: String
+    let language: String
+}
+
+struct EssayResult: Codable, Equatable {
+    let estimatedLevel: String
+    let overallComment: String
+    let correctedEssay: String
+    let corrections: [EssayCorrection]
+    // 只有英语考试模式才有这两项
+    let scoreEstimate: String?
+    let rubric: EssayRubric?
+}
+
+// MARK: - 我的
+
+// VocabStats 上面背单词那一节已经有了，直接复用，不要再定义一遍
+
+struct MistakeStats: Codable, Equatable {
+    let total: Int
+    let mastered: Int
+}
+
+struct Metrics: Codable, Equatable {
+    let vocab: VocabStats
+    let mistakes: MistakeStats
+    let chatCount: Int
+    let streakDays: Int
+    let activeDays: Int
+    let isMember: Bool
+}
+
+struct ProfileResponse: Codable {
+    let user: User
+}
+
 /// 后端统一用 { error: "..." } 返回错误，这里解出来直接展示给用户
 struct APIError: LocalizedError {
     let message: String
