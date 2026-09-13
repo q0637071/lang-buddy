@@ -768,8 +768,10 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--p
 /* ============ 首页功能星球 ============ */
 /* 投影是在 JS 里算的，不用 CSS 的 preserve-3d：连接线要画在 SVG 里，
    而 SVG 进不了 preserve-3d 的 3D 空间。自己算投影反而能同时控制节点和线的景深。 */
+/* isolation 必须有：里面选中的胶囊 z-index 给到 999，若不自成层叠上下文，
+   它会直接和顶栏（z-index 50）比大小，页面一滚就盖到导航上面去 */
 .feat-orbit {
-  position: relative; display: grid; grid-template-columns: 1fr 232px;
+  position: relative; isolation: isolate; display: grid; grid-template-columns: 1fr 232px;
   gap: 18px; align-items: center; margin-bottom: 26px;
   padding: 18px; border-radius: 22px; overflow: hidden;
   background:
@@ -790,8 +792,9 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--p
   -webkit-mask-image: radial-gradient(70% 70% at 35% 45%, #000, transparent 75%);
 }
 
+/* 球缩小之后要给外围轨道留出上下空间，舞台跟着加高 */
 .feat-orbit-stage {
-  position: relative; height: 320px; touch-action: none; cursor: grab;
+  position: relative; height: 360px; touch-action: none; cursor: grab;
   outline: none;
 }
 .feat-orbit-stage:active { cursor: grabbing; }
@@ -835,7 +838,7 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--p
 
 @media (max-width: 720px) {
   .feat-orbit { grid-template-columns: 1fr; gap: 6px; padding: 14px; }
-  .feat-orbit-stage { height: 268px; }
+  .feat-orbit-stage { height: 300px; }
   .feat-orbit-panel { text-align: center; }
   .feat-orbit-node { font-size: 12.5px; padding: 7px 11px 7px 8px; }
 }

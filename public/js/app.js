@@ -2145,11 +2145,36 @@
   function createWireSphere(canvas, opts = {}) {
     const o = {
       level: 2, color: '255,255,255', spin: 0.00022, dot: 1.5,
-      lineWidth: 1, alpha: 1, radiusRatio: 0.42, tilt: -0.42, driven: false, ...opts,
+      lineWidth: 1, alpha: 1, radiusRatio: 0.42, tilt: -0.42, driven: false,
+      satellites: false, satAlpha: 0.95, ...opts,
     };
     const { verts, edges } = icosphere(o.level);
     const ctx = canvas.getContext('2d');
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+    // 大球外围的卫星。轨道半径都 > 1，所以它们在球面之外绕；
+    // 速度各不相同而且互不成整数倍，避免转几圈之后又排成一条线。
+    // size 是"半径占主球半径的比例"，跟着球一起缩放，换屏幕尺寸不会走形。
+    const SATS = [
+      { kind: 'ball', orbitR: 1.10, inc: 0.34,  node: 0.0, phase: 0.0, speed: 0.33, size: 0.095, color: '126,240,234' },
+      { kind: 'ball', orbitR: 1.22, inc: -0.52, node: 1.9, phase: 2.1, speed: -0.21, size: 0.072, color: '125,211,252' },
+      { kind: 'ball', orbitR: 1.06, inc: 0.78,  node: 3.6, phase: 4.0, speed: 0.27, size: 0.056, color: '167,139,250' },
+      { kind: 'ball', orbitR: 1.24, inc: 0.12,  node: 2.7, phase: 1.2, speed: 0.17, size: 0.062, color: '253,224,71' },
+      { kind: 'tri',  orbitR: 1.16, inc: -0.30, node: 0.8, phase: 3.1, speed: 0.24, size: 0.150, color: '126,240,234' },
+      { kind: 'tri',  orbitR: 1.21, inc: 0.62,  node: 4.4, phase: 0.7, speed: -0.19, size: 0.130, color: '186,230,253' },
+      { kind: 'tri',  orbitR: 1.13, inc: -0.70, node: 5.5, phase: 5.2, speed: 0.30, size: 0.110, color: '196,181,253' },
+    ];
+    // 线框球刻意压得很淡（alpha 0.5），但卫星是要被看见的主体，
+    // 跟着一起淡就几乎看不出来了，所以单独给一档亮度
+    const satAlpha = o.satAlpha;
+    const sats = o.satellites
+      ? SATS.map((s, i) => ({
+          ...s,
+          size: s.size,
+          spin0: i * 1.1,
+          spinSpeed: s.kind === 'tri' ? (i % 2 ? -0.5 : 0.45) : 0,
+        }))
+      : [];
     let w = 0, h = 0, raf = null, yaw = 0, prev = 0;
     const px = new Float32Array(verts.length);
     const py = new Float32Array(verts.length);
@@ -2218,6 +2243,112 @@
           ctx.fill();
         }
       }
+
+      if (sats.length) drawSatellites(cx, cy, R, F, cY, sY, cX, sX);
+    }
+
+    // ---- 大球外面的卫星：几颗小球 + 几个三角 ----
+    // 各自有独立的轨道面和速度，不跟着主球一起转，画面才不会像一张贴纸在旋转。
+    // 投影用的是和主球完全相同的 R / F / yaw / pitch，所以它们是同一个空间里的东西。
+    function drawSatellites(cx, cy, R, F, cY, sY, cX, sX) {
+      const t = reduce ? 0 : performance.now() / 1000;
+      const drawn = [];
+
+      // 把轨道面内的一点变换到屏幕坐标。轨道线和卫星本体共用，
+      // 两者必须走完全同一套变换，否则球会"脱轨"。
+      const toScreen = (s, a) => {
+        let x = Math.cos(a) * s.orbitR, y = 0, z = Math.sin(a) * s.orbitR;
+        const ci = Math.cos(s.inc), si = Math.sin(s.inc);
+        [y, z] = [y * ci - z * si, y * si + z * ci];
+        const cn = Math.cos(s.node), sn = Math.sin(s.node);
+        [x, z] = [x * cn + z * sn, -x * sn + z * cn];
+        const x1 = x * cY + z * sY;
+        const z1 = -x * sY + z * cY;
+        const y2 = y * cX - z1 * sX;
+        const z2 = y * sX + z1 * cX;
+        const sc = F / (F - z2 * R);
+        return { X: cx + x1 * R * sc, Y: cy + y2 * R * sc, z: z2, sc };
+      };
+
+      // 先画轨道线：一圈细细的椭圆，是"这些东西在绕着转"最直接的说明。
+      // 背面那半压得更暗，环才有穿过球体的立体感。
+      const SEG = 72;
+      for (const s of sats) {
+        ctx.lineWidth = 1;
+        for (let k = 0; k < SEG; k++) {
+          const p0 = toScreen(s, (k / SEG) * Math.PI * 2);
+          const p1 = toScreen(s, ((k + 1) / SEG) * Math.PI * 2);
+          const depth = ((p0.z + p1.z) / 2 + 1) / 2;
+          ctx.strokeStyle = `rgba(${s.color},${(satAlpha * (0.03 + depth * depth * 0.17)).toFixed(3)})`;
+          ctx.beginPath();
+          ctx.moveTo(p0.X, p0.Y);
+          ctx.lineTo(p1.X, p1.Y);
+          ctx.stroke();
+        }
+      }
+
+      for (const s of sats) {
+        const a = s.phase + s.speed * t;
+        // 轨道面内的圆
+        let x = Math.cos(a) * s.orbitR, y = 0, z = Math.sin(a) * s.orbitR;
+        // 绕 X 轴倾一下（轨道倾角），再绕 Y 轴转一下（升交点），让每条轨道朝向都不同
+        const ci = Math.cos(s.inc), si = Math.sin(s.inc);
+        [y, z] = [y * ci - z * si, y * si + z * ci];
+        const cn = Math.cos(s.node), sn = Math.sin(s.node);
+        [x, z] = [x * cn + z * sn, -x * sn + z * cn];
+        // 再套用主球的 yaw / pitch
+        const x1 = x * cY + z * sY;
+        const z1 = -x * sY + z * cY;
+        const y2 = y * cX - z1 * sX;
+        const z2 = y * sX + z1 * cX;
+
+        const sc = F / (F - z2 * R);
+        drawn.push({
+          s, z: z2, sc,
+          X: cx + x1 * R * sc,
+          Y: cy + y2 * R * sc,
+          spin: s.spin0 + s.spinSpeed * t,
+        });
+      }
+
+      // 远的先画，近的后画——不排序的话后面的会盖住前面的，立体感立刻塌掉
+      drawn.sort((p, q) => p.z - q.z);
+
+      for (const d of drawn) {
+        const depth = (d.z + 1) / 2;                 // 0 最远 1 最近
+        const alpha = satAlpha * (0.18 + depth * depth * 0.82);
+        const size = d.s.size * d.sc * (0.6 + depth * 0.55);
+        ctx.save();
+        ctx.translate(d.X, d.Y);
+        if (d.s.kind === 'tri') {
+          // 三角只描边不填充，像 HUD 上的标记；自转让它有"在飘"的感觉
+          ctx.rotate(d.spin);
+          ctx.strokeStyle = `rgba(${d.s.color},${alpha.toFixed(3)})`;
+          ctx.lineWidth = Math.max(0.7, 1.1 * d.sc);
+          ctx.lineJoin = 'round';
+          ctx.beginPath();
+          for (let k = 0; k < 3; k++) {
+            const ang = -Math.PI / 2 + k * (Math.PI * 2 / 3);
+            const fx = Math.cos(ang) * size, fy = Math.sin(ang) * size;
+            k ? ctx.lineTo(fx, fy) : ctx.moveTo(fx, fy);
+          }
+          ctx.closePath();
+          ctx.stroke();
+        } else {
+          // 小球：径向渐变做出高光在左上的球感，外面再加一圈辉光
+          const g = ctx.createRadialGradient(-size * 0.35, -size * 0.4, size * 0.1, 0, 0, size);
+          g.addColorStop(0, `rgba(255,255,255,${(alpha * 0.95).toFixed(3)})`);
+          g.addColorStop(0.45, `rgba(${d.s.color},${alpha.toFixed(3)})`);
+          g.addColorStop(1, `rgba(${d.s.color},${(alpha * 0.25).toFixed(3)})`);
+          ctx.shadowColor = `rgba(${d.s.color},${(alpha * 0.8).toFixed(3)})`;
+          ctx.shadowBlur = size * 2.6;
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(0, 0, size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
     }
 
     const ro = window.ResizeObserver ? new ResizeObserver(resize) : null;
@@ -2280,7 +2411,10 @@
       { nav: 'profile',    label: '我的',     desc: '会员、目标语言、学习设置',     color: '#94a3b8' },
     ];
 
-    const RADIUS_RATIO = 0.44;        // 和线框球用同一个比例，两者半径才一致
+    // 0.32 不是随便定的：卫星最远绕到 1.24 倍球半径，加上自身尺寸和辉光，
+    // 触及半径约 1.45R。舞台是矩形、球半径按 min(w,h) 算，手机上半宽只有 149px，
+    // 实测 ratio 再大一档卫星就会被舞台边缘切掉。
+    const RADIUS_RATIO = 0.32;        // 和线框球用同一个比例，两者半径才一致
     // 自转速度统一按"多少秒一圈"来写，别直接写弧度——之前写 0.0032 rad/ms
     // 看着像个小数，其实是 2 秒一圈，快得根本看不清哪个功能转到了前面。
     // 背景线框球必须用同一个值，否则两层会互相打滑，一眼就看出不是同一颗球。
@@ -2364,7 +2498,7 @@
       links = edges.map(([a, b]) => ({ a, b, path: mk('fo-link', 1.4), cx: 0, cy: 0, vx: 0, vy: 0 }));
 
       wire = createWireSphere(document.getElementById('featOrbitWire'), {
-        level: 2, color: '150,240,235', dot: 1.1, alpha: 0.5, driven: true,
+        level: 2, color: '150,240,235', dot: 1.1, alpha: 0.5, driven: true, satellites: true,
       });
       wire.start();
 
@@ -2419,15 +2553,20 @@
 
       nodes.forEach((nd, i) => {
         const t = (nd.depth + 1) / 2;                 // 0 最远 1 最近
+        const isFront = i === bestI;
         nd.el.style.transform =
           `translate3d(${nd.x.toFixed(1)}px, ${nd.y.toFixed(1)}px, 0) translate(-50%, -50%) scale(${nd.scale.toFixed(3)})`;
-        nd.el.style.opacity = (0.3 + t * 0.7).toFixed(3);
+        // 选中的那个一律不透明、不虚化、压在最上层。
+        // 选中判定按的是方位角，它不一定是 z 最深的那个；如果还跟着深度调透明度，
+        // 就会出现"当前选中项自己是半透明的、字都看不清"这种怪事。
+        nd.el.style.opacity = isFront ? '1' : (0.3 + t * 0.7).toFixed(3);
         // 背面的节点稍微虚化，景深比单纯调透明度更"立体"
-        nd.el.style.filter = nd.depth < 0 ? `blur(${((-nd.depth) * 1.6).toFixed(2)}px)` : 'none';
-        nd.el.style.zIndex = String(100 + Math.round(nd.depth * 50));
-        // 转到背面的节点别抢点击：那时它被核心挡住，点了会让人莫名其妙跳走
-        nd.el.style.pointerEvents = nd.depth < -0.55 ? 'none' : 'auto';
-        nd.el.classList.toggle('is-front', i === bestI);
+        nd.el.style.filter = (!isFront && nd.depth < 0) ? `blur(${((-nd.depth) * 1.6).toFixed(2)}px)` : 'none';
+        nd.el.style.zIndex = isFront ? '999' : String(100 + Math.round(nd.depth * 50));
+        // 转到背面的节点别抢点击：那时它被前面的东西挡着，点了会让人莫名其妙跳走。
+        // 选中项永远可点——它就是当前要进的那个功能。
+        nd.el.style.pointerEvents = (!isFront && nd.depth < -0.55) ? 'none' : 'auto';
+        nd.el.classList.toggle('is-front', isFront);
       });
 
       if (bestI !== frontIndex) {
