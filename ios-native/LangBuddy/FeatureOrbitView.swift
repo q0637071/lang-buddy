@@ -23,11 +23,12 @@ struct FeatureOrbitView: View {
     @State private var showSignOut = false
     @State private var pickingOrbit = false
 
-    // 球体朝向
-    @State private var yaw: Double = 0
+    // 球体朝向。自转是一直在跑的，yawOffset 只是叠在它上面的手动偏移——
+    // 之前那套"拖动时停、松手恢复"要维护一个可空的自转时钟，
+    // 少启一次就永远停住（已经踩过一次）。现在没有"停"这个状态，转不停就卡不住。
+    @State private var yawOffset: Double = 0
     @State private var pitch: Double = -0.18
     @State private var dragStart: (yaw: Double, pitch: Double) = (0, -0.18)
-    @State private var spinSince: Date? = Date()
 
     /// 自转速度。写成"多少秒一圈"而不是裸弧度——直接写 0.21 rad/s 完全看不出快慢
     private let secondsPerTurn: Double = 30
@@ -51,7 +52,7 @@ struct FeatureOrbitView: View {
             // 之前把面板写成计算属性、里面调 Date()，SwiftUI 不会因为时间流逝重算它，
             // 表现就是球在转、下面的名字却一直不动。
             TimelineView(.animation) { ctx in
-                let liveYaw = yaw + autoOffset(at: ctx.date)
+                let liveYaw = liveYaw(at: ctx.date)
                 let frontIdx = frontIndex(yaw: liveYaw)
                 VStack(spacing: 0) {
                     header
@@ -143,14 +144,11 @@ struct FeatureOrbitView: View {
         .simultaneousGesture(
             DragGesture(minimumDistance: 4)
                 .onChanged { v in
-                    if spinSince != nil { freezeSpin() }
-                    yaw = dragStart.yaw + Double(v.translation.width) * 0.009
+                    // 只改偏移，不碰自转——手指按着的时候球也还在转
+                    yawOffset = dragStart.yaw + Double(v.translation.width) * 0.009
                     pitch = max(-0.7, min(0.7, dragStart.pitch - Double(v.translation.height) * 0.007))
                 }
-                .onEnded { _ in
-                    dragStart = (yaw, pitch)
-                    resumeSpin()      // 松手就接着转，不然拖过一次就永远停在那儿
-                }
+                .onEnded { _ in dragStart = (yawOffset, pitch) }
         )
     }
 
@@ -208,13 +206,21 @@ struct FeatureOrbitView: View {
             enter(f)
             return
         }
-        // 点的是后排节点：先把它转到正前方，再进去，别瞬移
-        freezeSpin()
+        // 点的是后排节点：先把它转到正前方，再进去，别瞬移。
+        // 球一直在自转，所以"正前方"是个移动的目标——要解的是偏移量：
+        // liveYaw = yawOffset + 已转过的角度，想让它等于 frontYaw，
+        // 就得把 yawOffset 设成 frontYaw − 已转过的角度。
+        let spun = Date().timeIntervalSince(startedAt) * spinSpeed
+        let wanted = f.frontYaw - spun
+        // 取和当前偏移最近的等价角，否则会绕远路转一大圈
+        let delta = atan2(sin(wanted - yawOffset), cos(wanted - yawOffset))
         withAnimation(.easeInOut(duration: 0.45)) {
-            yaw = f.frontYaw
+            yawOffset += delta
             pitch = max(-0.7, min(0.7, -asin(f.base.y)))
         }
-        dragStart = (f.frontYaw, pitch)
+        // withAnimation 的闭包是同步执行的，上面那句 += 已经生效了，
+        // 这里直接读当前值；再加一次 delta 就变成转两倍了
+        dragStart = (yawOffset, pitch)
         // 等转过去的动画走完再进，别瞬移
         Task {
             try? await Task.sleep(nanoseconds: 500_000_000)
@@ -229,7 +235,6 @@ struct FeatureOrbitView: View {
             app.route = r
         } else {
             app.showToast("这个功能正在做，敬请期待")
-            resumeSpin()   // 不跳页，得自己把转恢复了
         }
     }
 
@@ -251,24 +256,10 @@ struct FeatureOrbitView: View {
 
     // MARK: - 几何
 
-    private func autoOffset(at now: Date) -> Double {
-        guard let since = spinSince else { return 0 }
-        return now.timeIntervalSince(since) * spinSpeed
-    }
-
-    /// 重新开始自转。freezeSpin 已经把之前累计的角度并进 yaw 了，
-    /// 这里只要把时钟重新起头，就会从当前朝向接着转。
-    private func resumeSpin() {
-        spinSince = Date()
-    }
-
-    /// 把自转累计的角度并进 yaw 再停下，否则一停就会跳回起始朝向
-    private func freezeSpin() {
-        if let since = spinSince {
-            yaw += Date().timeIntervalSince(since) * spinSpeed
-            spinSince = nil
-        }
-        dragStart = (yaw, pitch)
+    /// 当前朝向 = 手动偏移 + 一直在走的自转。自转从来不停，
+    /// 所以不存在"忘了启回来"这种状态；手指按着的时候球也照转。
+    private func liveYaw(at now: Date) -> Double {
+        yawOffset + now.timeIntervalSince(startedAt) * spinSpeed
     }
 
     /// 选中判定比的是"方位角离正前方多近"，不是"谁的 z 最大"。
