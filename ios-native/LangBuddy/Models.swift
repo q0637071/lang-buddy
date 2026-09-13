@@ -341,6 +341,31 @@ struct SendCodeResponse: Codable {
     let devCode: String?
 }
 
+// MARK: - 对话对象（人设）
+
+/// 文字对话和视频通话共用同一批"人"，选一次到处生效。
+/// voice 决定朗读音色，prompt 在后端，不下发到 App。
+struct Persona: Codable, Identifiable, Equatable {
+    let id: String
+    let name: String
+    let title: String
+    let emoji: String
+    let gender: String
+    let voice: String
+    let brief: String
+    /// 视频通话里有没有专属的数字人形象。没有的话几位老师长得一样，只是性格不同
+    let hasOwnFace: Bool?
+
+    var displayName: String { name + " · " + title }
+}
+
+struct PersonaListResponse: Codable {
+    let personas: [Persona]
+    let defaultId: String?
+    /// 一共配了几张不同的脸。1 表示还只有默认形象
+    let distinctFaces: Int?
+}
+
 // MARK: - 作文批改
 
 struct EssayCorrection: Codable, Identifiable, Equatable {

@@ -15,6 +15,10 @@ struct VideoCallView: View {
     @State private var secondsLeft = 0
     @State private var ended = false
     @State private var errorText: String?
+    // 和文字对话共用同一批"对话对象"，选一次到处生效
+    @AppStorage("lb_persona") private var personaId = "hannah"
+    @State private var personas: [Persona] = []
+    @State private var sameFaceForAll = true
 
     // 计时和心跳分开：计时是给用户看的，心跳是给后端算钱的
     @State private var countdownTask: Task<Void, Never>?
@@ -109,6 +113,11 @@ struct VideoCallView: View {
                     Button("回首页") { app.route = .home }
                         .buttonStyle(PrimaryButtonStyle())
                 } else if status?.canStart == true {
+                    if !personas.isEmpty {
+                        PersonaPicker(selected: $personaId, personas: personas,
+                                      showFaceHint: true, sameFaceForAll: sameFaceForAll)
+                            .padding(.bottom, 4)
+                    }
                     Button(starting ? "接通中…" : "免费试用") { Task { await start() } }
                         .buttonStyle(PrimaryButtonStyle(enabled: !starting))
                         .disabled(starting)
@@ -153,6 +162,16 @@ struct VideoCallView: View {
     private func load() async {
         do { status = try await API.shared.avatarStatus() }
         catch { errorText = error.localizedDescription }
+        // 老师列表拿不到不影响打电话，后端会用默认人设，所以失败就当没有
+        if let list = try? await API.shared.personas() {
+            personas = list.personas
+            // distinctFaces 是后端算的"一共配了几张不同的脸"。只有 1 张时
+            // 要如实告诉用户几位老师长得一样，别让人以为选了长相
+            sameFaceForAll = (list.distinctFaces ?? 1) <= 1
+            if !personas.contains(where: { $0.id == personaId }) {
+                personaId = list.defaultId ?? personas.first?.id ?? personaId
+            }
+        }
         loading = false
     }
 
@@ -168,7 +187,7 @@ struct VideoCallView: View {
         }
 
         do {
-            let c = try await API.shared.startAvatarCall()
+            let c = try await API.shared.startAvatarCall(personaId: personaId)
             guard let url = URL(string: c.conversationUrl) else {
                 errorText = "通话地址无效"; return
             }

@@ -127,14 +127,21 @@ actor API {
     }
 
     /// history 只带最近若干轮，后端也会再截一次；带太多会撑爆上下文也更慢
+    func personas() async throws -> PersonaListResponse {
+        try await request("personas", as: PersonaListResponse.self)
+    }
+
     func sendChat(message: String, history: [ChatMessage],
                   inputLang: String, replyLang: String,
-                  scenarioId: String? = nil) async throws -> String {
+                  scenarioId: String? = nil,
+                  personaId: String? = nil) async throws -> String {
         let recent = history.suffix(10).map { ["role": $0.role, "content": $0.content] }
         var body: [String: Any] = ["message": message, "history": recent,
                                    "inputLang": inputLang, "replyLang": replyLang]
         // 带上场景 id，后端会把角色和目标追加进系统提示词
         if let scenarioId { body["scenarioId"] = scenarioId }
+        // 带上人设 id，后端据此决定 AI 用什么身份、什么风格说话
+        if let personaId { body["personaId"] = personaId }
         return try await request("chat", method: "POST", body: body, as: ChatReply.self).reply
     }
 
@@ -274,8 +281,11 @@ actor API {
         try await request("avatar/status", as: AvatarStatus.self)
     }
 
-    func startAvatarCall() async throws -> AvatarConversation {
-        try await request("avatar/conversation", method: "POST", as: AvatarConversation.self)
+    func startAvatarCall(personaId: String? = nil) async throws -> AvatarConversation {
+        var body: [String: Any] = [:]
+        if let personaId { body["personaId"] = personaId }
+        return try await request("avatar/conversation", method: "POST",
+                                 body: body, as: AvatarConversation.self)
     }
 
     /// 通话中每 20 秒报一次，服务端据此判断人什么时候真的离开——

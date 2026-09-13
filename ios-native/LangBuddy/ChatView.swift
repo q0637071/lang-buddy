@@ -16,7 +16,14 @@ struct ChatView: View {
     @FocusState private var inputFocused: Bool
 
     @StateObject private var speaker = Speaker.shared
-    @AppStorage("lb_tts_voice") private var voice = "hannah"
+    // 存的是"跟谁聊"。音色不再单独设——选了人就等于选了声音，
+    // 分两处设置只会让用户困惑（选了严格教练却配着甜美女声）。
+    @AppStorage("lb_persona") private var personaId = "hannah"
+    @State private var personas: [Persona] = []
+    /// 当前人设对应的音色；人设还没加载出来时退回默认
+    private var voice: String {
+        personas.first(where: { $0.id == personaId })?.voice ?? "hannah"
+    }
     @AppStorage("lb_tts_auto") private var autoSpeak = true
 
     // 按住说话
@@ -82,12 +89,8 @@ struct ChatView: View {
                 }
                 Spacer()
                 Menu {
+                    // 音色不再单独选：选了人就等于选了声音。分两处设置只会让人困惑
                     Toggle("自动朗读 AI 回复", isOn: $autoSpeak)
-                    Picker("朗读音色", selection: $voice) {
-                        ForEach(Speaker.voices, id: \.id) { v in
-                            Text(v.label).tag(v.id)
-                        }
-                    }
                     Divider()
                     Button("清空对话", role: .destructive) { Task { await clear() } }
                 } label: {
@@ -110,6 +113,13 @@ struct ChatView: View {
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 10)
+
+            // 情景练习里 AI 要扮演店员/面试官这些固定角色，再叠一层人设只会打架，
+            // 所以只有自由聊天才给选"跟谁聊"
+            if scenario == nil, !personas.isEmpty {
+                Divider()
+                PersonaPicker(selected: $personaId, personas: personas)
+            }
 
             Divider()
         }
@@ -464,6 +474,15 @@ struct ChatView: View {
         }
         languages = await l ?? []
         if let target = app.user?.targetLang, !target.isEmpty { replyLang = target }
+        // 拿不到人设列表不影响聊天，后端会退回默认，所以失败就当没有，不打断
+        if let list = try? await API.shared.personas() {
+            personas = list.personas
+            // 存着的 id 在列表里找不到了（比如后端改了人设），退回第一个，
+            // 否则音色会一直取不到、朗读永远是默认声音
+            if !personas.contains(where: { $0.id == personaId }) {
+                personaId = list.defaultId ?? personas.first?.id ?? personaId
+            }
+        }
         loading = false
 
         // 场景由 AI 先开口，学生才知道该接什么——不然进来面对空白页会愣住
@@ -492,7 +511,8 @@ struct ChatView: View {
                 message: text,
                 history: messages.dropLast().map { $0 },   // 不含刚发出的这条
                 inputLang: inputLang, replyLang: replyLang,
-                scenarioId: scenario?.id
+                scenarioId: scenario?.id,
+                personaId: personaId
             )
             let aiMsg = ChatMessage(role: "ai", content: reply)
             messages.append(aiMsg)
@@ -513,5 +533,64 @@ struct ChatView: View {
         } catch {
             app.showToast(error.localizedDescription)
         }
+    }
+}
+
+/// 选"跟谁聊"。文字对话和视频通话共用这一个组件——选一次到处生效，
+/// 不然用户要在两个地方各选一遍人。
+///
+/// 放在 ChatView.swift 里而不是新开文件：新文件要手动拖进 Xcode，
+/// 那一步已经出过两次岔子，能省则省。
+struct PersonaPicker: View {
+    @Binding var selected: String
+    var personas: [Persona]
+    /// 视频通话场景下，如果几位老师共用同一张脸，要如实说明，别让用户以为选了长相
+    var showFaceHint: Bool = false
+    var sameFaceForAll: Bool = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(personas) { p in
+                        let on = p.id == selected
+                        Button {
+                            selected = p.id
+                        } label: {
+                            VStack(spacing: 3) {
+                                Text(p.emoji).font(.system(size: 20))
+                                Text(p.name).font(.system(size: 11, weight: on ? .bold : .medium))
+                                Text(p.title).font(.system(size: 9.5))
+                                    .foregroundColor(on ? Theme.primaryDark : Theme.muted)
+                            }
+                            .frame(width: 62)
+                            .padding(.vertical, 8)
+                            .background(on ? Theme.primaryLight : Color(white: 0.96))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .stroke(on ? Theme.primary : Color.clear, lineWidth: 1.5)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundColor(Theme.text)
+                    }
+                }
+                .padding(.horizontal, 16)
+            }
+            if let p = personas.first(where: { $0.id == selected }) {
+                Text(p.brief)
+                    .font(.system(size: 11.5))
+                    .foregroundColor(Theme.muted)
+                    .padding(.horizontal, 16)
+            }
+            if showFaceHint && sameFaceForAll {
+                Text("几位老师目前共用同一个数字人形象，性格和说话方式不同")
+                    .font(.system(size: 10.5))
+                    .foregroundColor(Theme.muted.opacity(0.8))
+                    .padding(.horizontal, 16)
+            }
+        }
+        .padding(.vertical, 8)
     }
 }
