@@ -57,6 +57,13 @@ Xcode → **File → New → Project** → 选 **iOS** → **App** → Next
 ~/Desktop/my_lang_project/lang-buddy/ios-native/sync-to-xcode.sh
 ```
 
+> **第一次会提示 `No such file or directory`** —— 脚本本身也在仓库里，还没拉下来，
+> 而拉取正是它要做的第一件事。先手动 pull 一次，之后就一直能用了：
+>
+> ```bash
+> cd ~/Desktop/my_lang_project/lang-buddy && git pull && ./ios-native/sync-to-xcode.sh
+> ```
+
 它会 `git pull`、把 `.swift` 拷进 Xcode 工程目录，并且告诉你有没有**新文件**
 需要手动拖进 Xcode。然后 Xcode 里 `Cmd+Shift+K` 清一下再 Run。
 
