@@ -745,6 +745,25 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--p
 .ft-hero-bg::before { width: 300px; height: 300px; background: var(--primary); top: -130px; left: -60px; }
 .ft-hero-bg::after { width: 260px; height: 260px; background: #38bdf8; bottom: -140px; right: -50px; }
 .ft-hero-inner { position: relative; }
+/* 当前选中老师的大头像。必须给死宽高——Tavus 的缩略图原图上千像素宽，
+   不限制的话在手机上会撑满整屏。 */
+.ft-face {
+  width: 92px; height: 92px; margin: 0 auto 14px;
+  border-radius: 50%; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.07);
+  box-shadow: 0 0 0 2px rgba(126,240,234,.45), 0 10px 28px -10px rgba(0,0,0,.6);
+}
+.ft-face img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+/* 没照片时退回 emoji，尺寸单独给，别跟着图片走 */
+.ft-face-emoji { font-size: 44px; line-height: 1; }
+
+@media (max-width: 720px) {
+  .ft-face { width: 76px; height: 76px; margin-bottom: 12px; }
+  .ft-face-emoji { font-size: 36px; }
+}
 .ft-hero-badge {
   display: inline-block; font-size: 11.5px; font-weight: 700; letter-spacing: .06em;
   color: #7ef0ea; padding: 4px 11px; border-radius: 999px;

@@ -1854,7 +1854,10 @@ function personaPhoto(id) {
 // 字段名不确定（各版本叫过 thumbnail_url / thumbnail_image_url / preview_url…），
 // 所以不写死：把返回对象里所有"名字里带 thumbnail/image/preview 且值是图片链接"的
 // 字段挑出来，取第一个。找不到就返回 null，前端退回 emoji。
-let tavusThumbCache = null;      // { faceId: url | null }
+// cache 一直可读（可能只填了一半），promise 用来判断"是不是已经在拉了"。
+// 分开两个变量是因为：不能拉超时就把空 cache 当成最终结果，那样永远不会再试。
+let tavusThumbCache = {};
+let tavusThumbPromise = null;
 function looksLikeImageURL(v) {
   return typeof v === 'string' && /^https?:\/\//.test(v) && /\.(jpe?g|png|webp|gif)(\?|$)/i.test(v);
 }
@@ -1874,31 +1877,42 @@ function findThumb(obj, depth = 0) {
   return null;
 }
 
-async function loadTavusThumbs(personas) {
-  if (tavusThumbCache) return tavusThumbCache;
-  tavusThumbCache = {};
-  if (!TAVUS_API_KEY) return tavusThumbCache;
-  // 八个请求并发发出去，串行会让第一次打开人设列表卡好几秒
-  await Promise.all(personas.map(async p => {
+function startTavusThumbLoad(personas) {
+  if (tavusThumbPromise || !TAVUS_API_KEY) return tavusThumbPromise;
+  // 八个并发发出去，串行会让第一次打开列表卡好几秒。
+  // 每个请求单独设 5 秒超时——Tavus 卡住时不能把我们的接口一起拖死。
+  tavusThumbPromise = Promise.all(personas.map(async p => {
     const faceId = personaFace(p).faceId;
     if (!faceId) return;
     for (const base of ['/faces/', '/replicas/']) {
       try {
-        const data = await tavusFetch(base + encodeURIComponent(faceId));
+        const data = await tavusFetch(base + encodeURIComponent(faceId), {
+          signal: AbortSignal.timeout(5000),
+        });
         const url = findThumb(data);
         if (url) { tavusThumbCache[faceId] = url; return; }
       } catch { /* 这个路径不通就试下一个 */ }
     }
-  }));
-  return tavusThumbCache;
+  })).catch(() => {}).finally(() => {
+    // 一轮跑完就把 promise 清掉。这样下次请求会重试那些没拿到的，
+    // 而已经拿到的还在 cache 里，不会重复拉
+    tavusThumbPromise = null;
+  });
+  return tavusThumbPromise;
 }
 
 // 列表里不带 prompt：那是提示词，属于内部实现，没必要发给前端
 app.get('/api/personas', requireAuth, async (req, res) => {
   const list = readPersonas();
   // 本地照片优先（自己放的想怎么裁怎么裁），没有就用 Tavus 的形象缩略图。
-  // 拉不到也不影响，前端退回 emoji。
-  const thumbs = await loadTavusThumbs(list).catch(() => ({}));
+  // 最多等 2.5 秒：等到了这次就带图返回，等不到就先返回（后台继续拉，下次刷新就有）。
+  // 绝不能无限期等——人设列表出不来的话，整个"选老师"的功能就等于没有。
+  startTavusThumbLoad(list);
+  await Promise.race([
+    tavusThumbPromise || Promise.resolve(),
+    new Promise(r => setTimeout(r, 2500)),
+  ]);
+  const thumbs = tavusThumbCache;
   res.json({
     personas: list.map(({ prompt, ...rest }) => ({
       ...rest,
