@@ -281,6 +281,8 @@
           <span class="lang-pair-arrow">→</span>
           <label>AI 用 <select id="chatReplyLang"></select> 回答</label>
         </div>
+        <!-- 跟谁聊：决定 AI 的性格和纠错力度。下面的"AI 声音"是浏览器朗读用的，两回事 -->
+        <div class="persona-row" id="personaRowChat"></div>
         <div class="lang-pair-row">
           <label>AI 声音 <select id="voiceSelect"></select></label>
           <button type="button" class="btn btn-icon btn-icon-sm" id="btnPreviewVoice" title="试听">🔊</button>
@@ -324,6 +326,7 @@
           <div class="ft-hero-badge">真人形象 · 实时视频</div>
           <h3 class="ft-hero-title">看得见表情，听得见语气</h3>
           <p class="ft-hero-sub" id="ftSub">正在查询可用额度…</p>
+          <div class="persona-row persona-row-dark" id="personaRowCall"></div>
           <button type="button" class="btn btn-primary btn-lg" id="btnAvatarCall">开始通话</button>
           <p class="ft-hero-note" id="ftNote"></p>
         </div>

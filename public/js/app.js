@@ -188,7 +188,7 @@
     featOrbit.setActive(name === 'dashboard');
     heroWire.setActive(name === 'landing');
     if (name === 'tutor') renderTutor();
-    if (name === 'facetime') refreshAvatarButton();
+    if (name === 'facetime') { refreshAvatarButton(); renderPersonaRow('personaRowCall', true); }
     if (name === 'vocab') {
       state.vocabMode = 'review';
       $all('#vocabModeToggle .chip').forEach(c => c.classList.toggle('active', c.dataset.mode === 'review'));
@@ -597,6 +597,7 @@
       '🎁 非会员每天可免费体验 5 分钟 AI 对话，开通会员畅享无限时长。',
       '🎁 当前可试用 1 分钟 AI 对话，在"我的"页面验证手机号即可解锁每天 5 分钟。');
     $('#tutorPanel').hidden = false;
+    renderPersonaRow('personaRowChat', false);
 
     const toggle = $('#autoSpeakToggle');
     toggle.checked = state.autoSpeak;
@@ -829,6 +830,8 @@
           history: state.chatHistory.slice(0, -1),
           inputLang: state.chatInputLang,
           replyLang: state.chatReplyLang,
+          // 跟谁聊。后端据此决定 AI 用什么身份、什么风格、纠不纠错
+          personaId: currentPersonaId(),
         },
       });
       hideTypingBubble();
@@ -1239,6 +1242,64 @@
       .join('');
   }
 
+  // ---------- 跟谁聊（人设） ----------
+  // 文字对话和视频通话共用同一批人，选一次两边都生效。
+  // 只拉一次，后面复用——这个列表不会变。
+  const PERSONA_KEY = 'lb_persona';
+  let personaList = [];
+  let personaSameFace = true;
+
+  function currentPersonaId() {
+    const saved = safeGetItem(PERSONA_KEY);
+    if (saved && personaList.some(p => p.id === saved)) return saved;
+    return personaList[0]?.id || null;
+  }
+
+  async function loadPersonas() {
+    if (personaList.length) return personaList;
+    try {
+      const d = await api('/personas');
+      personaList = d.personas || [];
+      // distinctFaces 是后端算的"一共配了几张不同的脸"。只有 1 张时几位老师长得一样，
+      // 要如实说出来，别让用户以为选的是长相
+      personaSameFace = (d.distinctFaces ?? 1) <= 1;
+      if (!safeGetItem(PERSONA_KEY) && d.defaultId) safeSetItem(PERSONA_KEY, d.defaultId);
+    } catch {
+      personaList = []; // 拉不到不影响聊天，后端会用默认人设
+    }
+    return personaList;
+  }
+
+  /// 把人设选择渲染到指定容器。isCall=true 时额外提示"形象相同、性格不同"
+  async function renderPersonaRow(containerId, isCall) {
+    const box = $safe('#' + containerId);
+    if (!box) return;
+    await loadPersonas();
+    if (!personaList.length) { box.hidden = true; return; }
+    box.hidden = false;
+    const cur = currentPersonaId();
+    const hint = isCall && personaSameFace
+      ? '<div class="persona-hint">几位老师目前共用同一个数字人形象，性格和说话方式不同</div>'
+      : '';
+    box.innerHTML = `
+      <div class="persona-strip">
+        ${personaList.map(p => `
+          <button type="button" class="persona-chip${p.id === cur ? ' active' : ''}" data-persona="${escapeHtml(p.id)}" title="${escapeHtml(p.brief)}">
+            <span class="persona-emoji">${escapeHtml(p.emoji)}</span>
+            <span class="persona-name">${escapeHtml(p.name)}</span>
+            <span class="persona-title">${escapeHtml(p.title)}</span>
+          </button>`).join('')}
+      </div>
+      <div class="persona-brief">${escapeHtml(personaList.find(p => p.id === cur)?.brief || '')}</div>
+      ${hint}`;
+    box.querySelectorAll('[data-persona]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        safeSetItem(PERSONA_KEY, btn.dataset.persona);
+        renderPersonaRow(containerId, isCall);   // 重画一次，更新选中态和说明
+      });
+    });
+  }
+
   async function refreshAvatarButton() {
     const btn = $safe('#btnAvatarCall');
     const sub = $safe('#ftSub');
@@ -1304,7 +1365,10 @@
     $('#avatarStage').innerHTML = '';
     $('#avatarOverlay').hidden = false;
     try {
-      const data = await api('/avatar/conversation', { method: 'POST' });
+      const data = await api('/avatar/conversation', {
+        method: 'POST',
+        body: { personaId: currentPersonaId() },
+      });
       const frame = document.createElement('iframe');
       // 通话界面真的加载出来了才发第一次心跳——服务端拿到第一跳才开始计费，
       // 点开就退或接通失败一律不扣额度

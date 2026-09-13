@@ -686,6 +686,43 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--p
 .auth-inferred { font-size: 10.5px; color: var(--text-muted); }
 .admin-auth-note { font-size: 12px; color: var(--text-muted); margin-top: 8px; line-height: 1.7; }
 
+/* ============ 跟谁聊（人设选择） ============ */
+.persona-row { margin: 4px 0 10px; }
+.persona-strip {
+  display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.persona-strip::-webkit-scrollbar { display: none; }
+.persona-chip {
+  flex: none; width: 74px; padding: 9px 4px 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: #f4f5f9; border: 1.5px solid transparent; border-radius: 12px;
+  cursor: pointer; transition: border-color .15s ease, background .15s ease;
+}
+.persona-chip:hover { background: #eceef5; }
+.persona-chip.active { background: var(--primary-light); border-color: var(--primary); }
+.persona-emoji { font-size: 21px; line-height: 1.1; }
+.persona-name { font-size: 12px; font-weight: 700; color: var(--text); }
+.persona-title { font-size: 10px; color: var(--text-muted); }
+.persona-chip.active .persona-title { color: var(--primary-dark); }
+.persona-brief { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.persona-hint { font-size: 11px; color: var(--text-muted); opacity: .8; margin-top: 4px; }
+
+/* 面授页是深色底，浅色胶囊在上面太扎眼 */
+.persona-row-dark { margin: 12px 0 16px; }
+.persona-row-dark .persona-chip {
+  background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.12);
+}
+.persona-row-dark .persona-chip:hover { background: rgba(255,255,255,.13); }
+.persona-row-dark .persona-chip.active {
+  background: rgba(10,186,181,.22); border-color: rgba(126,240,234,.75);
+}
+.persona-row-dark .persona-name { color: #eaf3ff; }
+.persona-row-dark .persona-title { color: rgba(234,243,255,.6); }
+.persona-row-dark .persona-chip.active .persona-title { color: #7ef0ea; }
+.persona-row-dark .persona-brief,
+.persona-row-dark .persona-hint { color: rgba(234,243,255,.6); }
+
 /* ============ 与 AI 私教面对面 ============ */
 .ft-hero {
   position: relative; overflow: hidden; border-radius: 22px; margin-bottom: 20px;
