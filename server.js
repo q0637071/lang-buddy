@@ -77,6 +77,7 @@ const GRAMMAR_PATH = path.join(DATA_DIR, 'grammar.json');
 const COLLOQUIAL_PATH = path.join(DATA_DIR, 'colloquial.json');
 const PLACEMENT_PATH = path.join(DATA_DIR, 'placement-test.json');
 const SCENARIOS_PATH = path.join(DATA_DIR, 'scenarios.json');
+const PERSONAS_PATH = path.join(DATA_DIR, 'personas.json');
 const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -1399,7 +1400,7 @@ app.get('/api/meta/languages', (req, res) => {
 // ==================== AI 1对1 对话 ====================
 
 app.post('/api/chat', allowMemberOrFreeQuota('chat', { type: 'window', windowMs: 5 * 60 * 1000 }), rateLimit(15), async (req, res) => {
-  const { message, history, inputLang, replyLang, scenarioId } = req.body || {};
+  const { message, history, inputLang, replyLang, scenarioId, personaId } = req.body || {};
   if (!message || !String(message).trim()) return res.status(400).json({ error: '消息不能为空' });
   if (message.length > 500) return res.status(400).json({ error: '消息过长（最多500字符）' });
 
@@ -1421,6 +1422,14 @@ ${sameLang
 5. 不要长篇大论讲课，保持轻松的对话感。
 6. 极其重要：无论历史对话中出现过什么语言，你自己的每一句回复都必须整体用${replyLangName}书写（括号里的简短提示除外）。${sameLang ? '' : `绝不能整句改用${inputLangName}回复。`}`;
 
+  // 人设：决定"跟谁聊"。放在语言/难度规则之后、场景之前——
+  // 它改的是说话风格和纠错力度，不能覆盖"必须用什么语言、什么难度"那几条。
+  const persona = personaId ? findPersona(personaId) : null;
+  const personaPrompt = persona ? `
+
+本次对话的角色设定（保持这个身份，不要跳出来以"AI助教"的口吻说话）：
+${persona.prompt}` : '';
+
   // 情景练习：给 AI 一个具体角色和要达成的事，它才不会聊两句就跑题。
   // 放在通用提示词之后，因为它是对"当前这场对话"的追加约束，不是替换。
   const scenario = scenarioId ? findScenario(scenarioId) : null;
@@ -1439,7 +1448,9 @@ ${sameLang
     : `（提醒：接下来请只用${replyLangName}回复，不要用${inputLangName}回复整句话）`;
 
   const messages = [
-    { role: 'system', content: systemPrompt + scenarioPrompt },
+    // 顺序有讲究：通用规则（语言/难度）→ 人设（怎么说话）→ 场景（聊什么）。
+    // 场景放最后，因为它对当前这场对话的约束最具体，应该压过前两者的风格倾向。
+    { role: 'system', content: systemPrompt + personaPrompt + scenarioPrompt },
     ...(Array.isArray(history)
       ? history.slice(-10).map(h => ({
           role: h.role === 'ai' ? 'assistant' : 'user',
@@ -1781,6 +1792,26 @@ function readScenarios() {
 function findScenario(id) {
   return readScenarios().find(s => s.id === id) || null;
 }
+
+// AI 对话的"对象"（人设）。和场景是两回事：场景决定聊什么，人设决定跟谁聊，
+// 两者可以叠加——同一个咖啡点单场景，换成严格教练和换成闲聊朋友，体验完全不同。
+let personasCache = null;
+function readPersonas() {
+  if (!personasCache) personasCache = JSON.parse(fs.readFileSync(PERSONAS_PATH, 'utf-8'));
+  return personasCache.personas;
+}
+function findPersona(id) {
+  return readPersonas().find(p => p.id === id) || null;
+}
+
+// 列表里不带 prompt：那是提示词，属于内部实现，没必要发给前端
+app.get('/api/personas', requireAuth, (req, res) => {
+  const list = readPersonas();
+  res.json({
+    personas: list.map(({ prompt, ...rest }) => rest),
+    defaultId: list[0]?.id || null,   // 前端没存过选择时用这个
+  });
+});
 
 // 每日计划要满足两个矛盾的要求：同一天内刷新页面得是同一批（否则像随机器），
 // 换一天要换一批（否则天天练同样的）。用"日期+用户名"做种子的伪随机就够了，

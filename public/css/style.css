@@ -836,6 +836,58 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--p
 .feat-orbit-desc { font-size: 13px; opacity: .68; margin: 5px 0 13px; line-height: 1.5; }
 .feat-orbit-hint { font-size: 11.5px; opacity: .42; margin-top: 11px; }
 
+/* 「进入」按钮。原来直接套了通用的 .btn-primary——一颗实心小药丸摆在深色星空里，
+   像误贴上去的贴纸。改成发光边框 + 半透明底的"控制台按钮"：拉长、拉开字距、
+   留一道缓慢扫过的高光，安静但有存在感。 */
+.feat-orbit-enter {
+  position: relative; overflow: hidden;
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; min-width: 150px; padding: 13px 22px;
+  font-size: 14px; font-weight: 600; letter-spacing: .22em; text-indent: .22em;
+  color: #b9fff9; cursor: pointer;
+  background: linear-gradient(180deg, rgba(10,186,181,.16), rgba(10,186,181,.05));
+  border: 1px solid rgba(126,240,234,.42);
+  border-radius: 4px;                       /* 直角一点更像仪器面板，不要圆润的药丸 */
+  transition: color .2s ease, border-color .2s ease, box-shadow .25s ease, background .2s ease;
+}
+/* 四角的小缺口：只画角不画满框，是 HUD 的常见处理 */
+.feat-orbit-enter::before {
+  content: ""; position: absolute; inset: 3px; pointer-events: none;
+  border: 1px solid rgba(126,240,234,.22);
+  clip-path: polygon(0 0, 14px 0, 14px 1px, 1px 1px, 1px 14px, 0 14px,
+                     0 100%, 14px 100%, 14px calc(100% - 1px), 1px calc(100% - 1px), 1px calc(100% - 14px), 0 calc(100% - 14px),
+                     100% 100%, calc(100% - 14px) 100%, calc(100% - 14px) calc(100% - 1px), calc(100% - 1px) calc(100% - 1px), calc(100% - 1px) calc(100% - 14px), 100% calc(100% - 14px),
+                     100% 0, calc(100% - 14px) 0, calc(100% - 14px) 1px, calc(100% - 1px) 1px, calc(100% - 1px) 14px, 100% 14px);
+}
+/* 缓慢扫过的高光。5 秒一次、只亮一下，频繁扫会变成廉价的跑马灯 */
+.feat-orbit-enter::after {
+  content: ""; position: absolute; top: 0; bottom: 0; width: 45%;
+  background: linear-gradient(100deg, transparent, rgba(190,255,250,.20), transparent);
+  animation: foeSweep 5s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes foeSweep {
+  0%, 62% { left: -50%; }
+  92%, 100% { left: 105%; }
+}
+.feat-orbit-enter:hover {
+  color: #fff;
+  border-color: rgba(126,240,234,.9);
+  background: linear-gradient(180deg, rgba(10,186,181,.3), rgba(10,186,181,.12));
+  box-shadow: 0 0 22px rgba(10,186,181,.32), inset 0 0 18px rgba(126,240,234,.12);
+}
+.feat-orbit-enter:active { transform: translateY(1px); }
+.feat-orbit-enter:focus-visible { outline: 2px solid #7ef0ea; outline-offset: 2px; }
+.foe-arrow {
+  font-size: 17px; line-height: 1; text-indent: 0;
+  transition: transform .2s ease;
+}
+.feat-orbit-enter:hover .foe-arrow { transform: translateX(3px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .feat-orbit-enter::after { animation: none; opacity: 0; }
+}
+
 @media (max-width: 720px) {
   .feat-orbit { grid-template-columns: 1fr; gap: 6px; padding: 14px; }
   .feat-orbit-stage { height: 300px; }
