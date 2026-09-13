@@ -2156,25 +2156,16 @@
     // 速度各不相同而且互不成整数倍，避免转几圈之后又排成一条线。
     // size 是"半径占主球半径的比例"，跟着球一起缩放，换屏幕尺寸不会走形。
     const SATS = [
-      { kind: 'ball', orbitR: 1.10, inc: 0.34,  node: 0.0, phase: 0.0, speed: 0.33, size: 0.095, color: '126,240,234' },
-      { kind: 'ball', orbitR: 1.22, inc: -0.52, node: 1.9, phase: 2.1, speed: -0.21, size: 0.072, color: '125,211,252' },
-      { kind: 'ball', orbitR: 1.06, inc: 0.78,  node: 3.6, phase: 4.0, speed: 0.27, size: 0.056, color: '167,139,250' },
-      { kind: 'ball', orbitR: 1.24, inc: 0.12,  node: 2.7, phase: 1.2, speed: 0.17, size: 0.062, color: '253,224,71' },
-      { kind: 'tri',  orbitR: 1.16, inc: -0.30, node: 0.8, phase: 3.1, speed: 0.24, size: 0.150, color: '126,240,234' },
-      { kind: 'tri',  orbitR: 1.21, inc: 0.62,  node: 4.4, phase: 0.7, speed: -0.19, size: 0.130, color: '186,230,253' },
-      { kind: 'tri',  orbitR: 1.13, inc: -0.70, node: 5.5, phase: 5.2, speed: 0.30, size: 0.110, color: '196,181,253' },
+      { orbitR: 1.10, inc: 0.34,  node: 0.0, phase: 0.0, speed: 0.33, size: 0.095, color: '126,240,234' },
+      { orbitR: 1.22, inc: -0.52, node: 1.9, phase: 2.1, speed: -0.21, size: 0.072, color: '125,211,252' },
+      { orbitR: 1.06, inc: 0.78,  node: 3.6, phase: 4.0, speed: 0.27, size: 0.056, color: '167,139,250' },
+      { orbitR: 1.24, inc: 0.12,  node: 2.7, phase: 1.2, speed: 0.17, size: 0.062, color: '253,224,71' },
     ];
     // 线框球刻意压得很淡（alpha 0.5），但卫星是要被看见的主体，
     // 跟着一起淡就几乎看不出来了，所以单独给一档亮度
     const satAlpha = o.satAlpha;
-    const sats = o.satellites
-      ? SATS.map((s, i) => ({
-          ...s,
-          size: s.size,
-          spin0: i * 1.1,
-          spinSpeed: s.kind === 'tri' ? (i % 2 ? -0.5 : 0.45) : 0,
-        }))
-      : [];
+    // 三角去掉之后卫星不再需要自转角，SATS 直接拿来用
+    const sats = o.satellites ? SATS : [];
     let w = 0, h = 0, raf = null, yaw = 0, prev = 0;
     const px = new Float32Array(verts.length);
     const py = new Float32Array(verts.length);
@@ -2307,7 +2298,6 @@
           s, z: z2, sc,
           X: cx + x1 * R * sc,
           Y: cy + y2 * R * sc,
-          spin: s.spin0 + s.spinSpeed * t,
         });
       }
 
@@ -2320,21 +2310,7 @@
         const size = d.s.size * d.sc * (0.6 + depth * 0.55);
         ctx.save();
         ctx.translate(d.X, d.Y);
-        if (d.s.kind === 'tri') {
-          // 三角只描边不填充，像 HUD 上的标记；自转让它有"在飘"的感觉
-          ctx.rotate(d.spin);
-          ctx.strokeStyle = `rgba(${d.s.color},${alpha.toFixed(3)})`;
-          ctx.lineWidth = Math.max(0.7, 1.1 * d.sc);
-          ctx.lineJoin = 'round';
-          ctx.beginPath();
-          for (let k = 0; k < 3; k++) {
-            const ang = -Math.PI / 2 + k * (Math.PI * 2 / 3);
-            const fx = Math.cos(ang) * size, fy = Math.sin(ang) * size;
-            k ? ctx.lineTo(fx, fy) : ctx.moveTo(fx, fy);
-          }
-          ctx.closePath();
-          ctx.stroke();
-        } else {
+        {
           // 小球：径向渐变做出高光在左上的球感，外面再加一圈辉光
           const g = ctx.createRadialGradient(-size * 0.35, -size * 0.4, size * 0.1, 0, 0, size);
           g.addColorStop(0, `rgba(255,255,255,${(alpha * 0.95).toFixed(3)})`);
