@@ -1285,7 +1285,9 @@
       <div class="persona-strip">
         ${personaList.map(p => `
           <button type="button" class="persona-chip${p.id === cur ? ' active' : ''}" data-persona="${escapeHtml(p.id)}" title="${escapeHtml(p.brief)}">
-            <span class="persona-emoji">${escapeHtml(p.emoji)}</span>
+            ${p.photo
+              ? `<img class="persona-photo" src="${escapeHtml(p.photo)}" alt="" loading="lazy">`
+              : `<span class="persona-emoji">${escapeHtml(p.emoji)}</span>`}
             <span class="persona-name">${escapeHtml(p.name)}</span>
             <span class="persona-title">${escapeHtml(p.title)}</span>
           </button>`).join('')}

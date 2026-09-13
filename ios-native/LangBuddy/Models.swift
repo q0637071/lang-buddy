@@ -355,8 +355,15 @@ struct Persona: Codable, Identifiable, Equatable {
     let brief: String
     /// 视频通话里有没有专属的数字人形象。没有的话几位老师长得一样，只是性格不同
     let hasOwnFace: Bool?
+    /// 老师照片的相对路径，形如 "img/personas/hannah.jpg"。没放照片时是 nil，界面退回 emoji
+    let photo: String?
 
     var displayName: String { name + " · " + title }
+    /// 后端给的是相对路径，App 要拼成完整地址才能加载
+    var photoURL: URL? {
+        guard let photo, !photo.isEmpty else { return nil }
+        return URL(string: "https://langbuddy.org/" + photo)
+    }
 }
 
 struct PersonaListResponse: Codable {

@@ -702,6 +702,12 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--p
 .persona-chip:hover { background: #eceef5; }
 .persona-chip.active { background: var(--primary-light); border-color: var(--primary); }
 .persona-emoji { font-size: 21px; line-height: 1.1; }
+/* 照片裁成圆形。object-fit: cover 保证非正方形的图不会被压扁，只会裁掉两边 */
+.persona-photo {
+  width: 38px; height: 38px; border-radius: 50%; object-fit: cover;
+  background: #e6e8f0; display: block;
+}
+.persona-chip.active .persona-photo { box-shadow: 0 0 0 2px var(--primary); }
 .persona-name { font-size: 12px; font-weight: 700; color: var(--text); }
 .persona-title { font-size: 10px; color: var(--text-muted); }
 .persona-chip.active .persona-title { color: var(--primary-dark); }

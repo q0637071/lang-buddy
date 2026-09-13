@@ -558,7 +558,19 @@ struct PersonaPicker: View {
                             selected = p.id
                         } label: {
                             VStack(spacing: 3) {
-                                Text(p.emoji).font(.system(size: 20))
+                                // 有照片显示照片，没有退回 emoji；加载中先占位，别让整排跳动
+                                if let url = p.photoURL {
+                                    AsyncImage(url: url) { img in
+                                        img.resizable().scaledToFill()
+                                    } placeholder: {
+                                        Color(white: 0.90)
+                                    }
+                                    .frame(width: 34, height: 34)
+                                    .clipShape(Circle())
+                                    .overlay(Circle().stroke(on ? Theme.primary : .clear, lineWidth: 2))
+                                } else {
+                                    Text(p.emoji).font(.system(size: 20))
+                                }
                                 Text(p.name).font(.system(size: 11, weight: on ? .bold : .medium))
                                 Text(p.title).font(.system(size: 9.5))
                                     .foregroundColor(on ? Theme.primaryDark : Theme.muted)

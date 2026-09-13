@@ -1828,12 +1828,32 @@ function personaHasOwnFace(persona) {
   return !!process.env[`TAVUS_FACE_${key}`];
 }
 
+// 老师照片：文件名就是人设 id，放在 public/img/personas/ 下面就自动生效，
+// 不用改 personas.json——否则每加一张图都要改配置，还容易和实际文件对不上。
+// 启动时扫一次；加了新图重启服务即可（Render 上传新文件本来就会重新部署）。
+const PERSONA_IMG_DIR = path.join(__dirname, 'public', 'img', 'personas');
+let personaPhotoCache = null;
+function personaPhoto(id) {
+  if (!personaPhotoCache) {
+    personaPhotoCache = {};
+    try {
+      for (const f of fs.readdirSync(PERSONA_IMG_DIR)) {
+        const m = f.match(/^(.+)\.(jpg|jpeg|png|webp)$/i);
+        if (m) personaPhotoCache[m[1].toLowerCase()] = 'img/personas/' + f;
+      }
+    } catch { /* 目录不存在就当没有照片，一律退回 emoji */ }
+  }
+  return personaPhotoCache[String(id).toLowerCase()] || null;
+}
+
 // 列表里不带 prompt：那是提示词，属于内部实现，没必要发给前端
 app.get('/api/personas', requireAuth, (req, res) => {
   const list = readPersonas();
   res.json({
     personas: list.map(({ prompt, ...rest }) => ({
       ...rest,
+      // 有照片就给路径，没有前端会退回 emoji
+      photo: personaPhoto(rest.id),
       // 有没有专属的数字人形象。没有的话视频通话里几位老师长得一样，
       // 前端据此决定要不要提示"形象相同、性格不同"
       hasOwnFace: personaHasOwnFace(rest),
