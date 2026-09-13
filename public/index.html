@@ -761,6 +761,15 @@
           <div class="avatar-usage-line" id="adminAvatarSummary"></div>
           <div class="avatar-usage-meta" id="adminAvatarMeta"></div>
         </div>
+        <!-- 此刻正在通话的是谁。只有超级管理员拿得到数据（接口里按身份过滤，
+             不是靠前端隐藏），用来回答"我看到还有别的通话，那是谁" -->
+        <div class="admin-table-wrap" id="adminLiveCallsWrap" hidden>
+          <table class="admin-table">
+            <thead><tr><th>正在通话</th><th>开始于</th><th>状态</th><th>来源 IP</th><th>房间 id</th></tr></thead>
+            <tbody id="adminLiveCallsBody"></tbody>
+          </table>
+        </div>
+
         <div class="admin-table-wrap" id="adminAvatarIpWrap" hidden>
           <table class="admin-table">
             <thead><tr><th>来源 IP</th><th>本月次数</th><th>本月用量</th></tr></thead>

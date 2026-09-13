@@ -1212,6 +1212,25 @@
     if (a.remainingSeconds <= 0) parts.push('⚠️ 额度已用尽，已停发新通话');
     $('#adminAvatarMeta').textContent = parts.join('　·　');
 
+    // 正在通话的人。lastSeenAt 为空说明房间建了但人还没进去（点开就退、权限没给），
+    // 这种不计费也不计次，但会占一个并发位，所以要能看出来
+    const live = a.liveCalls || [];
+    const liveWrap = $('#adminLiveCallsWrap');
+    liveWrap.hidden = live.length === 0;
+    $('#adminLiveCallsBody').innerHTML = live.map(c => {
+      const joined = !!c.lastSeenAt;
+      const quiet = joined ? Math.round((Date.now() - c.lastSeenAt) / 1000) : null;
+      return `<tr>
+        <td>${escapeHtml(c.nickname)} <span class="auth-uname">${escapeHtml(c.username)}</span></td>
+        <td>${fmtDateTime(c.startedAt)}</td>
+        <td>${joined
+          ? `<span class="auth-tag auth-tag-in">通话中</span> <span class="auth-uname">${quiet}秒前有心跳</span>`
+          : '<span class="auth-tag auth-tag-out">建了房间没进去</span>'}</td>
+        <td>${escapeHtml(c.ip || '-')}</td>
+        <td class="auth-uname">${escapeHtml(c.conversationId || '-')}</td>
+      </tr>`;
+    }).join('');
+
     const wrap = $('#adminAvatarIpWrap');
     const rows = a.topIps || [];
     wrap.hidden = rows.length === 0;

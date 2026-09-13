@@ -2954,6 +2954,19 @@ app.get('/api/admin/overview', requireAdmin, (req, res) => {
         distinctIps: ipRows.length,
         // 具体 IP 属于个人信息，跟注册IP一样只给超级管理员
         topIps: canSeeIp ? ipRows.slice(0, 10) : [],
+        // 此刻正在通话的是谁。只给超级管理员——这是"某人现在正在用"这种实时行踪，
+        // 比历史用量敏感。有了它才能回答"我看到还有别的通话，那是谁"。
+        liveCalls: canSeeIp ? Object.values(db.users || {})
+          .filter(u => u.avatarUsage?.active)
+          .map(u => ({
+            username: u.username,
+            nickname: u.nickname || u.username,
+            startedAt: u.avatarUsage.active.startedAt,
+            lastSeenAt: u.avatarUsage.active.lastSeenAt,   // null = 还没真正进到房间里
+            ip: u.avatarUsage.active.ip || '',
+            conversationId: u.avatarUsage.active.conversationId || '',
+          }))
+          .sort((a, b) => b.startedAt - a.startedAt) : [],
       };
     })() : { enabled: false },
   });
