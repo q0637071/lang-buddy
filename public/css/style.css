@@ -78,28 +78,66 @@ p { line-height: 1.6; color: var(--text-muted); }
 /* 品牌比导航轻一点，让"现在在哪一页"成为顶栏里最显眼的东西 */
 .brand { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 16px; letter-spacing: -.01em; flex: none; }
 .brand-mark { width: 27px; height: 27px; border-radius: 8px; background: var(--gradient-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; box-shadow: var(--shadow-primary); }
-/* 导航：只有文字，没有图标也没有底色块。
-   十个带 emoji 的胶囊挤在一起时，先看到的是一排彩色方块，得逐个读才知道是什么；
-   去掉装饰之后眼睛直接落在字上，反而更快。选中态用一条从中间展开的下划线——
-   比换背景色安静，但位置感更明确。 */
-.main-nav { display: flex; align-items: center; gap: 2px; flex: 1; justify-content: center; }
+/* 顶栏的功能菜单。首页有星球做总入口了，这里收成一个按钮，
+   平时只占一点宽度，点开是一列完整功能名（不再是两个字的缩写）。 */
+.main-nav { position: relative; display: flex; align-items: center; margin-left: 6px; }
+.nav-menu-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 12px 7px 14px; border-radius: 999px;
+  border: 1px solid rgba(23,24,53,.09);
+  background: rgba(255,255,255,.7);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  cursor: pointer; font-size: 14px; font-weight: 600; color: var(--text);
+  letter-spacing: .01em;
+  transition: background .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+.nav-menu-btn:hover {
+  background: #fff; border-color: rgba(23,24,53,.16);
+  box-shadow: 0 4px 14px -6px rgba(23,24,53,.25);
+}
+.nav-menu-btn[aria-expanded="true"] {
+  background: #fff; border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(10,186,181,.14);
+}
+.nav-menu-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+/* 展开时箭头转过来，收起状态和展开状态一眼可辨 */
+.nav-caret { font-size: 9px; opacity: .45; transition: transform .22s cubic-bezier(.2,.8,.3,1); }
+.nav-menu-btn[aria-expanded="true"] .nav-caret { transform: rotate(180deg); opacity: .8; }
+
+.nav-menu {
+  position: absolute; top: calc(100% + 8px); left: 0; z-index: 60;
+  min-width: 210px; padding: 7px;
+  background: rgba(255,255,255,.86);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  backdrop-filter: blur(18px) saturate(180%);
+  border: 1px solid rgba(23,24,53,.08); border-radius: 16px;
+  box-shadow: 0 24px 48px -20px rgba(23,24,53,.35), 0 2px 6px -2px rgba(23,24,53,.1);
+  display: flex; flex-direction: column; gap: 1px;
+  transform-origin: top left;
+  animation: navMenuIn .18s cubic-bezier(.2,.9,.3,1);
+}
+@keyframes navMenuIn {
+  from { opacity: 0; transform: translateY(-6px) scale(.97); }
+  to   { opacity: 1; transform: none; }
+}
+
 .nav-item {
-  position: relative; background: transparent; border: none;
-  padding: 9px 15px 10px; font-size: 14px; font-weight: 500;
-  letter-spacing: .02em; color: var(--text-muted); cursor: pointer;
-  transition: color .18s ease;
+  position: relative;
+  background: transparent; border: none; cursor: pointer;
+  padding: 9px 12px 9px 26px; border-radius: 10px; text-align: left;
+  font-size: 14px; font-weight: 500; color: var(--text-muted);
+  transition: background .12s ease, color .12s ease;
 }
-.nav-item:hover { color: var(--text); }
-.nav-item.active { color: var(--text); font-weight: 600; }
-.nav-item::after {
-  content: ""; position: absolute; bottom: 2px; height: 2px;
-  left: 50%; right: 50%;                       /* 收成一个点，选中时往两边展开 */
-  background: var(--primary); border-radius: 2px;
-  transition: left .24s cubic-bezier(.2,.8,.3,1), right .24s cubic-bezier(.2,.8,.3,1);
+.nav-item:hover { background: rgba(23,24,53,.05); color: var(--text); }
+.nav-item.active { color: var(--primary-dark); font-weight: 700; }
+/* 当前页用一个小圆点标出来，不铺整块底色——一列里只有一项需要被认出来，
+   铺底色反而把视线拽走 */
+.nav-item.active::before {
+  content: ""; position: absolute; left: 11px; top: 50%;
+  width: 6px; height: 6px; margin-top: -3px; border-radius: 50%;
+  background: var(--primary);
 }
-.nav-item.active::after { left: 13px; right: 13px; }
-/* 键盘 Tab 到导航时要看得见焦点，但不要和选中态的下划线混淆 */
-.nav-item:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; border-radius: 8px; }
+.nav-item:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
 
 .auth-area { display: flex; gap: 8px; align-items: center; cursor: pointer; padding: 4px 6px; border-radius: 999px; transition: background .15s ease; }
 .auth-area:hover { background: #f0f1f7; }
@@ -965,22 +1003,13 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--p
 .nav-item { white-space: nowrap; }
 .brand-name { white-space: nowrap; }
 
-/* ============ 手机端：导航换到第二行，横向滚动 ============ */
-/* 试过左侧悬浮栏和底部标签栏，都撤掉了：悬停才展开的菜单等于把功能藏起来，
-   跟"一眼看清有哪些功能"是反的。现在手机上就是顶栏下面一条能滑的文字导航。 */
+/* ============ 手机端 ============ */
+/* 导航已经收成一个菜单按钮了，不用再为"一排标签排不排得下"做文章。
+   顶栏就是一行：品牌 + 菜单 + 头像。 */
 @media (max-width: 768px) {
-  .topbar-inner { flex-wrap: wrap; gap: 0 12px; padding: 8px 16px 0; }
-  .brand { flex: 1; min-width: 0; }
+  .topbar-inner { gap: 10px; padding: 8px 14px; }
   .brand-name { font-size: 15px; }
-  /* 导航条做成通栏：左右各往外顶掉顶栏的 16px 内边距，再用自己的 padding 把
-     首尾对齐回内容边缘。多出来的这 32px 刚好够 8 个两字标签在常见机型上一次排开，
-     不用滑；窄屏放不下时仍然可以横滑，不会挤成两行。 */
-  .main-nav {
-    order: 3; flex-basis: 100%; justify-content: flex-start;
-    margin: 4px -16px 0; padding: 0 13px;
-    overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
-  }
-  .main-nav::-webkit-scrollbar { display: none; }
-  .nav-item { padding: 8px 7px 10px; font-size: 13.5px; flex: none; }
-  .nav-item.active::after { left: 6px; right: 6px; }
+  .nav-menu-btn { padding: 7px 10px; font-size: 13.5px; }
+  /* 菜单本身在窄屏上改成从右侧对齐，否则会顶出屏幕 */
+  .nav-menu { left: auto; right: 0; min-width: 176px; }
 }

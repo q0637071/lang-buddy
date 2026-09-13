@@ -173,6 +173,28 @@
   // ---------- 视图切换 ----------
   const VIEWS = ['landing', 'dashboard', 'tutor', 'facetime', 'vocab', 'grammar', 'translate', 'colloquial', 'mistakes', 'essay', 'profile', 'admin'];
 
+  // ---------- 顶栏的功能菜单 ----------
+  function closeNavMenu() {
+    const m = $safe('#navMenu'), b = $safe('#navMenuBtn');
+    if (m) m.hidden = true;
+    if (b) b.setAttribute('aria-expanded', 'false');
+  }
+  function toggleNavMenu() {
+    const m = $safe('#navMenu'), b = $safe('#navMenuBtn');
+    if (!m || !b) return;
+    m.hidden = !m.hidden;
+    b.setAttribute('aria-expanded', String(!m.hidden));
+  }
+  // 点菜单外面就收起来。用捕获阶段之外的普通冒泡即可，
+  // 但要排除按钮自己，否则点按钮会"打开又立刻关上"
+  document.addEventListener('click', (e) => {
+    const m = $safe('#navMenu');
+    if (!m || m.hidden) return;
+    if (e.target.closest('#navMenu') || e.target.closest('#navMenuBtn')) return;
+    closeNavMenu();
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeNavMenu(); });
+
   function showView(name) {
     if (!state.user && name !== 'landing') name = 'landing';
     if (name === 'admin' && !state.user?.isAdmin) name = 'dashboard';
@@ -180,7 +202,13 @@
     VIEWS.forEach(v => {
       $('#view-' + v).hidden = v !== name;
     });
-    $all('.nav-item').forEach(btn => btn.classList.toggle('active', btn.dataset.nav === name));
+    $all('.nav-item').forEach(btn => {
+      const on = btn.dataset.nav === name;
+      btn.classList.toggle('active', on);
+      // 菜单按钮上显示当前页名字，收起状态下也知道自己在哪
+      if (on) { const l = $safe('#navMenuLabel'); if (l) l.textContent = btn.textContent; }
+    });
+    closeNavMenu();
     window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
 
     if (name === 'dashboard') renderDashboard();
@@ -204,6 +232,11 @@
     if (name === 'profile') renderProfile();
     if (name === 'admin') renderAdmin();
   }
+
+  // 这里是模块顶层，会在 $safe 那个 const 声明之前就执行——用 $safe 会撞 TDZ，
+  // 整个脚本直接挂掉（"Cannot access '$safe' before initialization"）。
+  // 顶层代码一律用原生 API，别依赖后面声明的辅助函数。
+  document.getElementById('navMenuBtn')?.addEventListener('click', toggleNavMenu);
 
   $all('[data-nav]').forEach(el => {
     el.addEventListener('click', () => showView(el.dataset.nav));

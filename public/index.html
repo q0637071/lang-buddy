@@ -16,20 +16,27 @@
       <span class="brand-name">LangBuddy 语伴</span>
     </div>
 
-    <!-- 导航就放在顶栏里，一行全部铺开。标签统一压到两个字：长短一致才扫得快，
-         也才装得下——加了图标和四字标签的那版在 1100px 里会折行。
-         title 补全全称，缩写猜不出来时鼠标停一下就知道。 -->
+    <!-- 首页已经有功能星球做总入口，顶栏再铺一排按钮是重复的。
+         收成一个菜单：平时只占一个按钮的宽度，点开仍然全部功能一步可达。
+         按钮上显示的是当前页名字，比一排等权重的标签更能说明"我在哪"。 -->
     <nav class="main-nav" id="mainNav" hidden>
-      <button class="nav-item" data-nav="dashboard">首页</button>
-      <button class="nav-item" data-nav="tutor" title="AI 对话练习">对话</button>
-      <button class="nav-item" data-nav="facetime" title="与 AI 私教面对面视频通话">面授</button>
-      <button class="nav-item" data-nav="translate" title="同声传译">同传</button>
-      <button class="nav-item" data-nav="vocab" title="背单词">单词</button>
-      <button class="nav-item" data-nav="grammar" title="语法精讲">语法</button>
-      <button class="nav-item" data-nav="colloquial" title="美式口语">口语</button>
-      <button class="nav-item" data-nav="essay" title="作文批改">作文</button>
-      <button class="nav-item" data-nav="mistakes" title="错题本">错题</button>
-      <button class="nav-item" data-nav="admin" id="navAdmin" hidden>后台</button>
+      <button type="button" class="nav-menu-btn" id="navMenuBtn"
+              aria-haspopup="true" aria-expanded="false">
+        <span id="navMenuLabel">首页</span>
+        <span class="nav-caret" aria-hidden="true">▾</span>
+      </button>
+      <div class="nav-menu" id="navMenu" hidden>
+        <button class="nav-item" data-nav="dashboard">首页</button>
+        <button class="nav-item" data-nav="tutor">AI 对话</button>
+        <button class="nav-item" data-nav="facetime">与 AI 私教面对面</button>
+        <button class="nav-item" data-nav="translate">同声传译</button>
+        <button class="nav-item" data-nav="vocab">背单词</button>
+        <button class="nav-item" data-nav="grammar">语法精讲</button>
+        <button class="nav-item" data-nav="colloquial">美式口语</button>
+        <button class="nav-item" data-nav="essay">作文批改</button>
+        <button class="nav-item" data-nav="mistakes">错题本</button>
+        <button class="nav-item" data-nav="admin" id="navAdmin" hidden>管理后台</button>
+      </div>
     </nav>
 
     <!-- 头像本身就是"我的"入口，不再单独占一个菜单位。data-nav 必须挂在这个
