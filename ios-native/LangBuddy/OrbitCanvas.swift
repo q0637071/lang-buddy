@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 功能星球的背景层：线框球 + 外围卫星（小球/三角）+ 轨道线。
+/// 功能星球的背景层：线框球 + 外围 4 颗小球 + 轨道线。
 /// 全部画在一张 Canvas 上——几百条线用 SwiftUI 视图去堆会直接掉帧。
 enum OrbitCanvas {
 
@@ -67,7 +67,6 @@ enum OrbitCanvas {
     // MARK: - 卫星
 
     private struct Sat {
-        let isTriangle: Bool
         let orbitR: Double
         let inc: Double        // 轨道倾角
         let node: Double       // 升交点：让每条轨道朝向都不一样
@@ -79,20 +78,14 @@ enum OrbitCanvas {
 
     /// 速度互不成整数倍，否则转几圈之后又会排成一条线
     private static let sats: [Sat] = [
-        .init(isTriangle: false, orbitR: 1.10, inc: 0.34, node: 0.0, phase: 0.0, speed: 0.33,
+        .init(orbitR: 1.10, inc: 0.34, node: 0.0, phase: 0.0, speed: 0.33,
               size: 0.090, color: Color(red: 0.49, green: 0.94, blue: 0.92)),
-        .init(isTriangle: false, orbitR: 1.22, inc: -0.52, node: 1.9, phase: 2.1, speed: -0.21,
+        .init(orbitR: 1.22, inc: -0.52, node: 1.9, phase: 2.1, speed: -0.21,
               size: 0.068, color: Color(red: 0.49, green: 0.83, blue: 0.99)),
-        .init(isTriangle: false, orbitR: 1.06, inc: 0.78, node: 3.6, phase: 4.0, speed: 0.27,
+        .init(orbitR: 1.06, inc: 0.78, node: 3.6, phase: 4.0, speed: 0.27,
               size: 0.052, color: Color(red: 0.65, green: 0.55, blue: 0.98)),
-        .init(isTriangle: false, orbitR: 1.24, inc: 0.12, node: 2.7, phase: 1.2, speed: 0.17,
+        .init(orbitR: 1.24, inc: 0.12, node: 2.7, phase: 1.2, speed: 0.17,
               size: 0.058, color: Color(red: 0.99, green: 0.88, blue: 0.28)),
-        .init(isTriangle: true, orbitR: 1.16, inc: -0.30, node: 0.8, phase: 3.1, speed: 0.24,
-              size: 0.140, color: Color(red: 0.49, green: 0.94, blue: 0.92)),
-        .init(isTriangle: true, orbitR: 1.21, inc: 0.62, node: 4.4, phase: 0.7, speed: -0.19,
-              size: 0.120, color: Color(red: 0.73, green: 0.90, blue: 0.99)),
-        .init(isTriangle: true, orbitR: 1.13, inc: -0.70, node: 5.5, phase: 5.2, speed: 0.30,
-              size: 0.100, color: Color(red: 0.77, green: 0.71, blue: 0.99)),
     ]
 
     // MARK: - 绘制
@@ -169,33 +162,19 @@ enum OrbitCanvas {
             let depth = (b.pr.z + 1) / 2
             let alpha = 0.22 + depth * depth * 0.78
             let size = CGFloat(b.s.size) * radius * CGFloat(b.pr.scale) * CGFloat(0.62 + depth * 0.5)
-            if b.s.isTriangle {
-                // 三角只描边，像 HUD 上的标记；跟着时间自转
-                let spin = time * (b.s.speed > 0 ? 0.45 : -0.5)
-                var path = Path()
-                for k in 0..<3 {
-                    let a = -Double.pi / 2 + Double(k) * (.pi * 2 / 3) + spin
-                    let pt = CGPoint(x: b.pr.p.x + cos(a) * size, y: b.pr.p.y + sin(a) * size)
-                    if k == 0 { path.move(to: pt) } else { path.addLine(to: pt) }
-                }
-                path.closeSubpath()
-                gc.stroke(path, with: .color(b.s.color.opacity(alpha)),
-                          style: StrokeStyle(lineWidth: 1.2, lineJoin: .round))
-            } else {
-                // 小球：外面一圈辉光 + 本体，做出发光的球感
-                let glow = size * 2.2
-                gc.fill(Path(ellipseIn: CGRect(x: b.pr.p.x - glow, y: b.pr.p.y - glow,
-                                               width: glow * 2, height: glow * 2)),
-                        with: .radialGradient(
-                            Gradient(colors: [b.s.color.opacity(alpha * 0.45), b.s.color.opacity(0)]),
-                            center: b.pr.p, startRadius: 0, endRadius: glow))
-                gc.fill(Path(ellipseIn: CGRect(x: b.pr.p.x - size, y: b.pr.p.y - size,
-                                               width: size * 2, height: size * 2)),
-                        with: .radialGradient(
-                            Gradient(colors: [.white.opacity(alpha), b.s.color.opacity(alpha)]),
-                            center: CGPoint(x: b.pr.p.x - size * 0.35, y: b.pr.p.y - size * 0.4),
-                            startRadius: 0, endRadius: size * 1.3))
-            }
+            // 外面一圈辉光 + 本体，做出发光的球感
+            let glow = size * 2.2
+            gc.fill(Path(ellipseIn: CGRect(x: b.pr.p.x - glow, y: b.pr.p.y - glow,
+                                           width: glow * 2, height: glow * 2)),
+                    with: .radialGradient(
+                        Gradient(colors: [b.s.color.opacity(alpha * 0.45), b.s.color.opacity(0)]),
+                        center: b.pr.p, startRadius: 0, endRadius: glow))
+            gc.fill(Path(ellipseIn: CGRect(x: b.pr.p.x - size, y: b.pr.p.y - size,
+                                           width: size * 2, height: size * 2)),
+                    with: .radialGradient(
+                        Gradient(colors: [.white.opacity(alpha), b.s.color.opacity(alpha)]),
+                        center: CGPoint(x: b.pr.p.x - size * 0.35, y: b.pr.p.y - size * 0.4),
+                        startRadius: 0, endRadius: size * 1.3))
         }
     }
 }

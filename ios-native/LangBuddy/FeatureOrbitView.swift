@@ -147,7 +147,10 @@ struct FeatureOrbitView: View {
                     yaw = dragStart.yaw + Double(v.translation.width) * 0.009
                     pitch = max(-0.7, min(0.7, dragStart.pitch - Double(v.translation.height) * 0.007))
                 }
-                .onEnded { _ in dragStart = (yaw, pitch) }
+                .onEnded { _ in
+                    dragStart = (yaw, pitch)
+                    resumeSpin()      // 松手就接着转，不然拖过一次就永远停在那儿
+                }
         )
     }
 
@@ -226,6 +229,7 @@ struct FeatureOrbitView: View {
             app.route = r
         } else {
             app.showToast("这个功能正在做，敬请期待")
+            resumeSpin()   // 不跳页，得自己把转恢复了
         }
     }
 
@@ -250,6 +254,12 @@ struct FeatureOrbitView: View {
     private func autoOffset(at now: Date) -> Double {
         guard let since = spinSince else { return 0 }
         return now.timeIntervalSince(since) * spinSpeed
+    }
+
+    /// 重新开始自转。freezeSpin 已经把之前累计的角度并进 yaw 了，
+    /// 这里只要把时钟重新起头，就会从当前朝向接着转。
+    private func resumeSpin() {
+        spinSince = Date()
     }
 
     /// 把自转累计的角度并进 yaw 再停下，否则一停就会跳回起始朝向
