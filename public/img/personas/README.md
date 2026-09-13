@@ -5,14 +5,14 @@
 
 | 老师 | 文件名（三选一） |
 |---|---|
-| 👩‍🏫 Janet 耐心的老师 | `janet.jpg` / `janet.png` / `janet.webp` |
-| 👩‍⚕️ Dr. Adams 医生 | `dradams.jpg` … |
-| 👩‍💼 Priya 职场同事 | `priya.jpg` … |
-| 🧑‍🎤 Julia 闲聊的朋友 | `julia.jpg` … |
-| 🕴️ James 面试官 | `james.jpg` … |
-| 🧔 Thomas 严格的教练 | `thomas.jpg` … |
-| 🧑 Raj 健谈的邻居 | `raj.jpg` … |
-| 🧑‍🎓 Danny 同龄学生 | `danny.jpg` … |
+| 👩‍🏫 Dawn 耐心的老师 | `dawn.jpg` / `dawn.png` / `dawn.webp` |
+| 👩‍💼 Steph 职场同事 | `steph.jpg` … |
+| 🧑‍🎤 Lucy 闲聊的朋友 | `lucy.jpg` … |
+| 🕴️ Olivia 面试官 | `olivia.jpg` … |
+| 🌏 Ruby 旅行达人 | `ruby.jpg` … |
+| 🧔 Lee 严格的教练 | `lee.jpg` … |
+| 🧑 Jamie 健谈的邻居 | `jamie.jpg` … |
+| 🧑‍🎓 Daniel 同龄学生 | `danny.jpg` （注意：id 是 danny，名字显示 Daniel） |
 
 照片直接从 Tavus 形象库那一页截图裁一下就行——列表里看到谁，接通后就是谁。
 
