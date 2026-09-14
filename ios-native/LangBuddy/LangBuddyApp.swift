@@ -55,6 +55,14 @@ struct RootView: View {
             case .grammarDetail(let id):
                 GrammarDetailView(lessonId: id)
                     .transition(.move(edge: .trailing).combined(with: .opacity))
+            case .colloquial:
+                ColloquialView().transition(.move(edge: .trailing).combined(with: .opacity))
+            case .essay:
+                EssayView().transition(.move(edge: .trailing).combined(with: .opacity))
+            case .mistakes:
+                MistakesView().transition(.move(edge: .trailing).combined(with: .opacity))
+            case .profile:
+                ProfileView().transition(.move(edge: .trailing).combined(with: .opacity))
             case .videoCall:
                 VideoCallView().transition(.opacity)
             case .orbit(let w, let fromHome):
@@ -98,6 +106,10 @@ struct RootView: View {
         case .grammar: return "grammar"
         // 详情带上 id，切换不同课程时才会触发过渡动画
         case .grammarDetail(let id): return "grammarDetail-" + id
+        case .colloquial: return "colloquial"
+        case .essay: return "essay"
+        case .mistakes: return "mistakes"
+        case .profile: return "profile"
         case .videoCall: return "videoCall"
         case .orbit(let w, _): return "orbit-" + w
         }

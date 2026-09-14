@@ -300,8 +300,16 @@ struct FeatureOrbitView: View {
                   color: Color(red: 0.96, green: 0.62, blue: 0.04), route: .vocab),
             .init(label: "语法精讲", desc: "一次讲透一个点，带 AI 批改",
                   color: Color(red: 0.65, green: 0.55, blue: 0.98), route: .grammar),
+            .init(label: "美式口语", desc: "地道说法，跟读对比发音",
+                  color: Color(red: 0.98, green: 0.45, blue: 0.52), route: .colloquial),
+            .init(label: "作文批改", desc: "逐句改，讲清为什么这么改",
+                  color: Color(red: 0.38, green: 0.65, blue: 0.98), route: .essay),
+            .init(label: "错题本", desc: "错过的题自动归拢，反复清零",
+                  color: Color(red: 0.20, green: 0.83, blue: 0.60), route: .mistakes),
+            .init(label: "我的", desc: "会员、目标语言、学习设置",
+                  color: Color(red: 0.58, green: 0.64, blue: 0.71), route: .profile),
             .init(label: "词根星球", desc: "顺着词根一次记住一串词",
-                  color: Color(red: 0.98, green: 0.45, blue: 0.52), route: nil, isOrbit: true),
+                  color: Color(red: 0.99, green: 0.72, blue: 0.30), route: nil, isOrbit: true),
         ]
 
         // 纬度压在 ±0.72 的带子里，不铺满整个球。铺满时靠近南北极的节点

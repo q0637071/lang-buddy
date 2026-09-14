@@ -425,6 +425,66 @@ struct ProfileResponse: Codable {
     let user: User
 }
 
+// MARK: - 美式口语
+
+struct Phrase: Codable, Identifiable, Equatable {
+    let id: String
+    let phrase: String
+    let meaning: String
+    let category: String
+    let register: String?
+    let example: String?
+    let exampleZh: String?
+    let note: String?
+}
+
+struct ColloquialResponse: Codable {
+    let phrases: [Phrase]
+    let categories: [String]
+}
+
+// MARK: - 错题本
+
+struct SimilarQuestion: Codable, Identifiable, Equatable {
+    let question: String
+    let answer: String
+    let explanation: String
+    var id: String { question }
+}
+
+struct Mistake: Codable, Identifiable, Equatable {
+    let id: String
+    let subject: String
+    let examType: String?
+    let category: String
+    let tags: [String]
+    let questionText: String
+    let userAnswer: String?
+    let correctAnswer: String
+    let explanation: String
+    let similarQuestions: [SimilarQuestion]?
+    let mastered: Bool
+    let createdAt: Double
+    /// 拍照上传的错题才有；后端给的是相对路径
+    let imageUrl: String?
+}
+
+struct MistakeStatsBlock: Codable, Equatable {
+    let total: Int
+    let mastered: Int
+    let categories: [String]
+    let tags: [String]
+}
+
+struct MistakeListResponse: Codable {
+    let mistakes: [Mistake]
+    let stats: MistakeStatsBlock
+}
+
+struct MistakeResponse: Codable {
+    let mistake: Mistake
+}
+
 /// 后端统一用 { error: "..." } 返回错误，这里解出来直接展示给用户
 struct APIError: LocalizedError {
     let message: String

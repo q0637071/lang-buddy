@@ -23,6 +23,10 @@ final class AppState: ObservableObject {
         case vocab
         case grammar
         case grammarDetail(String)   // 关联值是课程 id
+        case colloquial
+        case essay
+        case mistakes
+        case profile
         case videoCall
         // 中心词 + 从哪进来的：从首页进就返回首页，从背单词卡片进就返回背单词，
         // 否则用户会莫名其妙被丢到另一个功能里

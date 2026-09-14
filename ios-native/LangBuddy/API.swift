@@ -159,6 +159,45 @@ actor API {
         try await request("scenarios/\(id)", as: ScenarioResponse.self).scenario
     }
 
+    // MARK: - 美式口语 / 作文 / 错题本 / 我的
+
+    func colloquial() async throws -> ColloquialResponse {
+        try await request("colloquial/list", as: ColloquialResponse.self)
+    }
+
+    func checkEssay(text: String, mode: String, examType: String?) async throws -> EssayResult {
+        var body: [String: Any] = ["essayText": text, "mode": mode]
+        if let examType, !examType.isEmpty { body["examType"] = examType }
+        return try await request("essay/check", method: "POST", body: body, as: EssayResult.self)
+    }
+
+    func mistakes() async throws -> MistakeListResponse {
+        try await request("mistakes/list", as: MistakeListResponse.self)
+    }
+
+    func addMistake(text: String, examType: String?) async throws -> Mistake {
+        var body: [String: Any] = ["questionText": text]
+        if let examType, !examType.isEmpty { body["examType"] = examType }
+        return try await request("mistakes/submit-text", method: "POST", body: body,
+                                 as: MistakeResponse.self).mistake
+    }
+
+    func deleteMistake(_ id: String) async throws {
+        _ = try await request("mistakes/(id)", method: "DELETE", as: OKResponse.self)
+    }
+
+    func metrics() async throws -> Metrics {
+        try await request("metrics", as: Metrics.self)
+    }
+
+    func updateProfile(nickname: String?, level: String?, targetLang: String?) async throws -> User {
+        var body: [String: Any] = [:]
+        if let nickname, !nickname.isEmpty { body["nickname"] = nickname }
+        if let level { body["level"] = level }
+        if let targetLang { body["targetLang"] = targetLang }
+        return try await request("profile", method: "POST", body: body, as: ProfileResponse.self).user
+    }
+
     func clearChat() async throws {
         _ = try await request("chat/clear", method: "POST", as: OKResponse.self)
     }
