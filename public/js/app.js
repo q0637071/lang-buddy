@@ -1072,6 +1072,19 @@
       'network': '语音识别服务连接失败（该功能依赖浏览器自带的在线语音识别，国内网络下常不稳定），建议改用打字输入',
       'timeout': '长时间没有识别结果（部分安卓浏览器无法连接语音识别服务），建议改用打字输入',
     };
+    // Windows 上"麦克风被拒绝"有两层：Chrome 的站点权限，和系统那层隐私开关。
+    // 只说"在地址栏允许"会把已经允许过的人卡死——他看着自己明明已经允许了。
+    // 台式机还常常根本没有麦克风，这时候说权限就更是答非所问。
+    if (/Windows NT/i.test(navigator.userAgent || '')) {
+      if (error === 'not-allowed') {
+        return '麦克风被拒绝：先看地址栏左边的🔒里有没有允许麦克风；如果那里已经允许了，'
+          + '再去 Windows「设置 → 隐私和安全性 → 麦克风」，把「麦克风访问」和「让桌面应用访问你的麦克风」都打开，然后刷新页面';
+      }
+      if (error === 'audio-capture') {
+        return '没有检测到麦克风。台式机一般不自带麦克风，需要插耳麦或 USB 麦克风；'
+          + '插好后在 Windows 声音设置里把它设成默认输入设备，再刷新页面';
+      }
+    }
     return messages[error] || '语音识别出错，请重试';
   }
 
@@ -3032,20 +3045,26 @@
     if (!hasNativeASR()) lacks.push('语音识别');
     if (!window.speechSynthesis) lacks.push('朗读');
     const el = $('#ttsNoticeTranslate');
-    if (lacks.length) {
+    if (trServerMode && hasNativeASR()) {
+      // 上次在这台机器上试过、原生识别是通不了的，就别再假装它能用
+      el.textContent = '🎧 这台设备上浏览器自带的语音识别连不上，已改用录音翻译：'
+        + '点「开始录音」，对方说完后再点「停止并翻译」。';
+      el.hidden = false;
+    } else if (lacks.length) {
       el.textContent = `🔈 当前浏览器不支持${lacks.join('和')}，已自动改用服务端处理`
         + (hasNativeASR() ? '（首次播放稍慢）' : '：点「开始录音」，对方说完后再点「停止并翻译」');
       el.hidden = false;
     } else {
       el.hidden = true;
     }
+    $('#btnTrFallback').hidden = true;
     updateTrMicUI();
   }
 
   function updateTrMicUI() {
     $('#btnTrMic').classList.toggle('listening', trListening);
     // 两种模式的操作方式不同，按钮文案要如实反映，否则用户不知道该怎么用
-    const recMode = !hasNativeASR();
+    const recMode = useRecordingMode() || !hasNativeASR();
     $('#trMicLabel').textContent = trListening
       ? (recMode ? '停止并翻译' : '停止收听')
       : (recMode ? '开始录音' : '开始收听');
@@ -3079,8 +3098,45 @@
   // 浏览器没有 SpeechRecognition 时（微信/QQ内置浏览器）改用"录一段音上传识别"。
   // 这是唯一能让这些用户用上翻译的办法——原来只在状态栏改一行小字，
   // 按钮毫无变化，用户看起来就是"点了没反应"。
+  // 浏览器"有" SpeechRecognition 不等于"能用"：Chrome 的识别要连 Google 的服务器，
+  // 国内网络下经常连不上，表现就是 network 报错、或者一直"正在收听"却永远没结果。
+  // Windows 桌面版尤其明显（手机上 iOS 用的是苹果自己的识别，不受影响）。
+  // 这种情况下原生识别这条路是死的，必须整条换成"录一段音传给服务端识别"——
+  // 服务端走 Groq Whisper，是我们自己的服务器在调，和用户的网络无关。
+  let trServerMode = safeGetItem('lb_tr_asr_mode') === 'server';
+  let trEmptyTurns = 0;
+
   const hasNativeASR = () => !!(window.SpeechRecognition || window.webkitSpeechRecognition);
   const canRecord = () => !!(navigator.mediaDevices?.getUserMedia && window.MediaRecorder);
+  // 真正该走哪条路：没有原生识别、或原生识别已经被证明用不了，就走录音
+  const useRecordingMode = () => (!hasNativeASR() || trServerMode) && canRecord();
+
+  // 换到录音模式，并记住——下次进来直接走这条路，不用再让用户白等一次。
+  function switchToRecordingMode(reason, autoStart) {
+    trServerMode = true;
+    safeSetItem('lb_tr_asr_mode', 'server');
+    // 原生识别要彻底停掉，否则它会继续在后台一轮轮重试，和录音抢麦克风
+    trListening = false;
+    trResumeAfterSpeech = false;
+    trEmptyTurns = 0;
+    clearTimeout(trRestartTimer);
+    if (trRecognition) {
+      try { trRecognition.onresult = trRecognition.onerror = trRecognition.onend = null; } catch {}
+      try { trRecognition.abort(); } catch {}
+      trRecognition = null;
+    }
+    $('#btnTrFallback').hidden = true;
+    const el = $('#ttsNoticeTranslate');
+    el.textContent = `🎧 ${reason}已改用录音翻译：点「开始录音」，对方说完后再点「停止并翻译」。`;
+    el.hidden = false;
+    if (autoStart && canRecord()) { startRecordingMode(); return; }
+    $('#trStatus').textContent = '点「开始录音」试试';
+    updateTrMicUI();
+  }
+
+  $('#btnTrFallback').addEventListener('click', () => {
+    switchToRecordingMode('', true);
+  });
 
   let trMediaRecorder = null;
   let trChunks = [];
@@ -3104,9 +3160,15 @@
 
   function startTranslateListening() {
     unlockSpeechSynthesis();
+    // 录音模式优先判断：原生识别已经被证明用不了时，不能再去走那条死路
+    if (useRecordingMode()) {
+      startRecordingMode();
+      return;
+    }
     if (hasNativeASR()) {
       trListening = true;
       trErrorStreak = 0;
+      trEmptyTurns = 0;
       updateTrMicUI();
       listenTranslateTurn();
       return;
@@ -3225,6 +3287,9 @@
     trRecognition.onresult = (e) => finish(() => {
       if (!trListening) return;
       trErrorStreak = 0;
+      // 听到东西了，说明这条路是通的，把"改用录音"的出口收起来
+      trEmptyTurns = 0;
+      $('#btnTrFallback').hidden = true;
       const said = e.results[0][0].transcript.trim();
       // 去重：环境噪音、回声、或识别器抖动都可能把同一句连着报好几次，
       // 不挡住的话既刷屏又白烧AI额度
@@ -3256,13 +3321,30 @@
 
   function handleTrError(err) {
     if (!trListening) return;
+    // 麦克风本身的问题，换成录音模式也一样没用（录音同样要麦克风），只能如实说清怎么修
     if (err === 'not-allowed' || err === 'audio-capture') {
       $('#trStatus').textContent = '⚠️ ' + recognitionErrorMessage(err);
       stopTranslateListening();
       return;
     }
+    // 麦克风是好的，只是连不上浏览器自带的识别服务——这条路整条都是死的，
+    // 再重试多少次都一样，直接换成服务端识别。这正是 Windows 上"打开用不了"的主因。
+    if (err === 'network' || err === 'service-not-allowed') {
+      if (canRecord()) {
+        switchToRecordingMode('浏览器自带的语音识别连不上（国内网络常见），', true);
+      } else {
+        $('#trStatus').textContent = '⚠️ ' + recognitionErrorMessage('network');
+        stopTranslateListening();
+      }
+      return;
+    }
     if (err === 'no-speech' || err === 'timeout') {
-      // 没人说话是常态，静默重开继续听
+      // 没人说话是常态，静默重开继续听。
+      // 但连着好几轮什么都听不到，也可能是识别服务根本没在工作（连不上时
+      // 有些版本既不报 network 也不出结果，只是一轮轮空转）。这时候不该
+      // 擅自替用户换模式——他也可能只是没开口——而是把出口摆出来让他选。
+      trEmptyTurns++;
+      if (trEmptyTurns >= 3 && canRecord()) $('#btnTrFallback').hidden = false;
       trRestartTimer = setTimeout(() => { if (trListening) listenTranslateTurn(); }, 400);
       return;
     }
