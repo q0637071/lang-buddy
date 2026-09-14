@@ -66,6 +66,11 @@ const AVATAR_MAX_CALL_SECONDS = Number(process.env.AVATAR_MAX_CALL_SECONDS || 60
 // 通话期间前端每 20 秒报一次心跳。结算时按"最后一次心跳"算时长，而不是"到现在为止"——
 // 否则用户讲了30秒直接关页面，隔一会儿再回来会被按单次上限满额扣掉5分钟。
 // 宽限比心跳间隔略长，覆盖最后一次心跳到真正断开之间那一小段（这段 Tavus 是要收钱的）。
+// 从创建房间到用户真正进去（加载页面、授权摄像头麦克风）要十几二十秒，
+// 而 Tavus 的 max_call_duration 是从创建就开始算的。不留缓冲的话，
+// 用户"一分钟"的通话真正能说上话的只有四十秒左右。
+// 我们自己的计时从第一次心跳（真的进去了）开始，Tavus 那边多给这些秒数兜底。
+const AVATAR_JOIN_BUFFER = 45;
 const AVATAR_PING_SECONDS = 20;
 const AVATAR_PING_GRACE = 25;
 const avatarEnabled = () => !!(TAVUS_API_KEY && TAVUS_FACE_ID);
@@ -1596,9 +1601,22 @@ function avatarGlobalQuota(db) {
   return { used, limit, remaining: Math.max(0, limit - used) };
 }
 
+/// 这个用户每月能用多少：管理员给他单独设过就用他的，否则用全站默认。
+/// 用量仍然按 IP 记（防小号），只是额度上限因人而异。
+function avatarLimitsFor(user) {
+  const mins = Number(user?.avatarMonthlyMinutes);
+  const calls = Number(user?.avatarMonthlyCalls);
+  return {
+    seconds: (Number.isFinite(mins) && mins > 0 ? mins : AVATAR_MONTHLY_MINUTES) * 60,
+    calls: Number.isFinite(calls) && calls > 0 ? calls : AVATAR_MONTHLY_CALLS,
+    custom: (Number.isFinite(mins) && mins > 0) || (Number.isFinite(calls) && calls > 0),
+  };
+}
+
 function avatarQuota(db, user, ip) {
   if (!user.avatarUsage) user.avatarUsage = { active: null };
-  const limit = AVATAR_MONTHLY_MINUTES * 60;
+  const lim = avatarLimitsFor(user);
+  const limit = lim.seconds;
   if (avatarUnlimited(user)) {
     return {
       used: 0, limit: Infinity, remaining: Infinity, unlimited: true,
@@ -1610,8 +1628,9 @@ function avatarQuota(db, user, ip) {
   const calls = rec.calls || 0;
   return {
     used, limit, remaining: Math.max(0, limit - used), unlimited: false,
-    calls, callsLimit: AVATAR_MONTHLY_CALLS,
-    callsRemaining: Math.max(0, AVATAR_MONTHLY_CALLS - calls),
+    calls, callsLimit: lim.calls,
+    callsRemaining: Math.max(0, lim.calls - calls),
+    custom: lim.custom,     // 用的是单独给他设的额度，还是全站默认
   };
 }
 
@@ -1627,20 +1646,31 @@ function settleAvatarSession(db, user, exact = false) {
   // 这种情况不能计费——没用就不该扣。
   if (!u.active.lastSeenAt) { u.active = null; return; }
 
-  const raw = Math.round((u.active.lastSeenAt - u.active.startedAt) / 1000)
-    + (exact ? 0 : AVATAR_PING_GRACE);
-  const elapsed = Math.min(Math.max(raw, 0), AVATAR_MAX_CALL_SECONDS);
-  const charge = Math.max(elapsed, 30); // Tavus 每场最低计 30 秒，这是真实成本
+  const grace = exact ? 0 : AVATAR_PING_GRACE;
+
+  // 两个口径，故意分开算：
+  //   用户额度 —— 从"真正进到房间里"（第一次心跳）算起。之前从创建房间算，
+  //   把连接和授权摄像头那十几二十秒也扣在用户头上，他实际只说了四十秒却被扣满一分钟。
+  //   全站账单 —— 从创建房间算，因为 Tavus 就是这么收我们钱的。
+  //   这道闸门守的是真实支出，不能按对用户友好的口径记，否则会悄悄冲穿套餐。
+  const base = u.active.joinedAt || u.active.startedAt;
+  const userRaw = Math.round((u.active.lastSeenAt - base) / 1000) + grace;
+  const cap = u.active.maxSeconds || AVATAR_MAX_CALL_SECONDS;
+  const userElapsed = Math.min(Math.max(userRaw, 0), cap);
+  const userCharge = Math.max(userElapsed, 30); // Tavus 每场最低计 30 秒
+
+  const billRaw = Math.round((u.active.lastSeenAt - u.active.startedAt) / 1000) + grace;
+  const billCharge = Math.max(Math.min(Math.max(billRaw, 0), cap + AVATAR_JOIN_BUFFER), 30);
 
   // 落到发起这通电话时记录的 IP 上（中途换网也算在起始 IP，避免切网重置额度）
   if (!avatarUnlimited(user)) {
     const rec = avatarIpUsage(db, u.active.ip);
-    rec.seconds += charge;
+    rec.seconds += userCharge;
     // 次数和秒数一起记：走到这里说明有过心跳、人真的进去了。
     // 点开就退 / 接通失败在上面已经 return 了，不算一次——"没用就不该扣"
     rec.calls += 1;
   }
-  avatarGlobalUsage(db).seconds += charge; // 全站总量不分身份，管理员的也算
+  avatarGlobalUsage(db).seconds += billCharge; // 全站总量不分身份，管理员的也算
   u.active = null;
 }
 
@@ -1656,12 +1686,12 @@ app.get('/api/avatar/status', requireAuth, (req, res) => {
     enabled: true,
     isMember: isActiveMember(user),
     unlimited: q.unlimited,
-    monthlyMinutes: AVATAR_MONTHLY_MINUTES,
+    monthlyMinutes: q.limit === Infinity ? -1 : Math.round(q.limit / 60),
     usedSeconds: q.used,
     remainingSeconds: q.unlimited ? -1 : q.remaining,
     maxCallSeconds: AVATAR_MAX_CALL_SECONDS,
     // 试用次数。前端主要展示这个——"还剩1次"比"还剩73秒"好懂
-    monthlyCalls: AVATAR_MONTHLY_CALLS,
+    monthlyCalls: q.callsLimit === Infinity ? -1 : q.callsLimit,
     usedCalls: q.unlimited ? 0 : q.calls,
     remainingCalls: q.unlimited ? -1 : q.callsRemaining,
     globalExhausted: g.remaining <= 0,
@@ -1695,11 +1725,11 @@ app.post('/api/avatar/conversation', requireAuth, rateLimit(6), async (req, res)
   // 次数和总时长各判一道，先撞上哪道就说哪道——错误信息含糊会让用户反复重试
   if (q.callsRemaining <= 0) {
     saveDB(db);
-    return res.status(403).json({ error: `AI 视频通话每月试用 ${AVATAR_MONTHLY_CALLS} 次已用完，下月1日重置` });
+    return res.status(403).json({ error: `AI 视频通话每月试用 ${q.callsLimit} 次已用完，下月1日重置` });
   }
   if (q.remaining <= 0) {
     saveDB(db);
-    return res.status(403).json({ error: `AI 视频通话每月体验额度（${AVATAR_MONTHLY_MINUTES}分钟）已用完，下月1日重置` });
+    return res.status(403).json({ error: `AI 视频通话每月额度（${Math.round(q.limit / 60)}分钟）已用完，下月1日重置` });
   }
 
   // 并发闸门放在额度之后：额度不够本来就不该发，没必要再占一个并发位去判断
@@ -1740,7 +1770,7 @@ app.post('/api/avatar/conversation', requireAuth, rateLimit(6), async (req, res)
         conversation_name: `LangBuddy-${user.username}`,
         conversational_context: context,
         properties: {
-          max_call_duration: callSeconds,
+          max_call_duration: callSeconds + AVATAR_JOIN_BUFFER,
           participant_left_timeout: 30,  // 人走了30秒就关，别空转烧钱
           participant_absent_timeout: 90, // 创建后90秒没人进来直接关
           enable_recording: false,
@@ -1749,7 +1779,14 @@ app.post('/api/avatar/conversation', requireAuth, rateLimit(6), async (req, res)
       }),
     });
     // lastSeenAt 先留空：等前端真的把通话界面挂上来、发出第一次心跳才开始计费
-    user.avatarUsage.active = { conversationId: data.conversation_id, startedAt: Date.now(), lastSeenAt: null, ip: clientIp };
+    user.avatarUsage.active = {
+      conversationId: data.conversation_id,
+      startedAt: Date.now(),      // 房间创建时刻，Tavus 按这个收我们的钱
+      joinedAt: null,             // 第一次心跳的时刻，用户的额度按这个扣
+      lastSeenAt: null,
+      maxSeconds: callSeconds,
+      ip: clientIp,
+    };
     saveDB(db);
     res.json({
       conversationUrl: data.conversation_url,
@@ -1770,10 +1807,22 @@ app.post('/api/avatar/ping', requireAuth, (req, res) => {
   const user = db.users[req.session.userId];
   const active = user.avatarUsage && user.avatarUsage.active;
   if (!active) return res.json({ ok: false });
-  active.lastSeenAt = Date.now();
-  const usedNow = Math.round((active.lastSeenAt - active.startedAt) / 1000);
+  const now = Date.now();
+  // 第一次心跳 = 用户真正进到房间里了。计时和扣额度都从这一刻算，
+  // 前面连接、授权摄像头那段不算在他头上
+  if (!active.joinedAt) active.joinedAt = now;
+  active.lastSeenAt = now;
+  const usedNow = Math.round((now - active.joinedAt) / 1000);
+  const cap = active.maxSeconds || AVATAR_MAX_CALL_SECONDS;
   saveDB(db);
-  res.json({ ok: true, elapsedSeconds: usedNow, pingSeconds: AVATAR_PING_SECONDS });
+  // 把剩余时间一并回给前端：让服务端当权威，前端的倒计时按这个校准，
+  // 免得它从"点了开始通话"就开始倒数，用户还没进去就已经少了二十秒
+  res.json({
+    ok: true,
+    elapsedSeconds: usedNow,
+    remainingSeconds: Math.max(0, cap - usedNow),
+    pingSeconds: AVATAR_PING_SECONDS,
+  });
 });
 
 app.post('/api/avatar/end', requireAuth, async (req, res) => {
@@ -3099,6 +3148,9 @@ app.get('/api/admin/users', requireAdmin, (req, res) => {
       row.lastLoginAt = u.lastLoginAt || null;
       row.lastLogoutAt = u.lastLogoutAt || null;
       row.loginCount = (u.authLog || []).filter(e => e.type === 'login').length;
+      // 视频通话额度：null 表示用的是全站默认，有值表示单独给他设过
+      row.avatarMonthlyMinutes = u.avatarMonthlyMinutes || null;
+      row.avatarMonthlyCalls = u.avatarMonthlyCalls || null;
     }
     return row;
   }).sort((a, b) => b.createdAt - a.createdAt);
@@ -3159,6 +3211,40 @@ app.get('/api/admin/auth-recent', requireSuperAdmin, (req, res) => {
     total: inRange.length,      // 该范围内的总条数
     totalAll: rows.length,      // 不限时间时一共有多少，用来提示"还有更早的"
     rows: inRange.slice(0, limit),
+  });
+});
+
+// 给某个用户单独设视频通话额度。传 0 或空表示恢复成全站默认。
+// 只给超级管理员：这等于直接批钱——每分钟约 ¥2.7 是真金白银。
+app.post('/api/admin/users/:username/avatar-quota', requireSuperAdmin, (req, res) => {
+  const db = loadDB();
+  const user = db.users[req.params.username];
+  if (!user) return res.status(404).json({ error: '用户不存在' });
+
+  const { minutes, calls } = req.body || {};
+  const m = Number(minutes), c = Number(calls);
+  // 上限卡在全站月度额度上：给一个人开的量不可能超过整站能用的量，
+  // 写个离谱的数字进去只会让账单在他一个人身上爆掉
+  if (minutes != null && minutes !== '' && (!Number.isFinite(m) || m < 0 || m > AVATAR_GLOBAL_MONTHLY_MINUTES)) {
+    return res.status(400).json({ error: `分钟数要在 0 到 ${AVATAR_GLOBAL_MONTHLY_MINUTES} 之间` });
+  }
+  if (calls != null && calls !== '' && (!Number.isFinite(c) || c < 0 || c > 200)) {
+    return res.status(400).json({ error: '次数要在 0 到 200 之间' });
+  }
+
+  if (!Number.isFinite(m) || m <= 0) delete user.avatarMonthlyMinutes;
+  else user.avatarMonthlyMinutes = m;
+  if (!Number.isFinite(c) || c <= 0) delete user.avatarMonthlyCalls;
+  else user.avatarMonthlyCalls = c;
+
+  saveDB(db);
+  const lim = avatarLimitsFor(user);
+  res.json({
+    ok: true,
+    username: user.username,
+    avatarMonthlyMinutes: user.avatarMonthlyMinutes || null,
+    avatarMonthlyCalls: user.avatarMonthlyCalls || null,
+    effective: { minutes: lim.seconds / 60, calls: lim.calls, custom: lim.custom },
   });
 });
 

@@ -585,6 +585,8 @@ p { line-height: 1.6; color: var(--text-muted); }
 .admin-users-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
 .admin-users-header .section-title { margin: 0; }
 .admin-actions { display: flex; gap: 6px; white-space: nowrap; }
+/* 被单独设过视频额度的用户标出来，扫一眼就知道给谁开过口子 */
+.btn-admin-action-on { border-color: var(--primary) !important; background: var(--primary-light) !important; color: var(--primary-dark) !important; font-weight: 700; }
 .btn-admin-action { border: 1px solid var(--border); background: #fff; color: var(--text); border-radius: 8px; padding: 5px 10px; font-size: 12px; cursor: pointer; }
 .btn-admin-action:hover { border-color: var(--primary); color: var(--primary); }
 .btn-admin-action-danger { color: var(--danger); border-color: #fca5a5; }

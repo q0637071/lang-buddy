@@ -1429,7 +1429,7 @@
       const frame = document.createElement('iframe');
       // 通话界面真的加载出来了才发第一次心跳——服务端拿到第一跳才开始计费，
       // 点开就退或接通失败一律不扣额度
-      frame.addEventListener('load', () => { api('/avatar/ping', { method: 'POST' }).catch(() => {}); });
+      frame.addEventListener('load', () => { sendAvatarPing(); });
       frame.src = data.conversationUrl;
       frame.allow = 'camera; microphone; fullscreen; display-capture; autoplay';
       frame.className = 'avatar-frame';
@@ -1439,9 +1439,7 @@
       // 心跳：只要页面还开着就持续上报，服务端据此判断人什么时候真的走了。
       // 没有它，异常退出会被按单次上限满额扣费。
       clearInterval(avatarPingTimer);
-      avatarPingTimer = setInterval(() => {
-        api('/avatar/ping', { method: 'POST' }).catch(() => {});
-      }, 20000);
+      avatarPingTimer = setInterval(sendAvatarPing, 20000);
       $('#avatarCallStatus').textContent = '接通后请允许摄像头和麦克风权限。';
     } catch (err) {
       $('#avatarCallStatus').textContent = '⚠️ ' + err.message;
@@ -1452,13 +1450,26 @@
     }
   }
 
+  // 心跳。服务端在收到第一次心跳时才起表，并回传权威的剩余秒数；
+  // 本地倒计时只负责让数字每秒动起来，准不准以服务端为准。
+  let avatarLeft = 0;
+  async function sendAvatarPing() {
+    try {
+      const r = await api('/avatar/ping', { method: 'POST' });
+      if (typeof r.remainingSeconds === 'number') avatarLeft = r.remainingSeconds;
+    } catch { /* 掉一次心跳不要紧，下一次会补上 */ }
+  }
+
   function startAvatarCountdown(maxSeconds) {
-    let left = maxSeconds;
+    // 服务端要等用户真正进到房间（第一次心跳）才开始计时，在那之前它还没起表。
+    // 所以本地先按满额显示，等第一次心跳回来再校准——不能从"点了开始通话"
+    // 就往下减，那样连接和授权摄像头的十几秒会白白吃掉用户的通话时间。
+    avatarLeft = maxSeconds;
     clearInterval(avatarTimer);
     const tick = () => {
-      $('#avatarQuotaHint').textContent = `本次通话剩余 ${fmtSeconds(left)}`;
-      if (left <= 0) { endAvatarCall('本次通话时长已到'); return; }
-      left--;
+      $('#avatarQuotaHint').textContent = `本次通话剩余 ${fmtSeconds(Math.max(0, avatarLeft))}`;
+      if (avatarLeft <= 0) { endAvatarCall('本次通话时长已到'); return; }
+      avatarLeft--;
     };
     tick();
     avatarTimer = setInterval(tick, 1000);
@@ -4115,6 +4126,7 @@
             <button type="button" class="btn-admin-action" data-action="toggle-member" data-username="${escapeHtml(u.username)}" data-ismember="${u.isMember ? '1' : ''}">${u.isMember ? '取消会员' : '设为会员'}</button>
             ${isSuper ? `<button type="button" class="btn-admin-action" data-action="auth-log" data-username="${escapeHtml(u.username)}">登录记录</button>` : ''}
             ${isSuper ? `<button type="button" class="btn-admin-action" data-action="reset-pw" data-username="${escapeHtml(u.username)}">重置密码</button>` : ''}
+            ${isSuper ? `<button type="button" class="btn-admin-action${u.avatarMonthlyMinutes ? ' btn-admin-action-on' : ''}" data-action="avatar-quota" data-username="${escapeHtml(u.username)}" data-minutes="${u.avatarMonthlyMinutes || ''}" data-calls="${u.avatarMonthlyCalls || ''}">视频额度${u.avatarMonthlyMinutes ? '：' + u.avatarMonthlyMinutes + ' 分钟' : ''}</button>` : ''}
             ${isSuper && !isSelf ? `<button type="button" class="btn-admin-action btn-admin-action-danger" data-action="delete" data-username="${escapeHtml(u.username)}">删除</button>` : ''}
           </td>
         </tr>
@@ -4134,6 +4146,29 @@
       try {
         await api(`/admin/users/${encodeURIComponent(username)}/membership`, { method: 'POST', body: { isMember: nextIsMember } });
         toast(nextIsMember ? '已开通会员' : '已取消会员');
+        renderAdmin();
+      } catch (err) {
+        toast(err.message);
+      }
+    } else if (action === 'avatar-quota') {
+      const curMin = btn.dataset.minutes || '';
+      const curCalls = btn.dataset.calls || '';
+      const m = prompt(
+        `给「${username}」单独设每月视频通话额度（分钟）。\n留空或填 0 = 恢复全站默认。\n\n注意：视频通话按分钟真金白银计费。`,
+        curMin);
+      if (m === null) return;                     // 点了取消
+      // 一通最长一分钟，所以次数至少要给到分钟数，
+      // 否则出现"给了 5 分钟却只能打 2 通"这种自相矛盾的设置
+      const suggested = Number(m) > 0 ? String(Math.max(Number(m), Number(curCalls) || 0)) : '';
+      const c = prompt('每月最多打几通？（每通最长 1 分钟）\n留空或填 0 = 恢复全站默认。', suggested);
+      if (c === null) return;
+      try {
+        const r = await api(`/admin/users/${encodeURIComponent(username)}/avatar-quota`, {
+          method: 'POST', body: { minutes: m, calls: c },
+        });
+        toast(r.effective.custom
+          ? `已设为每月 ${r.effective.minutes} 分钟 / ${r.effective.calls} 通`
+          : '已恢复成全站默认');
         renderAdmin();
       } catch (err) {
         toast(err.message);
