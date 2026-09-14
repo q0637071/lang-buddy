@@ -4070,6 +4070,27 @@
     }).join('') || '<tr><td colspan="5">暂无记录</td></tr>';
   }
 
+  /// 按钮上直接写清楚"限额多少、已用多少"。只显示设置值的话，
+  /// 出现"明明设了 5 分钟却说用完了"时，从界面上看不出卡在哪。
+  function avatarQuotaLabel(u) {
+    const lim = u.avatarLimit;
+    if (!lim) return '视频额度';
+    if (!lim.custom) return '视频额度：默认';
+    const used = u.avatarUsed;
+    const tail = used && used.scope === 'user'
+      ? `（已用 ${used.calls}/${lim.calls} 通）`
+      : '';
+    return `视频额度：${lim.minutes} 分钟 / ${lim.calls} 通${tail}`;
+  }
+
+  /// 弹窗里也要写清他已经用掉多少——"设了 5 分钟却说用完"多半就是这里满了。
+  function avatarUsedText(u) {
+    const lim = u.avatarLimit, used = u.avatarUsed;
+    if (!lim || !used) return '';
+    if (used.scope !== 'user') return '用量按 IP 记（全站默认额度）';
+    return `${used.calls}/${lim.calls} 通，${Math.round(used.seconds / 60 * 10) / 10}/${lim.minutes} 分钟`;
+  }
+
   async function renderAdmin() {
     if (!state.user?.isAdmin) return;
     try {
@@ -4126,7 +4147,7 @@
             <button type="button" class="btn-admin-action" data-action="toggle-member" data-username="${escapeHtml(u.username)}" data-ismember="${u.isMember ? '1' : ''}">${u.isMember ? '取消会员' : '设为会员'}</button>
             ${isSuper ? `<button type="button" class="btn-admin-action" data-action="auth-log" data-username="${escapeHtml(u.username)}">登录记录</button>` : ''}
             ${isSuper ? `<button type="button" class="btn-admin-action" data-action="reset-pw" data-username="${escapeHtml(u.username)}">重置密码</button>` : ''}
-            ${isSuper ? `<button type="button" class="btn-admin-action${u.avatarMonthlyMinutes ? ' btn-admin-action-on' : ''}" data-action="avatar-quota" data-username="${escapeHtml(u.username)}" data-minutes="${u.avatarMonthlyMinutes || ''}" data-calls="${u.avatarMonthlyCalls || ''}">视频额度${u.avatarMonthlyMinutes ? '：' + u.avatarMonthlyMinutes + ' 分钟' : ''}</button>` : ''}
+            ${isSuper ? `<button type="button" class="btn-admin-action${u.avatarLimit?.custom ? ' btn-admin-action-on' : ''}" data-action="avatar-quota" data-username="${escapeHtml(u.username)}" data-minutes="${u.avatarMonthlyMinutes || ''}" data-calls="${u.avatarMonthlyCalls || ''}" data-used="${escapeHtml(avatarUsedText(u))}">${avatarQuotaLabel(u)}</button>` : ''}
             ${isSuper && !isSelf ? `<button type="button" class="btn-admin-action btn-admin-action-danger" data-action="delete" data-username="${escapeHtml(u.username)}">删除</button>` : ''}
           </td>
         </tr>
@@ -4153,8 +4174,11 @@
     } else if (action === 'avatar-quota') {
       const curMin = btn.dataset.minutes || '';
       const curCalls = btn.dataset.calls || '';
+      const usedNow = btn.dataset.used || '';
       const m = prompt(
-        `给「${username}」单独设每月视频通话额度（分钟）。\n留空或填 0 = 恢复全站默认。\n\n注意：视频通话按分钟真金白银计费。`,
+        `给「${username}」单独设每月视频通话额度（分钟）。\n` +
+        (usedNow ? `当前：${usedNow}\n` : '') +
+        `留空或填 0 = 恢复全站默认。\n\n注意：视频通话按分钟真金白银计费。`,
         curMin);
       if (m === null) return;                     // 点了取消
       // 次数不再问了：服务端会按分钟数推（每通最长 1 分钟，5 分钟就是 5 通）。
@@ -4162,7 +4186,8 @@
       // 已经单独设过次数的保留原值，别把人家特意调的覆盖掉。
       const reset = Number(m) > 0 && confirm(
         '要不要同时把他本月已用掉的次数清零？\n\n' +
-        '用量是按 IP 记的，提额不会自动抹掉已经用掉的部分。\n' +
+        (usedNow ? `他本月已用：${usedNow}\n` : '') +
+        '提额不会自动抹掉已经用掉的部分。\n' +
         '如果他现在就提示"次数已用完"，选「确定」。');
       try {
         const r = await api(`/admin/users/${encodeURIComponent(username)}/avatar-quota`, {

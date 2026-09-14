@@ -3175,9 +3175,20 @@ app.get('/api/admin/users', requireAdmin, (req, res) => {
       row.lastLoginAt = u.lastLoginAt || null;
       row.lastLogoutAt = u.lastLogoutAt || null;
       row.loginCount = (u.authLog || []).filter(e => e.type === 'login').length;
-      // 视频通话额度：null 表示用的是全站默认，有值表示单独给他设过
+      // 视频通话额度：null 表示用的是全站默认，有值表示单独给他设过。
+      // 连同"实际生效的限额"和"本月已用"一起给出来——只报设置值的话，
+      // 出现"明明设了 5 分钟却说用完了"时没法从界面上看出卡在哪。
       row.avatarMonthlyMinutes = u.avatarMonthlyMinutes || null;
       row.avatarMonthlyCalls = u.avatarMonthlyCalls || null;
+      const alim = avatarLimitsFor(u);
+      row.avatarLimit = { minutes: alim.seconds / 60, calls: alim.calls, custom: alim.custom };
+      if (alim.custom) {
+        const ur = avatarOwnUsage(u);
+        row.avatarUsed = { scope: 'user', seconds: ur.seconds || 0, calls: ur.calls || 0 };
+      } else {
+        // 按 IP 记的算不出唯一答案（取决于他从哪个网络连），只能说明口径
+        row.avatarUsed = { scope: 'ip' };
+      }
     }
     return row;
   }).sort((a, b) => b.createdAt - a.createdAt);
