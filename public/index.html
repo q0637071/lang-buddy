@@ -796,6 +796,13 @@
       <div id="adminAuthSection" hidden>
         <div class="admin-users-header">
           <h3 class="section-title">最近登录</h3>
+          <select class="admin-auth-filter" id="adminAuthRange">
+            <option value="24">过去 24 小时</option>
+            <option value="72">过去 3 天</option>
+            <option value="168">过去 7 天</option>
+            <option value="720">过去 30 天</option>
+            <option value="all">全部</option>
+          </select>
           <select class="admin-auth-filter" id="adminAuthFilter">
             <option value="all">全部动态</option>
             <option value="login">只看登录</option>

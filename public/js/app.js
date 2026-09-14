@@ -3998,8 +3998,10 @@
       toast(err.message);
     }
   }
-  // 筛选是纯前端的：200 条已经在内存里，不用为了换个筛选再跑一趟服务器
+  // 类型筛选是纯前端的：当前这批已经在内存里，不用为了换个筛选再跑一趟服务器
   $safe('#adminAuthFilter')?.addEventListener('change', paintAdminAuthRows);
+  // 时间范围不一样——数据本身得重新取，前端手里只有当前范围内的那批
+  $safe('#adminAuthRange')?.addEventListener('change', () => renderAdminAuthLog(true));
 
   $('#authLogClose').addEventListener('click', () => { $('#authLogOverlay').hidden = true; });
   $('#authLogOverlay').addEventListener('click', (e) => { if (e.target.id === 'authLogOverlay') $('#authLogOverlay').hidden = true; });
@@ -4012,10 +4014,17 @@
     sec.hidden = !isSuper;
     if (!isSuper) return;            // 普通管理员连请求都不发，接口那边也会 403
     try {
-      const data = await api('/admin/auth-recent?limit=200');
+      const range = $safe('#adminAuthRange')?.value || '24';
+      const data = await api(`/admin/auth-recent?limit=200&hours=${encodeURIComponent(range)}`);
       adminAuthRows = data.rows || [];
+      // 24 要说"24 小时"不是"1 天"——选项上写的就是 24 小时，两边对不上会让人愣一下
+      const scope = data.hours
+        ? `过去 ${data.hours <= 24 ? data.hours + ' 小时' : (data.hours / 24) + ' 天'}`
+        : '全部时间';
+      const more = data.totalAll > data.total
+        ? `（全部时间共 ${data.totalAll} 条，切换上面的范围可以看更早的）` : '';
       $('#adminAuthNote').textContent =
-        `显示最近 ${adminAuthRows.length} 条，共 ${data.total} 条。`
+        `${scope}内共 ${data.total} 条，显示 ${adminAuthRows.length} 条${more}。`
         + '每个账号只保留最近 50 条日志，更早的记录已被覆盖；标「推算」的是按注册时间补的。';
       paintAdminAuthRows();
     } catch (err) {

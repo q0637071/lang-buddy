@@ -3110,6 +3110,13 @@ app.get('/api/admin/users', requireAdmin, (req, res) => {
 // 比用户列表里的单项还敏感，普通管理员一律不给。
 app.get('/api/admin/auth-recent', requireSuperAdmin, (req, res) => {
   const limit = Math.min(500, Math.max(10, Number(req.query.limit) || 100));
+  // 默认只看过去 24 小时：这块是用来回答"刚才是谁在用"的，
+  // 一上来就把几个月的记录全铺出来，真正有用的最新几条反而被埋了。
+  // hours=0（或 all）表示不限时间。
+  const rawHours = req.query.hours;
+  const hours = rawHours === 'all' || rawHours === '0' ? 0
+    : (Number.isFinite(Number(rawHours)) && Number(rawHours) > 0 ? Number(rawHours) : 24);
+  const since = hours > 0 ? Date.now() - hours * 3600 * 1000 : 0;
   const db = loadDB();
   const rows = [];
 
@@ -3145,7 +3152,14 @@ app.get('/api/admin/auth-recent', requireSuperAdmin, (req, res) => {
   }
 
   rows.sort((a, b) => b.at - a.at);
-  res.json({ total: rows.length, rows: rows.slice(0, limit) });
+  // 时间筛选放在排序之后、截断之前：先截断再筛会把时间范围内的记录也砍掉
+  const inRange = since > 0 ? rows.filter(r => r.at >= since) : rows;
+  res.json({
+    hours,                      // 回传实际生效的范围，前端据此显示"过去 N 小时"
+    total: inRange.length,      // 该范围内的总条数
+    totalAll: rows.length,      // 不限时间时一共有多少，用来提示"还有更早的"
+    rows: inRange.slice(0, limit),
+  });
 });
 
 // 某个用户的完整登录/登出记录，只有超级管理员能看
