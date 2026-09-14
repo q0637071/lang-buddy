@@ -1606,11 +1606,35 @@ function avatarGlobalQuota(db) {
 function avatarLimitsFor(user) {
   const mins = Number(user?.avatarMonthlyMinutes);
   const calls = Number(user?.avatarMonthlyCalls);
+  const hasMins = Number.isFinite(mins) && mins > 0;
+  const hasCalls = Number.isFinite(calls) && calls > 0;
+
+  const seconds = (hasMins ? mins : AVATAR_MONTHLY_MINUTES) * 60;
+
+  // 次数没单独设时，按分钟数推出来，不能退回全站默认的 2 次。
+  // 每通最长 AVATAR_MAX_CALL_SECONDS，给了 5 分钟却只让打 2 通 = 实际只有 2 分钟，
+  // 等于"设了等于没设"。管理员心里想的是分钟数，次数是实现细节，不该要他自己算。
+  const derived = Math.max(1, Math.ceil(seconds / AVATAR_MAX_CALL_SECONDS));
+
   return {
-    seconds: (Number.isFinite(mins) && mins > 0 ? mins : AVATAR_MONTHLY_MINUTES) * 60,
-    calls: Number.isFinite(calls) && calls > 0 ? calls : AVATAR_MONTHLY_CALLS,
-    custom: (Number.isFinite(mins) && mins > 0) || (Number.isFinite(calls) && calls > 0),
+    seconds,
+    calls: hasCalls ? calls : (hasMins ? derived : AVATAR_MONTHLY_CALLS),
+    custom: hasMins || hasCalls,
   };
+}
+
+// 被管理员单独设过额度的用户，用量按"人"记而不是按 IP 记。
+// 按 IP 是为了防小号——同一个 IP 注册一堆号刷免费额度。但管理员明确给某个人
+// 开了额度，他就不属于这种情况；继续按 IP 记反而会出两种怪事：
+// 他换个网络额度就变了，或者和室友/同事共用出口 IP 时额度被别人吃掉。
+function avatarOwnUsage(user) {
+  const thisMonth = monthKey(new Date());
+  let rec = user.avatarOwnUsage;
+  if (!rec || rec.month !== thisMonth) {
+    rec = user.avatarOwnUsage = { month: thisMonth, seconds: 0, calls: 0 };
+  }
+  if (typeof rec.calls !== 'number') rec.calls = 0;
+  return rec;
 }
 
 function avatarQuota(db, user, ip) {
@@ -1623,7 +1647,7 @@ function avatarQuota(db, user, ip) {
       calls: 0, callsLimit: Infinity, callsRemaining: Infinity,
     };
   }
-  const rec = avatarIpUsage(db, ip);
+  const rec = lim.custom ? avatarOwnUsage(user) : avatarIpUsage(db, ip);
   const used = rec.seconds || 0;
   const calls = rec.calls || 0;
   return {
@@ -1662,9 +1686,12 @@ function settleAvatarSession(db, user, exact = false) {
   const billRaw = Math.round((u.active.lastSeenAt - u.active.startedAt) / 1000) + grace;
   const billCharge = Math.max(Math.min(Math.max(billRaw, 0), cap + AVATAR_JOIN_BUFFER), 30);
 
-  // 落到发起这通电话时记录的 IP 上（中途换网也算在起始 IP，避免切网重置额度）
+  // 落到发起这通电话时记录的 IP 上（中途换网也算在起始 IP，避免切网重置额度）。
+  // 被单独设过额度的用户记在他自己名下——理由见 avatarOwnUsage 上面那段。
   if (!avatarUnlimited(user)) {
-    const rec = avatarIpUsage(db, u.active.ip);
+    const rec = avatarLimitsFor(user).custom
+      ? avatarOwnUsage(user)
+      : avatarIpUsage(db, u.active.ip);
     rec.seconds += userCharge;
     // 次数和秒数一起记：走到这里说明有过心跳、人真的进去了。
     // 点开就退 / 接通失败在上面已经 return 了，不算一次——"没用就不该扣"
@@ -3237,14 +3264,47 @@ app.post('/api/admin/users/:username/avatar-quota', requireSuperAdmin, (req, res
   if (!Number.isFinite(c) || c <= 0) delete user.avatarMonthlyCalls;
   else user.avatarMonthlyCalls = c;
 
-  saveDB(db);
+  // 用量是按 IP 记的，提额不会把已经用掉的抹掉。但"给他 5 分钟"通常意味着
+  // "让他现在就能用"，所以给一个清零选项：把这个用户出现过的 IP 的本月用量归零。
+  // IP 从登录日志和注册 IP 里取——用户对象上没有历史 IP 字段。
   const lim = avatarLimitsFor(user);
+
+  // 提额不会自动抹掉已经用掉的部分，但"给他 5 分钟"通常意味着"让他现在就能用"。
+  // 清零要清对地方：设过自定义额度的记在他自己名下，其余的还在 IP 上。
+  let cleared = null;
+  if (req.body?.resetUsage) {
+    if (lim.custom) {
+      const rec = avatarOwnUsage(user);
+      cleared = { scope: 'user', seconds: rec.seconds, calls: rec.calls };
+      rec.seconds = 0;
+      rec.calls = 0;
+    } else {
+      const ips = [...new Set(
+        [...(user.authLog || []).map(e => e.ip), user.registrationIp]
+          .filter(ip => ip && ip !== '-')
+      )];
+      const hit = [];
+      for (const ip of ips) {
+        const rec = avatarIpUsage(db, ip);
+        if (rec.seconds || rec.calls) { hit.push(ip); rec.seconds = 0; rec.calls = 0; }
+      }
+      cleared = { scope: 'ip', ips: hit };
+    }
+  }
+
+  saveDB(db);
+  // 把他当前的用量报回去，管理员才知道"设了 5 分钟但他已经用掉 2 分钟"
+  const rec = lim.custom ? avatarOwnUsage(user) : null;
   res.json({
     ok: true,
     username: user.username,
     avatarMonthlyMinutes: user.avatarMonthlyMinutes || null,
     avatarMonthlyCalls: user.avatarMonthlyCalls || null,
     effective: { minutes: lim.seconds / 60, calls: lim.calls, custom: lim.custom },
+    // custom 之后按人记，所以这里能给出确定的数；非 custom 是按 IP 记的，
+    // 取决于他当时从哪个网络连，给不出唯一答案
+    used: rec ? { seconds: rec.seconds, calls: rec.calls } : null,
+    cleared,
   });
 });
 

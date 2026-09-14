@@ -4157,17 +4157,20 @@
         `给「${username}」单独设每月视频通话额度（分钟）。\n留空或填 0 = 恢复全站默认。\n\n注意：视频通话按分钟真金白银计费。`,
         curMin);
       if (m === null) return;                     // 点了取消
-      // 一通最长一分钟，所以次数至少要给到分钟数，
-      // 否则出现"给了 5 分钟却只能打 2 通"这种自相矛盾的设置
-      const suggested = Number(m) > 0 ? String(Math.max(Number(m), Number(curCalls) || 0)) : '';
-      const c = prompt('每月最多打几通？（每通最长 1 分钟）\n留空或填 0 = 恢复全站默认。', suggested);
-      if (c === null) return;
+      // 次数不再问了：服务端会按分钟数推（每通最长 1 分钟，5 分钟就是 5 通）。
+      // 之前要管理员自己填，留空就退回默认 2 次，结果"给了 5 分钟实际只能用 2 分钟"。
+      // 已经单独设过次数的保留原值，别把人家特意调的覆盖掉。
+      const reset = Number(m) > 0 && confirm(
+        '要不要同时把他本月已用掉的次数清零？\n\n' +
+        '用量是按 IP 记的，提额不会自动抹掉已经用掉的部分。\n' +
+        '如果他现在就提示"次数已用完"，选「确定」。');
       try {
         const r = await api(`/admin/users/${encodeURIComponent(username)}/avatar-quota`, {
-          method: 'POST', body: { minutes: m, calls: c },
+          method: 'POST', body: { minutes: m, calls: curCalls, resetUsage: reset },
         });
         toast(r.effective.custom
-          ? `已设为每月 ${r.effective.minutes} 分钟 / ${r.effective.calls} 通`
+          ? `已设为每月 ${r.effective.minutes} 分钟 / ${r.effective.calls} 通` +
+            (r.cleared ? '，用量已清零' : `，本月已用 ${r.used?.calls ?? 0} 通`)
           : '已恢复成全站默认');
         renderAdmin();
       } catch (err) {
