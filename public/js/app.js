@@ -9,6 +9,7 @@
     user: null,
     languages: [],
     chatHistory: [],
+    scene: null,        // 正在练的情景（null = 自由聊天）
     vocabQueue: [],
     vocabIndex: 0,
     vocabStats: null,
@@ -171,7 +172,7 @@
   }
 
   // ---------- 视图切换 ----------
-  const VIEWS = ['landing', 'dashboard', 'tutor', 'facetime', 'vocab', 'grammar', 'translate', 'colloquial', 'mistakes', 'essay', 'profile', 'admin'];
+  const VIEWS = ['landing', 'dashboard', 'tutor', 'scenarios', 'facetime', 'vocab', 'grammar', 'translate', 'colloquial', 'mistakes', 'essay', 'profile', 'admin'];
 
   // ---------- 顶栏的功能菜单 ----------
   function closeNavMenu() {
@@ -219,7 +220,8 @@
     // 两颗球都只在自己那一页转。离开就停掉 rAF，否则会在后台一直跑，白耗电
     featOrbit.setActive(name === 'dashboard');
     heroWire.setActive(name === 'landing');
-    if (name === 'tutor') renderTutor();
+    if (name === 'tutor') { renderTutor(); updateSceneBanner(); }
+    if (name === 'scenarios') renderScenarios();
     if (name === 'facetime') { refreshAvatarButton(); renderPersonaRow('personaRowCall', true); }
     if (name === 'vocab') {
       state.vocabMode = 'review';
@@ -671,6 +673,208 @@
     populateVoiceSelect();
   }
 
+  // ==================== 情景地图 ====================
+  // 服务端早就有了（/api/scenarios/* 和聊天里的 scenarioId），一直缺的是这层界面。
+  // 走过的场景由服务端记（第一次说话就算走过，不用手动点完成），这里只负责画。
+
+  // 地图上的行进顺序：由易到难，不按 scenarios.json 里的存储顺序。
+  // 没列进来的分类排在最后，这样以后加新分类不会凭空消失。
+  const SCENE_ZONE_ORDER = ['校园', '日常生活', '购物', '社交', '出行', '生活应急', '职场', '表达观点'];
+  const SCENE_LEVEL_ORDER = { basic: 0, intermediate: 1, advanced: 2 };
+
+  let sceneList = [];       // 排好序的全部场景
+  let sceneTodayId = null;  // 今天推荐哪个
+
+  function sortedScenes(list) {
+    return list.slice().sort((a, b) => {
+      const za = SCENE_ZONE_ORDER.indexOf(a.category);
+      const zb = SCENE_ZONE_ORDER.indexOf(b.category);
+      // indexOf 返回 -1 的（新分类）要排到最后，不能让 -1 冒到最前面
+      const ra = za === -1 ? SCENE_ZONE_ORDER.length : za;
+      const rb = zb === -1 ? SCENE_ZONE_ORDER.length : zb;
+      if (ra !== rb) return ra - rb;
+      const la = SCENE_LEVEL_ORDER[a.level] ?? 9;
+      const lb = SCENE_LEVEL_ORDER[b.level] ?? 9;
+      return la - lb;
+    });
+  }
+
+  async function renderScenarios() {
+    try {
+      const [listData, dailyData] = await Promise.all([
+        api('/scenarios/list'),
+        api('/scenarios/daily').catch(() => null),
+      ]);
+      sceneList = sortedScenes(listData.scenarios || []);
+      // 用户说的是"每天一个"，所以只取计划里的第一个当今日场景。
+      // 服务端一次给三个，多出来的两个不丢——它们在地图上照样能点。
+      const today = dailyData?.plan?.[0] || null;
+      sceneTodayId = today?.id || null;
+
+      const box = $('#sceneToday');
+      if (today) {
+        $('#sceneTodayEmoji').textContent = today.emoji || '💬';
+        $('#sceneTodayTitle').textContent = today.title;
+        $('#sceneTodayBrief').textContent = today.brief || '';
+        $('#btnSceneTodayStart').textContent = today.doneToday ? '今天已练过，再练一次' : '开始今天的场景';
+        box.hidden = false;
+      } else {
+        box.hidden = true;
+      }
+
+      const done = sceneList.filter(s => s.doneCount > 0).length;
+      $('#sceneProgressText').textContent = `${done} / ${sceneList.length}`;
+      $('#sceneProgressFill').style.width =
+        sceneList.length ? `${Math.round(done / sceneList.length * 100)}%` : '0%';
+
+      layoutSceneMap();
+    } catch (err) {
+      toast(err.message || '情景地图加载失败');
+    }
+  }
+
+  // 节点沿一条正弦曲线铺开。位置必须按容器实际宽度算，所以每次显示和
+  // 窗口变化时都要重算；宽度为 0 时直接跳过——算出来会是 NaN，
+  // 写进 SVG 的 d 属性会让整条路径消失（这个坑在功能星球上踩过一次）。
+  function layoutSceneMap() {
+    const stage = $safe('#sceneMap');
+    const nodesBox = $safe('#sceneMapNodes');
+    const svg = $safe('#sceneMapPath');
+    if (!stage || !nodesBox || !svg || !sceneList.length) return;
+    const W = stage.clientWidth;
+    if (!(W > 0)) return;
+
+    const STEP = W < 420 ? 96 : 112;      // 相邻两个点的垂直间距
+    const TOP = 54;
+    const amp = Math.min(W * 0.3, 118);   // 左右摆动幅度
+    const cx = W / 2;
+    const H = TOP + (sceneList.length - 1) * STEP + 70;
+
+    stage.style.height = H + 'px';
+    nodesBox.style.height = H + 'px';
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+    const pts = sceneList.map((s, i) => ({
+      x: cx + amp * Math.sin(i * 0.82),
+      y: TOP + i * STEP,
+    }));
+
+    // 用二次贝塞尔把相邻两点连成平滑的路，控制点取在两点之间的横向拐角处
+    let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
+    for (let i = 1; i < pts.length; i++) {
+      const p = pts[i], q = pts[i - 1];
+      const my = (q.y + p.y) / 2;
+      d += ` C ${q.x.toFixed(1)} ${my.toFixed(1)}, ${p.x.toFixed(1)} ${my.toFixed(1)}, ${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
+    }
+    svg.innerHTML =
+      `<path d="${d}" fill="none" stroke="var(--border)" stroke-width="4" stroke-linecap="round"/>`;
+
+    // 节点和区域标签
+    let html = '';
+    let lastZone = null;
+    sceneList.forEach((s, i) => {
+      const p = pts[i];
+      if (s.category !== lastZone) {
+        lastZone = s.category;
+        // 标签放在这一段的对侧，避免压住节点本身
+        const onLeft = p.x > cx;
+        const zx = onLeft ? 6 : W - 6;
+        html += `<div class="scene-zone" style="left:${zx}px;top:${(p.y - 34).toFixed(1)}px;${onLeft ? '' : 'transform:translate(-100%,-50%);'}">${escapeHtml(s.category)}</div>`;
+      }
+      const cls = ['scene-node'];
+      if (s.doneCount > 0) cls.push('done');
+      if (s.id === sceneTodayId) cls.push('today');
+      html += `<button type="button" class="${cls.join(' ')}" data-scene="${escapeHtml(s.id)}"
+        style="left:${p.x.toFixed(1)}px;top:${p.y.toFixed(1)}px;">
+        <span class="scene-node-dot">${escapeHtml(s.emoji || '💬')}${s.doneCount > 0 ? '<span class="scene-node-flag">✓</span>' : ''}</span>
+        <span class="scene-node-label">${escapeHtml(s.title)}</span>
+      </button>`;
+    });
+    nodesBox.innerHTML = html;
+  }
+
+  // 窗口尺寸变了要重排，否则横竖屏切换后节点会错位
+  window.addEventListener('resize', () => {
+    if (!$safe('#view-scenarios')?.hidden) layoutSceneMap();
+  });
+
+  $('#sceneMapNodes').addEventListener('click', (e) => {
+    const btn = e.target.closest('.scene-node');
+    if (btn) openSceneDetail(btn.dataset.scene);
+  });
+
+  $('#btnSceneTodayStart').addEventListener('click', () => {
+    if (sceneTodayId) openSceneDetail(sceneTodayId);
+  });
+
+  let sceneDetailId = null;
+  async function openSceneDetail(id) {
+    try {
+      const { scenario: s } = await api(`/scenarios/${encodeURIComponent(id)}`);
+      sceneDetailId = s.id;
+      $('#sceneDetailEmoji').textContent = s.emoji || '💬';
+      $('#sceneDetailTitle').textContent = s.title;
+      const levelName = { basic: '入门', intermediate: '进阶', advanced: '高阶' }[s.level] || s.level;
+      $('#sceneDetailMeta').textContent = `${s.category} · ${levelName} · 对方是${s.aiRole}`;
+      $('#sceneDetailGoal').textContent = s.goal;
+      $('#sceneDetailPhrases').innerHTML = (s.keyPhrases || [])
+        .map(p => `<span class="scene-phrase">${escapeHtml(p)}</span>`).join('');
+      $('#sceneDetailOverlay').hidden = false;
+    } catch (err) {
+      toast(err.message || '打不开这个场景');
+    }
+  }
+
+  function closeSceneDetail() { $('#sceneDetailOverlay').hidden = true; }
+  $('#btnSceneDetailClose').addEventListener('click', closeSceneDetail);
+  $('#sceneDetailOverlay').addEventListener('click', (e) => {
+    if (e.target === $('#sceneDetailOverlay')) closeSceneDetail();
+  });
+
+  $('#btnSceneStart').addEventListener('click', async () => {
+    if (!sceneDetailId) return;
+    closeSceneDetail();
+    await startScene(sceneDetailId);
+  });
+
+  // 进入一个场景：清掉当前对话，换成这个设定，让 AI 先开口。
+  // 不清空的话，AI 会带着之前闲聊的上下文进场景，开口就驴唇不对马嘴。
+  async function startScene(id) {
+    let s;
+    try {
+      ({ scenario: s } = await api(`/scenarios/${encodeURIComponent(id)}`));
+    } catch (err) { toast(err.message || '打不开这个场景'); return; }
+
+    state.scene = s;
+    state.chatHistory = [];
+    state.chatHistoryLoaded = true;   // 别再把旧的闲聊记录拉回来盖掉场景
+    showView('tutor');
+    $('#chatWindow').innerHTML = '';
+    updateSceneBanner();
+    // 开场白由 AI 说出来，学生才知道该接什么
+    appendMsg('ai', s.opener);
+  }
+
+  function updateSceneBanner() {
+    const b = $safe('#sceneBanner');
+    if (!b) return;
+    if (!state.scene) { b.hidden = true; return; }
+    $('#sceneBannerEmoji').textContent = state.scene.emoji || '💬';
+    $('#sceneBannerTitle').textContent = `情景练习 · ${state.scene.title}`;
+    $('#sceneBannerGoal').textContent = state.scene.brief || '';
+    b.hidden = false;
+  }
+
+  $('#btnSceneExit').addEventListener('click', () => {
+    state.scene = null;
+    state.chatHistory = [];
+    state.chatHistoryLoaded = false;  // 下次进对话页把原来的闲聊记录接回来
+    $('#chatWindow').innerHTML = '';
+    updateSceneBanner();
+    showView('scenarios');
+    renderScenarios();                // 刚练完的场景要立刻插上旗
+  });
+
   // ---------- AI 朗读音色选择 ----------
   let availableVoices = [];
 
@@ -872,6 +1076,8 @@
           replyLang: state.chatReplyLang,
           // 跟谁聊。后端据此决定 AI 用什么身份、什么风格、纠不纠错
           personaId: currentPersonaId(),
+          // 在演哪个场景。后端据此给 AI 角色和目标，并记下"这个场景练过了"
+          scenarioId: state.scene?.id || undefined,
         },
       });
       hideTypingBubble();
@@ -2541,6 +2747,7 @@
   const featOrbit = (() => {
     const FEATURES = [
       { nav: 'tutor',      label: 'AI 对话',  desc: '打字或语音，AI 按你的水平陪练', color: '#0ABAB5' },
+      { nav: 'scenarios',  label: '情景地图', desc: '一天一个场景，走过的自动插旗', color: '#f472b6' },
       { nav: 'facetime',   label: '面对面',   desc: '和 AI 私教视频通话，看得见表情', color: '#22d3ee' },
       { nav: 'translate',  label: '同声传译', desc: '说一句，立刻听到另一种语言',   color: '#38bdf8' },
       { nav: 'vocab',      label: '背单词',   desc: '按遗忘曲线复习，顺带记词根',   color: '#f59e0b', badge: 'vocabDue' },

@@ -29,6 +29,7 @@
         <button class="nav-item" data-nav="dashboard">首页</button>
         <button class="nav-item" data-nav="facetime">与 AI 私教面对面</button>
         <button class="nav-item" data-nav="tutor">AI 对话</button>
+        <button class="nav-item" data-nav="scenarios">情景地图</button>
         <button class="nav-item" data-nav="translate">同声传译</button>
         <button class="nav-item" data-nav="vocab">背单词</button>
         <button class="nav-item" data-nav="grammar">语法精讲</button>
@@ -304,6 +305,17 @@
             <button type="button" class="btn btn-outline btn-sm" id="btnVoiceCall">🎧 开启语音对话模式</button>
           </div>
         </div>
+        <!-- 情景练习进行中的横幅。不显示的话，用户会忘了自己正在一个设定里，
+             AI 一直扮演店员就显得莫名其妙 -->
+        <div class="scene-banner" id="sceneBanner" hidden>
+          <span class="scene-banner-emoji" id="sceneBannerEmoji">☕️</span>
+          <div class="scene-banner-text">
+            <strong id="sceneBannerTitle">情景练习</strong>
+            <span id="sceneBannerGoal"></span>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" id="btnSceneExit">退出情景</button>
+        </div>
+
         <div class="chat-window" id="chatWindow"></div>
 
         <div class="call-status-bar" id="callStatusBar" hidden>
@@ -378,6 +390,59 @@
   </section>
 
   <!-- 背单词 -->
+  <!-- 情景地图：把 20 个情景排成一条路，走过的自动插旗。
+       节点位置要按容器宽度算，所以由 JS 生成，这里只留舞台。 -->
+  <section class="view" id="view-scenarios" hidden>
+    <div class="container container-narrow">
+      <h2 class="page-title">情景地图</h2>
+      <p class="page-sub">一天走一个场景，和 AI 演一遍真实对话。练过的会自动插上旗子。</p>
+
+      <div class="scene-today" id="sceneToday" hidden>
+        <div class="scene-today-tag">今日场景</div>
+        <div class="scene-today-main">
+          <span class="scene-today-emoji" id="sceneTodayEmoji">☕️</span>
+          <div>
+            <div class="scene-today-title" id="sceneTodayTitle">-</div>
+            <div class="scene-today-brief" id="sceneTodayBrief">-</div>
+          </div>
+        </div>
+        <button type="button" class="btn btn-primary" id="btnSceneTodayStart">开始今天的场景</button>
+      </div>
+
+      <div class="scene-progress">
+        <div class="scene-progress-head">
+          <span>地图进度</span>
+          <span id="sceneProgressText">-</span>
+        </div>
+        <div class="scene-progress-bar"><div class="scene-progress-fill" id="sceneProgressFill"></div></div>
+      </div>
+
+      <div class="scene-map" id="sceneMap">
+        <svg class="scene-map-path" id="sceneMapPath" aria-hidden="true"></svg>
+        <div class="scene-map-nodes" id="sceneMapNodes"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 点开某个场景后的说明卡：先讲清这次要演什么、目标是什么，再进对话 -->
+  <div class="modal-overlay" id="sceneDetailOverlay" hidden>
+    <div class="modal scene-detail">
+      <button type="button" class="modal-close" id="btnSceneDetailClose" aria-label="关闭">×</button>
+      <div class="scene-detail-head">
+        <span class="scene-detail-emoji" id="sceneDetailEmoji">☕️</span>
+        <div>
+          <h3 id="sceneDetailTitle">-</h3>
+          <div class="scene-detail-meta" id="sceneDetailMeta">-</div>
+        </div>
+      </div>
+      <p class="scene-detail-goal" id="sceneDetailGoal">-</p>
+      <div class="scene-detail-phrases" id="sceneDetailPhrases"></div>
+      <div class="scene-detail-actions">
+        <button type="button" class="btn btn-primary" id="btnSceneStart">开始对话</button>
+      </div>
+    </div>
+  </div>
+
   <section class="view" id="view-vocab" hidden>
     <div class="container container-narrow">
       <h2 class="page-title">背单词</h2>
