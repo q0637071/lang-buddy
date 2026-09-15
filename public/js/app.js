@@ -810,6 +810,107 @@
     };
   }
 
+  // 每一章一个世界。走到哪一章，地面、路、两边的东西全换一套。
+  //   ground  地面三段渐变        trail 路的四层颜色（路沿/路面/中心/碎石）
+  //   props   两侧长什么          palette 这些东西的三档明暗
+  //   accent  点缀（花/灯/浪花）  patch 地面斑块的颜色
+  const SCENE_THEMES = {
+    '校园生活':   { ground: ['#7fb843', '#6aa63a', '#74ae3e'], trail: ['#5b8a2e', '#c8a96a', '#dcc28e', '#b9975a', '#efdcb0'], props: 'bush',   palette: [['#4e7c2a','#5d9133','#6ea63d'],['#3f6b22','#4f8129','#5f9633'],['#57892f','#67a038','#79b545']], accent: ['#f2c0d8','#ffe07a','#b9dcff'], patch: '#ffffff' },
+    '日常生活':   { ground: ['#a8cf6b', '#94c159', '#9fc964'], trail: ['#7a9b46', '#d8c48c', '#e9dcb4', '#c5ad76', '#f4ead0'], props: 'bush',   palette: [['#5c8a34','#6c9d3e','#7cb04a'],['#4d7a2c','#5d8d36','#6da042'],['#66953a','#76a844','#86bb50']], accent: ['#fff1a8','#ffd0e0','#d6f0a8'], patch: '#ffffff' },
+    '购物消费':   { ground: ['#c9b6e8', '#b8a2df', '#c2aee4'], trail: ['#8f77c4', '#e8d9f2', '#f4ecf9', '#d3bde8', '#fbf6fd'], props: 'awning', palette: [['#8b5fc7','#9d72d6','#b088e3'],['#7a4fb5','#8c62c4','#9f77d2'],['#a06fd4','#b183e0','#c298ea']], accent: ['#ffd6e8','#fff0a8','#c8f0ff'], patch: '#ffffff' },
+    '餐饮美食':   { ground: ['#f3c98b', '#eab873', '#efc281'], trail: ['#c9924c', '#f6e3c0', '#fcf1da', '#e3c48f', '#fff8ea'], props: 'bush',   palette: [['#c98a3f','#d99b4c','#e6ab5c'],['#b87a34','#c88a41','#d69a50'],['#d59a52','#e3aa60','#efb96f']], accent: ['#ff9f7a','#ffe08a','#c6e8a0'], patch: '#ffffff' },
+    '交通出行':   { ground: ['#e8cf9a', '#dbbf85', '#e2c78f'], trail: ['#a98a55', '#6e6a68', '#8a8683', '#5c5856', '#b9b5b1'], props: 'cactus', palette: [['#4f8a5a','#5d9d68','#6bb076'],['#427a4c','#508d59','#5ea066'],['#5a9564','#68a872','#77bb80']], accent: ['#ffd9a8','#ffb0b0','#e8e0c0'], patch: '#ffffff' },
+    '住宿旅行':   { ground: ['#f0dfae', '#e6d19b', '#7ec8d8'], trail: ['#c0a464', '#f6ead0', '#fdf6e6', '#e0cb9c', '#fffcf2'], props: 'palm',   palette: [['#3d8a6a','#489e79','#54b189'],['#347a5c','#3f8d6a','#4aa077'],['#46997a','#52ac88','#5fbf97']], accent: ['#ffd88a','#ffb3c8','#a8e8f5'], patch: '#ffffff' },
+    '社交往来':   { ground: ['#8fbfd8', '#7aaccb', '#a898d6'], trail: ['#5f86a8', '#d6c9e8', '#eae2f4', '#bfb0d6', '#f6f1fb'], props: 'bush',   palette: [['#3f7a6a','#4b8d7a','#57a08a'],['#356b5c','#417e6a','#4d9178'],['#4a8878','#569b86','#63ae95']], accent: ['#ffe9a8','#ffc8e0','#c8e4ff'], patch: '#ffffff' },
+    '医疗健康':   { ground: ['#c9e6ee', '#b2d9e5', '#bfe1ea'], trail: ['#8ab4c4', '#eef7fa', '#ffffff', '#d5e8ef', '#ffffff'], props: 'bush',   palette: [['#5a9fa8','#68b2bb','#77c4ce'],['#4d8b94','#5b9ea7','#69b1ba'],['#66aab3','#74bdc6','#83d0d9']], accent: ['#ffffff','#d8f0ff','#c8ffe8'], patch: '#ffffff' },
+    '银行与手续': { ground: ['#b8c4d4', '#a3b1c4', '#aebbcc'], trail: ['#7e8b9e', '#d9dfe8', '#edf1f6', '#c2cad6', '#f8fafc'], props: 'tower',  palette: [['#7b8798','#8b97a8','#9ba7b8'],['#6b7788','#7b8798','#8b97a8'],['#8b97a8','#9ba7b8','#abb7c8']], accent: ['#ffe9a8','#a8d8ff','#ffffff'], patch: '#ffffff' },
+    '租房与居住': { ground: ['#e2b89a', '#d5a786', '#dcb091'], trail: ['#a97f5e', '#ecd9c2', '#f7ebdc', '#d6bda2', '#fdf7f0'], props: 'house',  palette: [['#c2705a','#d18268','#df9478'],['#b06250','#bf745e','#cd866c'],['#cb7f66','#d99174','#e7a382']], accent: ['#ffd9a8','#ffc0a8','#c8e8a8'], patch: '#ffffff' },
+    '职场基础':   { ground: ['#b5c6c9', '#a1b4b8', '#adbfc3'], trail: ['#7d8f93', '#dbe3e5', '#eff4f5', '#c3ced1', '#fafcfc'], props: 'tower',  palette: [['#6f8488','#7f9498','#8fa4a8'],['#5f7478','#6f8488','#7f9498'],['#7f9498','#8fa4a8','#9fb4b8']], accent: ['#ffe9a8','#a8e0ff','#ffffff'], patch: '#ffffff' },
+    '职场进阶':   { ground: ['#2b3358', '#1f2542', '#2a2f4f'], trail: ['#4a5686', '#5b6699', '#7a86bb', '#3d4873', '#98a3cc'], props: 'tower',  palette: [['#3a4370','#46507f','#535d8e'],['#2f3760','#3a4370','#46507f'],['#46507f','#535d8e','#616b9d']], accent: ['#ffd76a','#7ae8ff','#ff8ac4'], patch: '#8fa0ff' },
+    '兴趣与休闲': { ground: ['#5f9a5a', '#4f8a4c', '#589350'], trail: ['#3f6b3a', '#c4a273', '#d9bb92', '#ad8d60', '#e8d2ae'], props: 'pine',   palette: [['#2f6b3d','#3a7d48','#458f54'],['#275c34','#326e3f','#3d804a'],['#387a45','#438c50','#4f9e5c']], accent: ['#ffb45a','#ffe07a','#ff8a8a'], patch: '#ffffff' },
+    '观点与谈判': { ground: ['#8f7fc8', '#7a6ab5', '#9b8ad4'], trail: ['#5f4f96', '#ded3f0', '#efe8f8', '#c4b5e2', '#f9f5fd'], props: 'peak',   palette: [['#6b5ca8','#7a6ab5','#8878c2'],['#5c4d99','#6b5ca8','#7a6ab5'],['#7a6ab5','#8878c2','#9686cf']], accent: ['#ffe9a8','#ffffff','#c8d8ff'], patch: '#ffffff' },
+  };
+  const SCENE_THEME_FALLBACK = SCENE_THEMES['校园生活'];
+  const themeOf = (chapter) => SCENE_THEMES[chapter] || SCENE_THEME_FALLBACK;
+
+  const ell = (cx, cy, rx, ry, fill, op) =>
+    `<ellipse cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" rx="${rx.toFixed(1)}" ry="${ry.toFixed(1)}" fill="${fill}"${op ? ` opacity="${op}"` : ''}/>`;
+  const shadow = (x, y, r) => ell(x, y + r * .48, r * .95, r * .3, '#000', '.16');
+
+  // 针叶树：三层三角，比阔叶丛更"野外"
+  function pine(x, y, r, hue) {
+    const tri = (cy, w, h, fill) =>
+      `<path d="M ${x.toFixed(1)} ${(cy - h).toFixed(1)} L ${(x + w).toFixed(1)} ${cy.toFixed(1)} L ${(x - w).toFixed(1)} ${cy.toFixed(1)} Z" fill="${fill}"/>`;
+    return shadow(x, y, r)
+      + `<rect x="${(x - r * .1).toFixed(1)}" y="${(y + r * .1).toFixed(1)}" width="${(r * .2).toFixed(1)}" height="${(r * .4).toFixed(1)}" fill="#6b4c2a"/>`
+      + tri(y + r * .2, r * .85, r * .8, hue[0])
+      + tri(y - r * .2, r * .7, r * .8, hue[1])
+      + tri(y - r * .6, r * .5, r * .7, hue[2]);
+  }
+  // 仙人掌：一根主干两条手臂
+  function cactus(x, y, r, hue) {
+    const rr = (cx, cy, w, h) =>
+      `<rect x="${(cx - w / 2).toFixed(1)}" y="${cy.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="${(w / 2).toFixed(1)}" fill="${hue[1]}"/>`;
+    return shadow(x, y, r * .8)
+      + rr(x, y - r, r * .42, r * 1.5)
+      + rr(x - r * .42, y - r * .45, r * .26, r * .7)
+      + rr(x + r * .42, y - r * .62, r * .26, r * .85)
+      + ell(x - r * .06, y - r * .8, r * .07, r * .5, hue[2], '.5');
+  }
+  // 棕榈：弯曲的干 + 四片叶
+  function palm(x, y, r, hue) {
+    const frond = (dx, dy) =>
+      `<path d="M ${x.toFixed(1)} ${(y - r * 1.25).toFixed(1)} q ${dx} ${dy} ${(dx * 1.7).toFixed(1)} ${(dy * .5).toFixed(1)}" fill="none" stroke="${hue[1]}" stroke-width="${(r * .22).toFixed(1)}" stroke-linecap="round"/>`;
+    return shadow(x, y, r * .7)
+      + `<path d="M ${x.toFixed(1)} ${(y + r * .3).toFixed(1)} q ${(r * .18).toFixed(1)} ${(-r * .8).toFixed(1)} ${(-r * .05).toFixed(1)} ${(-r * 1.55).toFixed(1)}" fill="none" stroke="#9c7442" stroke-width="${(r * .18).toFixed(1)}" stroke-linecap="round"/>`
+      + frond(-r * .5, -r * .2) + frond(r * .5, -r * .2)
+      + frond(-r * .55, r * .25) + frond(r * .55, r * .25)
+      + `<circle cx="${x.toFixed(1)}" cy="${(y - r * 1.25).toFixed(1)}" r="${(r * .14).toFixed(1)}" fill="${hue[2]}"/>`;
+  }
+  // 楼：一个方块加几排窗。夜景里窗会亮
+  function tower(x, y, r, hue, lit) {
+    const w = r * 1.05, h = r * 2.1;
+    let win = '';
+    for (let ry = 0; ry < 4; ry++) for (let rx = 0; rx < 2; rx++) {
+      const on = lit ? ((rx + ry * 3 + Math.round(x)) % 3 !== 0) : false;
+      win += `<rect x="${(x - w / 2 + w * (.22 + rx * .38)).toFixed(1)}" y="${(y - h + h * (.16 + ry * .2)).toFixed(1)}" width="${(w * .2).toFixed(1)}" height="${(h * .11).toFixed(1)}" fill="${on ? '#ffe08a' : '#ffffff'}" opacity="${on ? .9 : .28}"/>`;
+    }
+    return shadow(x, y, r * .8)
+      + `<rect x="${(x - w / 2).toFixed(1)}" y="${(y - h).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${hue[1]}"/>`
+      + `<rect x="${(x - w / 2).toFixed(1)}" y="${(y - h).toFixed(1)}" width="${(w * .32).toFixed(1)}" height="${h.toFixed(1)}" fill="${hue[2]}" opacity=".45"/>` + win;
+  }
+  // 小房子：方身 + 坡屋顶
+  function house(x, y, r, hue) {
+    const w = r * 1.4, h = r * .95;
+    return shadow(x, y, r * .8)
+      + `<rect x="${(x - w / 2).toFixed(1)}" y="${(y - h).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="#f4e3d0"/>`
+      + `<path d="M ${(x - w * .62).toFixed(1)} ${(y - h).toFixed(1)} L ${x.toFixed(1)} ${(y - h - r * .62).toFixed(1)} L ${(x + w * .62).toFixed(1)} ${(y - h).toFixed(1)} Z" fill="${hue[0]}"/>`
+      + `<rect x="${(x - w * .12).toFixed(1)}" y="${(y - h * .62).toFixed(1)}" width="${(w * .24).toFixed(1)}" height="${(h * .62).toFixed(1)}" fill="${hue[1]}"/>`
+      + `<rect x="${(x + w * .18).toFixed(1)}" y="${(y - h * .8).toFixed(1)}" width="${(w * .18).toFixed(1)}" height="${(h * .26).toFixed(1)}" fill="#bcd6e8"/>`;
+  }
+  // 店铺遮阳棚：条纹雨棚，商业街的味道
+  function awning(x, y, r, hue) {
+    const w = r * 1.5;
+    let stripes = '';
+    for (let i = 0; i < 5; i++) {
+      stripes += `<rect x="${(x - w / 2 + i * w / 5).toFixed(1)}" y="${(y - r * 1.05).toFixed(1)}" width="${(w / 10).toFixed(1)}" height="${(r * .42).toFixed(1)}" fill="#ffffff" opacity=".65"/>`;
+    }
+    return shadow(x, y, r * .8)
+      + `<rect x="${(x - w / 2).toFixed(1)}" y="${(y - r * .62).toFixed(1)}" width="${w.toFixed(1)}" height="${(r * .62).toFixed(1)}" rx="2" fill="#fbf4ff"/>`
+      + `<path d="M ${(x - w / 2).toFixed(1)} ${(y - r * .62).toFixed(1)} L ${(x - w * .42).toFixed(1)} ${(y - r * 1.05).toFixed(1)} L ${(x + w * .42).toFixed(1)} ${(y - r * 1.05).toFixed(1)} L ${(x + w / 2).toFixed(1)} ${(y - r * .62).toFixed(1)} Z" fill="${hue[1]}"/>`
+      + stripes;
+  }
+  // 远山：两层三角，用在"观点与谈判"那一章的云端上
+  function peak(x, y, r, hue) {
+    const tri = (w, h, fill) =>
+      `<path d="M ${x.toFixed(1)} ${(y - h).toFixed(1)} L ${(x + w).toFixed(1)} ${y.toFixed(1)} L ${(x - w).toFixed(1)} ${y.toFixed(1)} Z" fill="${fill}"/>`;
+    return tri(r * 1.15, r * 1.5, hue[0])
+      + tri(r * .75, r * 1.15, hue[2])
+      + `<path d="M ${x.toFixed(1)} ${(y - r * 1.5).toFixed(1)} l ${(r * .3).toFixed(1)} ${(r * .42).toFixed(1)} l ${(-r * .18).toFixed(1)} ${(-r * .06).toFixed(1)} l ${(-r * .12).toFixed(1)} ${(r * .1).toFixed(1)} l ${(-r * .12).toFixed(1)} ${(-r * .1).toFixed(1)} l ${(-r * .18).toFixed(1)} ${(r * .06).toFixed(1)} Z" fill="#ffffff" opacity=".9"/>`;
+  }
+
+  const PROP_FN = { bush: null, pine, cactus, palm, tower, house, awning, peak };
+
   // 一丛灌木：底下一圈影子撑出体积，上面三四个深浅不同的椭圆。
   // 没有影子的话叠出来是几个平贴的色块，一眼就假。
   function bush(x, y, r, hue) {
@@ -830,20 +931,18 @@
     return p(-s * .4, s, 2) + p(0, s * 1.25, -1.5) + p(s * .4, s * .85, 2.5);
   }
 
-  function sceneDecor(W, H, seed) {
+  function sceneDecor(W, H, seed, theme) {
     const rnd = seededRandom(seed + 1);
-    const GREENS = [
-      ['#4e7c2a', '#5d9133', '#6ea63d'],
-      ['#3f6b22', '#4f8129', '#5f9633'],
-      ['#57892f', '#67a038', '#79b545'],
-    ];
+    const GREENS = theme.palette;
+    const propFn = PROP_FN[theme.props] || null;   // null 表示用灌木
+    const night = theme.props === 'tower' && theme.ground[0] === '#2b3358';
     let out = '';
 
-    // 草地上的斑块，打散纯色
+    // 地面斑块，打散纯色
     for (let i = 0; i < 26; i++) {
       const x = rnd() * W, y = rnd() * H;
       const r = 26 + rnd() * 54;
-      out += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="${r.toFixed(1)}" ry="${(r * .45).toFixed(1)}" fill="#ffffff" opacity="${(0.03 + rnd() * .05).toFixed(3)}"/>`;
+      out += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="${r.toFixed(1)}" ry="${(r * .45).toFixed(1)}" fill="${theme.patch}" opacity="${(0.03 + rnd() * .05).toFixed(3)}"/>`;
     }
 
     // 两侧的草木带。锚点故意放到画布外一点，让草丛从边缘"探"进来、边上被裁掉。
@@ -860,12 +959,13 @@
         const base = -18 + rnd() * 22;
         const pen = rnd() * inward;
         const x = side ? W - base - pen : base + pen;
-        out += bush(x, jitterY, r, GREENS[Math.floor(rnd() * GREENS.length)]);
-        // 偶尔配一小丛花，纯粹为了不那么单调
+        const hue = GREENS[Math.floor(rnd() * GREENS.length)];
+        out += propFn ? propFn(x, jitterY, r, hue, night) : bush(x, jitterY, r, hue);
+        // 偶尔配一点点缀，纯粹为了不那么单调
         if (rnd() > .55) {
           const fx = x + (side ? -1 : 1) * (r * .9 + rnd() * 14);
           const fy = jitterY + (rnd() - .5) * 30;
-          const c = ['#f2c0d8', '#ffe07a', '#b9dcff'][Math.floor(rnd() * 3)];
+          const c = theme.accent[Math.floor(rnd() * theme.accent.length)];
           out += `<circle cx="${fx.toFixed(1)}" cy="${fy.toFixed(1)}" r="3.4" fill="${c}"/>`
             + `<circle cx="${(fx + 7).toFixed(1)}" cy="${(fy + 5).toFixed(1)}" r="2.6" fill="${c}" opacity=".85"/>`;
         }
@@ -879,9 +979,10 @@
     for (let i = 0; i < 46; i++) {
       const x = rnd() * W, y = 20 + rnd() * (H - 40);
       if (Math.abs(x - cx) < keepClear) continue;
+      const g = GREENS[Math.floor(rnd() * GREENS.length)];
       out += rnd() > .3
-        ? grassTuft(x, y, 9 + rnd() * 7, rnd() > .5 ? '#4f8129' : '#5f9633')
-        : `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="${(4 + rnd() * 4).toFixed(1)}" ry="${(3 + rnd() * 2.5).toFixed(1)}" fill="#8aa06a" opacity=".55"/>`;
+        ? grassTuft(x, y, 9 + rnd() * 7, rnd() > .5 ? g[1] : g[2])
+        : `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="${(4 + rnd() * 4).toFixed(1)}" ry="${(3 + rnd() * 2.5).toFixed(1)}" fill="${g[0]}" opacity=".5"/>`;
     }
     return out;
   }
@@ -919,14 +1020,22 @@
     }
     // 土路 + 两边的草木。描三层：深色描边压出路沿、土色路面、中间一条浅色虚线，
     // 三层用同一个 d，所以路一定跟着关卡走，不会出现"路和点对不上"。
+    const th = themeOf(chapter);
+    const [tEdge, tSurf, tMid, tDark, tLight] = th.trail;
     svg.innerHTML =
-      sceneDecor(W, H, sceneChapterIdx)
-      + `<path d="${d}" fill="none" stroke="#5b8a2e" stroke-width="34" stroke-linecap="round" stroke-linejoin="round" opacity=".55"/>`
-      + `<path d="${d}" fill="none" stroke="#c8a96a" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>`
-      + `<path d="${d}" fill="none" stroke="#dcc28e" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>`
-      // 路面上的碎石质感：一层粗虚线压暗、一层细虚线提亮，比纯色路面有土感
-      + `<path d="${d}" fill="none" stroke="#b9975a" stroke-width="12" stroke-linecap="round" stroke-dasharray="3 26" opacity=".5"/>`
-      + `<path d="${d}" fill="none" stroke="#efdcb0" stroke-width="5" stroke-linecap="round" stroke-dasharray="10 30" opacity=".55"/>`;
+      sceneDecor(W, H, sceneChapterIdx, th)
+      + `<path d="${d}" fill="none" stroke="${tEdge}" stroke-width="34" stroke-linecap="round" stroke-linejoin="round" opacity=".55"/>`
+      + `<path d="${d}" fill="none" stroke="${tSurf}" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>`
+      + `<path d="${d}" fill="none" stroke="${tMid}" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>`
+      // 路面质感：一层粗虚线压暗、一层细虚线提亮，比纯色路面更像真的地面
+      + `<path d="${d}" fill="none" stroke="${tDark}" stroke-width="12" stroke-linecap="round" stroke-dasharray="3 26" opacity=".5"/>`
+      + `<path d="${d}" fill="none" stroke="${tLight}" stroke-width="5" stroke-linecap="round" stroke-dasharray="10 30" opacity=".55"/>`;
+
+    // 地面颜色跟着章节换。写在 style 上而不是 CSS 里——一共 14 套，
+    // 全写进样式表就是 14 段几乎一样的规则，改一个颜色要翻半天。
+    stage.style.background =
+      `radial-gradient(120% 60% at 50% 0%, rgba(255,255,255,.16), transparent 60%),`
+      + `linear-gradient(180deg, ${th.ground[0]} 0%, ${th.ground[1]} 40%, ${th.ground[2]} 100%)`;
 
     const LV = { basic: '入门', intermediate: '进阶', advanced: '高阶' };
     nodesBox.innerHTML = rows.map((s, i) => {
