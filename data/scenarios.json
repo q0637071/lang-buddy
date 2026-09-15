@@ -1,228 +1,12 @@
 {
-  "version": 2,
-  "note": "情景对话库。每个场景给 AI 一个明确的角色和目标，把'随便聊'变成'有目标的练习'。level 决定它出现在哪个水平的每日计划里；goal 是这次练习要达成的事，AI 会围着它推进对话。",
+  "version": 3,
+  "note": "情景对话库。每个场景给 AI 一个明确的角色和目标，把\"随便聊\"变成\"有目标的练习\"。level 决定它出现在哪个水平的每日计划里；goal 是这次练习要达成的事，AI 会围着它推进对话。category 同时也是地图上的章节，章节顺序见 SCENE_CHAPTERS（public/js/app.js）。注意：id 是用户通关记录的主键，一旦发布就不要再改。",
   "scenarios": [
-    {
-      "id": "cafe-order",
-      "emoji": "☕️",
-      "level": "basic",
-      "category": "日常生活",
-      "title": "在咖啡店点单",
-      "brief": "点一杯咖啡，说清楚规格和口味",
-      "aiRole": "一位友好的咖啡店店员",
-      "setting": "学生走进一家美式咖啡店，店里有点忙",
-      "goal": "让学生成功点到一杯饮品，并回答尺寸、冷热、是否加糖奶这几个追问",
-      "opener": "Hi there! Welcome in. What can I get started for you today?",
-      "keyPhrases": [
-        "I'd like a...",
-        "small / medium / large",
-        "for here or to go",
-        "with oat milk"
-      ]
-    },
-    {
-      "id": "self-intro",
-      "emoji": "👋",
-      "level": "basic",
-      "category": "社交",
-      "title": "第一次见面自我介绍",
-      "brief": "介绍自己的名字、来处和职业",
-      "aiRole": "一位刚认识的同龄朋友",
-      "setting": "在一个语言交换活动上，两人刚坐到同一桌",
-      "goal": "让学生完整介绍自己，并至少反问对方一个问题",
-      "opener": "Hey, I don't think we've met! I'm Alex. What's your name?",
-      "keyPhrases": [
-        "Nice to meet you",
-        "I'm from...",
-        "I work as...",
-        "How about you?"
-      ]
-    },
-    {
-      "id": "ask-directions",
-      "emoji": "🗺️",
-      "level": "basic",
-      "category": "出行",
-      "title": "在街上问路",
-      "brief": "问怎么去地铁站，并听懂对方的指路",
-      "aiRole": "一位热心的本地路人",
-      "setting": "学生在一条陌生的街上，想找最近的地铁站",
-      "goal": "让学生问清方向，并能复述一遍确认自己听懂了",
-      "opener": "You look a little lost — do you need help finding something?",
-      "keyPhrases": [
-        "Excuse me, how do I get to...",
-        "turn left / right",
-        "go straight",
-        "how far is it"
-      ]
-    },
-    {
-      "id": "restaurant",
-      "emoji": "🍽️",
-      "level": "basic",
-      "category": "日常生活",
-      "title": "餐厅点餐",
-      "brief": "看菜单点餐，并提出一个特殊要求",
-      "aiRole": "一位专业的餐厅服务员",
-      "setting": "一家中档西餐厅的晚餐时段",
-      "goal": "让学生点完一份主菜和一杯饮料，并提出一个要求（比如不要洋葱）",
-      "opener": "Good evening! Have you had a chance to look at the menu?",
-      "keyPhrases": [
-        "I'll have the...",
-        "Could I get that without...",
-        "What do you recommend?",
-        "the check, please"
-      ]
-    },
-    {
-      "id": "hotel-checkin",
-      "emoji": "🏨",
-      "level": "intermediate",
-      "category": "出行",
-      "title": "酒店入住",
-      "brief": "办理入住，并询问酒店设施",
-      "aiRole": "一位酒店前台接待",
-      "setting": "学生带着行李抵达酒店前台，已经在网上订过房",
-      "goal": "让学生完成入住，并问清早餐时间和 WiFi 密码",
-      "opener": "Good afternoon! Checking in? Could I have your name and ID, please?",
-      "keyPhrases": [
-        "I have a reservation under...",
-        "What time is breakfast?",
-        "Is there a late checkout?",
-        "Could I get a wake-up call?"
-      ]
-    },
-    {
-      "id": "doctor-visit",
-      "emoji": "🏥",
-      "level": "intermediate",
-      "category": "生活应急",
-      "title": "看医生描述症状",
-      "brief": "说清楚哪里不舒服、持续多久",
-      "aiRole": "一位耐心的全科医生",
-      "setting": "学生因为感冒和喉咙痛来到诊所",
-      "goal": "让学生描述清楚症状、持续时间和严重程度，并听懂医嘱",
-      "opener": "Hi, come on in and have a seat. So, what brings you in today?",
-      "keyPhrases": [
-        "I've had a sore throat for...",
-        "It hurts when I...",
-        "Do I need antibiotics?",
-        "any side effects"
-      ]
-    },
-    {
-      "id": "phone-complaint",
-      "emoji": "📞",
-      "level": "intermediate",
-      "category": "生活应急",
-      "title": "打电话投诉",
-      "brief": "网购的东西有问题，打电话要求退换",
-      "aiRole": "一位按流程办事但还算客气的客服",
-      "setting": "学生收到的耳机右声道没声音，打客服电话",
-      "goal": "让学生说清问题、提出诉求，并坚持到拿到一个明确的解决方案",
-      "opener": "Thank you for calling customer support. My name is Jordan. How can I help you today?",
-      "keyPhrases": [
-        "I'd like to report a problem with...",
-        "It stopped working after...",
-        "I'd prefer a replacement",
-        "Could you confirm that in writing?"
-      ]
-    },
-    {
-      "id": "small-talk-work",
-      "emoji": "💼",
-      "level": "intermediate",
-      "category": "职场",
-      "title": "同事间的闲聊",
-      "brief": "在茶水间和同事聊周末和工作",
-      "aiRole": "一位友好健谈的同事",
-      "setting": "周一早上，两人在公司茶水间等咖啡机",
-      "goal": "让学生自然地接话并把对话延续三轮以上，不冷场",
-      "opener": "Morning! Long weekend, huh? Did you get up to anything fun?",
-      "keyPhrases": [
-        "Not much, just...",
-        "How was yours?",
-        "That sounds great",
-        "I know what you mean"
-      ]
-    },
-    {
-      "id": "job-interview",
-      "emoji": "🎯",
-      "level": "advanced",
-      "category": "职场",
-      "title": "英文面试",
-      "brief": "回答自我介绍和优缺点这类经典问题",
-      "aiRole": "一位专业但友善的面试官",
-      "setting": "一家外企的第二轮面试，视频会议形式",
-      "goal": "让学生完成自我介绍，并用具体例子回答一个行为面试问题",
-      "opener": "Thanks for making the time today. To start, could you walk me through your background?",
-      "keyPhrases": [
-        "I have X years of experience in...",
-        "In my previous role, I...",
-        "One example would be...",
-        "What does success look like in this role?"
-      ]
-    },
-    {
-      "id": "negotiate-deadline",
-      "emoji": "⏰",
-      "level": "advanced",
-      "category": "职场",
-      "title": "和上级协商延期",
-      "brief": "说明困难、提出替代方案、争取更多时间",
-      "aiRole": "一位讲道理但有压力的上级",
-      "setting": "项目原定周五交付，学生发现做不完",
-      "goal": "让学生说明原因、给出替代方案，并谈成一个双方接受的新时间",
-      "opener": "You wanted to talk about the Friday deadline? What's the situation?",
-      "keyPhrases": [
-        "I want to flag a risk...",
-        "What I can commit to is...",
-        "Would it help if we...",
-        "to be realistic about scope"
-      ]
-    },
-    {
-      "id": "debate-opinion",
-      "emoji": "💭",
-      "level": "advanced",
-      "category": "表达观点",
-      "title": "表达并捍卫观点",
-      "brief": "就一个有争议的话题给出立场并回应反驳",
-      "aiRole": "一位喜欢刨根问底但不刻薄的辩论伙伴",
-      "setting": "两人在讨论「远程办公是不是更高效」",
-      "goal": "让学生给出明确立场、至少两条论据，并回应一次反驳",
-      "opener": "So — remote work. I think it kills team culture. Where do you land on that?",
-      "keyPhrases": [
-        "I'd argue that...",
-        "That's a fair point, but...",
-        "The evidence suggests...",
-        "It depends on whether..."
-      ]
-    },
-    {
-      "id": "airport",
-      "emoji": "✈️",
-      "level": "intermediate",
-      "category": "出行",
-      "title": "机场值机与安检",
-      "brief": "办登机牌、托运行李、应对追问",
-      "aiRole": "一位效率很高的地勤人员",
-      "setting": "学生在国际航班的值机柜台，带一件托运行李",
-      "goal": "让学生完成值机，并处理一个意外（行李超重）",
-      "opener": "Good morning. May I see your passport and booking reference, please?",
-      "keyPhrases": [
-        "I'm checking one bag",
-        "Is there a window seat available?",
-        "How much is the excess baggage fee?",
-        "Which gate is it?"
-      ]
-    },
     {
       "id": "campus-intro",
       "emoji": "🎒",
       "level": "basic",
-      "category": "校园",
+      "category": "校园生活",
       "title": "开学第一天认识同学",
       "brief": "介绍自己、问对方专业，把话接下去",
       "aiRole": "一位同班的美国同学，性格随和爱聊",
@@ -240,7 +24,7 @@
       "id": "campus-library",
       "emoji": "📚",
       "level": "basic",
-      "category": "校园",
+      "category": "校园生活",
       "title": "图书馆借书与续借",
       "brief": "找书、借书、问还书期限",
       "aiRole": "一位耐心的图书馆管理员",
@@ -255,10 +39,82 @@
       ]
     },
     {
+      "id": "campus-dorm",
+      "emoji": "🛏️",
+      "level": "basic",
+      "category": "校园生活",
+      "title": "和室友第一次相处",
+      "brief": "约定作息、分担家务",
+      "aiRole": "一位刚搬进来的室友，随和但有自己的习惯",
+      "setting": "学生和新室友第一次坐下来聊住在一起的规矩",
+      "goal": "让学生说出自己的作息习惯，并和对方约定一条家务分工",
+      "opener": "So... should we talk about house rules or is that too formal?",
+      "keyPhrases": [
+        "I usually go to bed around...",
+        "Do you mind if I...?",
+        "How about we take turns?",
+        "That works for me"
+      ]
+    },
+    {
+      "id": "campus-register",
+      "emoji": "📝",
+      "level": "basic",
+      "category": "校园生活",
+      "title": "选课与注册",
+      "brief": "问课程时间、学分、能不能加进去",
+      "aiRole": "一位学院的教务老师",
+      "setting": "学生想选一门已经满员的课，去教务办公室问办法",
+      "goal": "让学生问清课程时间和学分，并问出候补名单怎么排",
+      "opener": "Hi, what can I help you with today?",
+      "keyPhrases": [
+        "Is this class still open?",
+        "How many credits is it?",
+        "Can I get on the waitlist?",
+        "When does registration close?"
+      ]
+    },
+    {
+      "id": "campus-lost",
+      "emoji": "🎓",
+      "level": "basic",
+      "category": "校园生活",
+      "title": "在校园里迷路",
+      "brief": "问教学楼怎么走、要走多久",
+      "aiRole": "一位正好路过的学长",
+      "setting": "学生第一周找不到上课的教学楼，拦住一个人问路",
+      "goal": "让学生说清要去哪，听懂路线后复述一遍确认",
+      "opener": "You look a little lost — need help finding something?",
+      "keyPhrases": [
+        "I'm trying to find...",
+        "Is it far from here?",
+        "Which way is that?",
+        "Thanks, I really appreciate it"
+      ]
+    },
+    {
+      "id": "campus-club",
+      "emoji": "🎪",
+      "level": "basic",
+      "category": "校园生活",
+      "title": "参加社团招新",
+      "brief": "问活动内容、时间、怎么加入",
+      "aiRole": "一位社团招新摊位上的热情学生",
+      "setting": "学生在社团招新日走到一个感兴趣的摊位前",
+      "goal": "让学生问出活动频率和加入方式，并留下联系方式",
+      "opener": "Hey! Want to hear about what we do?",
+      "keyPhrases": [
+        "What kind of things do you do?",
+        "How often do you meet?",
+        "Do I need any experience?",
+        "How do I sign up?"
+      ]
+    },
+    {
       "id": "campus-professor",
       "emoji": "🧑‍🏫",
       "level": "intermediate",
-      "category": "校园",
+      "category": "校园生活",
       "title": "去 office hour 问问题",
       "brief": "讲清楚哪里没懂，并请老师再解释一遍",
       "aiRole": "一位友善但时间紧的大学教授",
@@ -276,7 +132,7 @@
       "id": "campus-groupwork",
       "emoji": "👥",
       "level": "intermediate",
-      "category": "校园",
+      "category": "校园生活",
       "title": "小组作业分工",
       "brief": "提出想法、分配任务、约下次时间",
       "aiRole": "一位同组的同学，有自己的想法但愿意商量",
@@ -291,10 +147,406 @@
       ]
     },
     {
+      "id": "campus-presentation",
+      "emoji": "🎤",
+      "level": "intermediate",
+      "category": "校园生活",
+      "title": "课堂展示后答疑",
+      "brief": "回应同学和老师的提问",
+      "aiRole": "一位追问细节的同学，之后是教授",
+      "setting": "学生刚讲完一个课堂 presentation，进入提问环节",
+      "goal": "让学生听懂问题、给出有依据的回答，并承认一处自己没把握的地方",
+      "opener": "Thanks for the presentation. I have a question about your second point.",
+      "keyPhrases": [
+        "That's a great question",
+        "What I meant was...",
+        "I'm not entirely sure, but...",
+        "Let me come back to you on that"
+      ]
+    },
+    {
+      "id": "campus-extension",
+      "emoji": "⏰",
+      "level": "intermediate",
+      "category": "校园生活",
+      "title": "申请作业延期",
+      "brief": "说明原因、提出新期限",
+      "aiRole": "一位讲原则但通情达理的教授",
+      "setting": "学生因为生病没能按时完成论文，去找教授申请延期",
+      "goal": "让学生说明情况、主动提出一个具体的新期限，并接受可能的扣分",
+      "opener": "Come in. You wanted to talk about the paper deadline?",
+      "keyPhrases": [
+        "I've been dealing with...",
+        "Would it be possible to...?",
+        "I can have it to you by...",
+        "I understand if that affects my grade"
+      ]
+    },
+    {
+      "id": "campus-advisor",
+      "emoji": "🧭",
+      "level": "intermediate",
+      "category": "校园生活",
+      "title": "和导师谈选专业",
+      "brief": "讲清兴趣和顾虑，听取建议",
+      "aiRole": "一位学术导师，会反问学生真实想法",
+      "setting": "学生在两个专业之间犹豫，约了导师谈话",
+      "goal": "让学生讲清两个选项的吸引力和顾虑，并回应导师的反问",
+      "opener": "So you're thinking about switching. Tell me what's going on.",
+      "keyPhrases": [
+        "I'm torn between...",
+        "What worries me is...",
+        "Do you think it's realistic to...?",
+        "That's something I hadn't considered"
+      ]
+    },
+    {
+      "id": "campus-studygroup",
+      "emoji": "📖",
+      "level": "intermediate",
+      "category": "校园生活",
+      "title": "组织期末复习小组",
+      "brief": "召集人、定时间地点、分配范围",
+      "aiRole": "一位愿意参加但时间很紧的同学",
+      "setting": "期末将至，学生想拉几个人一起复习",
+      "goal": "让学生说服对方参加，并敲定一个双方都能来的时间",
+      "opener": "I'd love to, but my schedule is kind of a mess right now.",
+      "keyPhrases": [
+        "Would it help if we...?",
+        "It doesn't have to be long",
+        "Which days are you free?",
+        "Let's lock that in then"
+      ]
+    },
+    {
+      "id": "campus-internship",
+      "emoji": "💼",
+      "level": "intermediate",
+      "category": "校园生活",
+      "title": "问教授要推荐信",
+      "brief": "说明用途、提供材料、表达感谢",
+      "aiRole": "一位愿意帮忙但需要信息的教授",
+      "setting": "学生申请实习需要一封推荐信，来找上过课的教授",
+      "goal": "让学生说清申请的岗位和截止日期，并主动提出提供简历",
+      "opener": "Sure, I can write one. What's it for?",
+      "keyPhrases": [
+        "I'm applying for...",
+        "The deadline is...",
+        "I can send you my resume",
+        "I really appreciate it"
+      ]
+    },
+    {
+      "id": "campus-conflict",
+      "emoji": "😬",
+      "level": "advanced",
+      "category": "校园生活",
+      "title": "小组里有人不干活",
+      "brief": "把问题摆到桌面上又不撕破脸",
+      "aiRole": "一位一直没交自己那部分的组员，起初回避",
+      "setting": "小组作业快截止，有个组员始终没交东西",
+      "goal": "让学生指出具体问题、听对方解释，并提出一个可执行的补救方案",
+      "opener": "Hey, sorry — I know I'm behind. Things have been crazy.",
+      "keyPhrases": [
+        "I wanted to check in about...",
+        "The issue is that...",
+        "What if you took just...?",
+        "Can we agree on a deadline?"
+      ]
+    },
+    {
+      "id": "campus-grade",
+      "emoji": "📊",
+      "level": "advanced",
+      "category": "校园生活",
+      "title": "为分数申诉",
+      "brief": "有理有据地质疑评分",
+      "aiRole": "一位不轻易改分、要求学生给出依据的教授",
+      "setting": "学生认为一份作业被打低了，去找教授理论",
+      "goal": "让学生指出具体的评分点、拿出依据，并接受一个不完全满意的结果",
+      "opener": "I'm happy to go through it, but I stand by the grade unless there's an error.",
+      "keyPhrases": [
+        "I'd like to understand how...",
+        "According to the rubric...",
+        "Could you take another look at...?",
+        "Thanks for explaining your reasoning"
+      ]
+    },
+    {
+      "id": "daily-neighbor",
+      "emoji": "👋",
+      "level": "basic",
+      "category": "日常生活",
+      "title": "和邻居打招呼",
+      "brief": "寒暄、介绍自己、聊天气",
+      "aiRole": "一位友善的邻居，喜欢聊几句",
+      "setting": "学生刚搬进公寓，在楼道里遇到邻居",
+      "goal": "让学生完成自我介绍，并至少延伸一个话题（天气、附近、宠物）",
+      "opener": "Morning! You just moved in, right?",
+      "keyPhrases": [
+        "I moved in last week",
+        "Nice to finally meet you",
+        "How long have you lived here?",
+        "See you around!"
+      ]
+    },
+    {
+      "id": "daily-package",
+      "emoji": "📦",
+      "level": "basic",
+      "category": "日常生活",
+      "title": "取快递和包裹",
+      "brief": "报姓名、出示证件、处理丢件",
+      "aiRole": "一位快递点的工作人员",
+      "setting": "学生去取一个显示已送达但没收到的包裹",
+      "goal": "让学生说清包裹信息，并在被告知查不到时提出下一步怎么办",
+      "opener": "Hi, do you have a tracking number?",
+      "keyPhrases": [
+        "It says it was delivered",
+        "The name is...",
+        "Can you check again?",
+        "What should I do if it's lost?"
+      ]
+    },
+    {
+      "id": "daily-haircut",
+      "emoji": "💇",
+      "level": "basic",
+      "category": "日常生活",
+      "title": "理发店剪头发",
+      "brief": "说清想要的长度和样式",
+      "aiRole": "一位健谈的理发师",
+      "setting": "学生第一次在美国理发店剪头发",
+      "goal": "让学生说清想剪多短、哪里不要动，并在中途叫停调整",
+      "opener": "So, what are we doing today?",
+      "keyPhrases": [
+        "Just a trim, please",
+        "About two inches off",
+        "Can you leave the top longer?",
+        "That's perfect, thank you"
+      ]
+    },
+    {
+      "id": "daily-laundry",
+      "emoji": "🧺",
+      "level": "basic",
+      "category": "日常生活",
+      "title": "公共洗衣房",
+      "brief": "问怎么用机器、怎么付钱",
+      "aiRole": "一位正在洗衣服的住户",
+      "setting": "学生第一次用公寓的公共洗衣房，不会操作",
+      "goal": "让学生问出机器怎么启动、怎么付费、洗一次要多久",
+      "opener": "Need a hand? These machines are kind of weird.",
+      "keyPhrases": [
+        "How do I start it?",
+        "Does it take coins or card?",
+        "How long is a cycle?",
+        "Thanks, you saved me"
+      ]
+    },
+    {
+      "id": "daily-weather-chat",
+      "emoji": "☔️",
+      "level": "basic",
+      "category": "日常生活",
+      "title": "聊天气和周末",
+      "brief": "用天气开启一段闲聊",
+      "aiRole": "一位在等电梯的同楼住户",
+      "setting": "学生和陌生人一起等电梯，尴尬的三十秒",
+      "goal": "让学生主动开启话题并自然地收尾",
+      "opener": "Crazy weather today, huh?",
+      "keyPhrases": [
+        "I know, right?",
+        "Any plans for the weekend?",
+        "Same here",
+        "Have a good one!"
+      ]
+    },
+    {
+      "id": "daily-phone-plan",
+      "emoji": "📱",
+      "level": "basic",
+      "category": "日常生活",
+      "title": "办手机卡",
+      "brief": "问套餐、流量、能不能月付",
+      "aiRole": "一位营业厅店员",
+      "setting": "学生刚到美国，要办一张手机卡",
+      "goal": "让学生问出月费、流量额度，并说出自己选哪个套餐",
+      "opener": "Hi there, looking for a new plan?",
+      "keyPhrases": [
+        "How much data do I get?",
+        "Is there a contract?",
+        "Can I pay monthly?",
+        "I'll go with that one"
+      ]
+    },
+    {
+      "id": "daily-gym",
+      "emoji": "🏋️",
+      "level": "basic",
+      "category": "日常生活",
+      "title": "健身房办卡",
+      "brief": "问价格、器材、能不能先试",
+      "aiRole": "一位健身房的销售",
+      "setting": "学生想在附近健身房办一张卡",
+      "goal": "让学生问出月费和有没有合约，并要求先试用一次",
+      "opener": "Welcome in! Want a quick tour?",
+      "keyPhrases": [
+        "How much is the monthly fee?",
+        "Is there a sign-up fee?",
+        "Can I try it first?",
+        "Let me think about it"
+      ]
+    },
+    {
+      "id": "daily-lost-item",
+      "emoji": "🔍",
+      "level": "intermediate",
+      "category": "日常生活",
+      "title": "丢了东西去失物招领",
+      "brief": "描述物品特征、留联系方式",
+      "aiRole": "一位需要核实细节的失物招领员",
+      "setting": "学生把背包落在了图书馆，去失物招领处找",
+      "goal": "让学生详细描述物品特征，并在被要求时提供可验证的细节",
+      "opener": "Can you describe it for me?",
+      "keyPhrases": [
+        "It's a black backpack",
+        "There's a sticker on the front",
+        "I left it around 3 p.m.",
+        "Here's my number"
+      ]
+    },
+    {
+      "id": "daily-repair",
+      "emoji": "🔧",
+      "level": "intermediate",
+      "category": "日常生活",
+      "title": "叫人来修东西",
+      "brief": "说明故障、约上门时间",
+      "aiRole": "一位维修公司的调度员",
+      "setting": "学生家里的暖气坏了，打电话叫维修",
+      "goal": "让学生说清故障现象、地址，并敲定一个上门时间段",
+      "opener": "Maintenance, how can I help?",
+      "keyPhrases": [
+        "The heater isn't working",
+        "It started two days ago",
+        "When can someone come out?",
+        "Morning would be better"
+      ]
+    },
+    {
+      "id": "daily-appointment",
+      "emoji": "📅",
+      "level": "intermediate",
+      "category": "日常生活",
+      "title": "打电话改预约",
+      "brief": "取消、改期、确认",
+      "aiRole": "一位电话另一端的前台",
+      "setting": "学生要把一个已约好的预约改到下周",
+      "goal": "让学生报出原预约信息、提出新时间，并确认改成功了",
+      "opener": "Thanks for calling. How can I help you?",
+      "keyPhrases": [
+        "I need to reschedule",
+        "I have an appointment on...",
+        "Do you have anything next week?",
+        "Just to confirm, that's..."
+      ]
+    },
+    {
+      "id": "daily-smalltalk-deep",
+      "emoji": "💬",
+      "level": "intermediate",
+      "category": "日常生活",
+      "title": "把闲聊聊深一点",
+      "brief": "从天气聊到共同兴趣",
+      "aiRole": "一位刚认识、话不多但愿意聊的人",
+      "setting": "学生在一个活动上和人聊了两句，想把话题聊开",
+      "goal": "让学生找到一个共同点并把对话延续三轮以上",
+      "opener": "Yeah, it's been a long week.",
+      "keyPhrases": [
+        "What do you do for fun?",
+        "Oh really? Me too",
+        "How did you get into that?",
+        "We should do that sometime"
+      ]
+    },
+    {
+      "id": "daily-favor",
+      "emoji": "🙏",
+      "level": "intermediate",
+      "category": "日常生活",
+      "title": "请人帮个忙",
+      "brief": "开口求助、说明原因、表达感谢",
+      "aiRole": "一位不太熟但人不错的同事/同学",
+      "setting": "学生需要请人帮忙照看一下东西/代收包裹",
+      "goal": "让学生礼貌地开口、说明原因，并在对方犹豫时给出替代方案",
+      "opener": "Sure, what's up?",
+      "keyPhrases": [
+        "I was wondering if you could...",
+        "It would only take a minute",
+        "No worries if you can't",
+        "I owe you one"
+      ]
+    },
+    {
+      "id": "daily-apology",
+      "emoji": "😔",
+      "level": "intermediate",
+      "category": "日常生活",
+      "title": "为迟到或失约道歉",
+      "brief": "认错、解释、补救",
+      "aiRole": "一位等了很久、有点不高兴的朋友",
+      "setting": "学生迟到了四十分钟，对方已经等很久了",
+      "goal": "让学生真诚道歉、简短解释而不找借口，并提出补救",
+      "opener": "I was starting to think you forgot.",
+      "keyPhrases": [
+        "I'm really sorry",
+        "I should have texted you",
+        "Let me make it up to you",
+        "It won't happen again"
+      ]
+    },
+    {
+      "id": "daily-decline",
+      "emoji": "🚫",
+      "level": "advanced",
+      "category": "日常生活",
+      "title": "委婉地拒绝邀请",
+      "brief": "拒绝但不伤感情",
+      "aiRole": "一位热情邀请、会再劝一次的朋友",
+      "setting": "朋友邀请学生参加一个他不想去的活动",
+      "goal": "让学生礼貌拒绝、在被再次邀请时坚持立场，并提出别的安排",
+      "opener": "Come on, it'll be fun! Just for an hour?",
+      "keyPhrases": [
+        "I'd love to, but...",
+        "I've got a lot on right now",
+        "Maybe another time?",
+        "How about we do... instead?"
+      ]
+    },
+    {
+      "id": "daily-emergency-call",
+      "emoji": "🚨",
+      "level": "advanced",
+      "category": "日常生活",
+      "title": "紧急情况打电话求助",
+      "brief": "快速说清地点和情况",
+      "aiRole": "一位冷静提问的接线员",
+      "setting": "学生目击了一起事故，打电话报警",
+      "goal": "让学生说清位置、情况和人数，并按对方指示保持在线",
+      "opener": "911, what's your emergency?",
+      "keyPhrases": [
+        "There's been an accident",
+        "I'm at the corner of...",
+        "Two people, one looks hurt",
+        "I'll stay on the line"
+      ]
+    },
+    {
       "id": "shop-clothes",
       "emoji": "👕",
       "level": "basic",
-      "category": "购物",
+      "category": "购物消费",
       "title": "服装店试衣",
       "brief": "问尺码、试穿、说出哪里不合适",
       "aiRole": "一位热情的服装店店员",
@@ -312,7 +564,7 @@
       "id": "shop-supermarket",
       "emoji": "🛒",
       "level": "basic",
-      "category": "购物",
+      "category": "购物消费",
       "title": "超市找东西和结账",
       "brief": "问商品在哪、称重、结账付款",
       "aiRole": "一位超市店员，后来是收银员",
@@ -327,10 +579,82 @@
       ]
     },
     {
+      "id": "shop-shoes",
+      "emoji": "👟",
+      "level": "basic",
+      "category": "购物消费",
+      "title": "买鞋问尺码",
+      "brief": "试穿、说感受、换一双",
+      "aiRole": "一位鞋店店员",
+      "setting": "学生想买一双跑鞋，不确定美码尺寸",
+      "goal": "让学生问出对应尺码、试穿并说出哪里不舒服",
+      "opener": "What size are you looking for?",
+      "keyPhrases": [
+        "I'm usually a size...",
+        "Do you have half sizes?",
+        "They're a bit narrow",
+        "Can I try the next size up?"
+      ]
+    },
+    {
+      "id": "shop-online-issue",
+      "emoji": "💻",
+      "level": "basic",
+      "category": "购物消费",
+      "title": "网购客服在线咨询",
+      "brief": "查订单、问发货、改地址",
+      "aiRole": "一位在线客服",
+      "setting": "学生的网购订单一周没动静，找在线客服",
+      "goal": "让学生提供订单号、问出物流状态，并要求更新地址",
+      "opener": "Hi! Could I have your order number?",
+      "keyPhrases": [
+        "My order hasn't shipped",
+        "It's been over a week",
+        "Can I change the address?",
+        "When will it arrive?"
+      ]
+    },
+    {
+      "id": "shop-pharmacy",
+      "emoji": "💊",
+      "level": "basic",
+      "category": "购物消费",
+      "title": "药店买非处方药",
+      "brief": "说症状、问用法",
+      "aiRole": "一位药店的店员",
+      "setting": "学生感冒了，去药店买药",
+      "goal": "让学生描述症状、问出用量和注意事项",
+      "opener": "Hi, can I help you find something?",
+      "keyPhrases": [
+        "I have a sore throat",
+        "What do you recommend?",
+        "How often should I take it?",
+        "Does it make you sleepy?"
+      ]
+    },
+    {
+      "id": "shop-farmers-market",
+      "emoji": "🥕",
+      "level": "basic",
+      "category": "购物消费",
+      "title": "逛农夫市集",
+      "brief": "问价格、挑选、砍一点点价",
+      "aiRole": "一位摊主，人很好但不太肯降价",
+      "setting": "学生周末逛农夫市集买菜",
+      "goal": "让学生问价、挑选，并尝试买多一点换个优惠价",
+      "opener": "Morning! Everything's picked fresh this week.",
+      "keyPhrases": [
+        "How much for these?",
+        "Are they in season?",
+        "If I take two, can you do...?",
+        "I'll take a pound"
+      ]
+    },
+    {
       "id": "shop-return",
       "emoji": "🔁",
       "level": "intermediate",
-      "category": "购物",
+      "category": "购物消费",
       "title": "退货和换货",
       "brief": "说明原因、出示小票、争取退款",
       "aiRole": "一位按规定办事的客服，需要被说服",
@@ -348,7 +672,7 @@
       "id": "shop-bargain",
       "emoji": "🏷️",
       "level": "intermediate",
-      "category": "购物",
+      "category": "购物消费",
       "title": "问折扣和比价",
       "brief": "问有没有优惠、比较两件商品",
       "aiRole": "一位电子产品店员，懂行也会推销",
@@ -361,6 +685,2938 @@
         "Does it come with a warranty?",
         "I’ll take this one"
       ]
+    },
+    {
+      "id": "shop-electronics",
+      "emoji": "🔌",
+      "level": "intermediate",
+      "category": "购物消费",
+      "title": "买电子产品问参数",
+      "brief": "比较配置、问保修",
+      "aiRole": "一位懂行的电子产品店员",
+      "setting": "学生想买一个耳机，纠结两款",
+      "goal": "让学生问出两款的差别、保修政策，并说明自己的选择理由",
+      "opener": "Are you looking for noise-canceling or just regular?",
+      "keyPhrases": [
+        "What's the battery life?",
+        "How do they compare?",
+        "Is there a warranty?",
+        "I'll go with these"
+      ]
+    },
+    {
+      "id": "shop-warranty",
+      "emoji": "🧾",
+      "level": "intermediate",
+      "category": "购物消费",
+      "title": "保修期内维修",
+      "brief": "说明故障、争取免费维修",
+      "aiRole": "一位按流程办事的售后人员",
+      "setting": "学生买的设备在保修期内坏了，去要求维修",
+      "goal": "让学生说清购买时间和故障，并在被告知要收费时据理力争",
+      "opener": "Do you have proof of purchase?",
+      "keyPhrases": [
+        "I bought it four months ago",
+        "It should still be under warranty",
+        "It stopped working on its own",
+        "Can you check the policy again?"
+      ]
+    },
+    {
+      "id": "shop-delivery-wrong",
+      "emoji": "📮",
+      "level": "intermediate",
+      "category": "购物消费",
+      "title": "收到错的商品",
+      "brief": "说明问题、要求补寄",
+      "aiRole": "一位客服，会先要求提供照片",
+      "setting": "学生收到的商品和下单的不一样",
+      "goal": "让学生说清问题、按要求提供证据，并争取到补寄而不是退款",
+      "opener": "I'm sorry about that. Can you send a photo?",
+      "keyPhrases": [
+        "This isn't what I ordered",
+        "I already sent the picture",
+        "I'd rather have the right one",
+        "How long will that take?"
+      ]
+    },
+    {
+      "id": "shop-subscription",
+      "emoji": "🔁",
+      "level": "intermediate",
+      "category": "购物消费",
+      "title": "取消订阅服务",
+      "brief": "要求取消、拒绝挽留",
+      "aiRole": "一位会挽留三次的客服",
+      "setting": "学生想取消一个按月扣费的订阅",
+      "goal": "让学生明确提出取消、拒绝优惠挽留，并确认取消成功和最后扣费日期",
+      "opener": "Before we do that — can I offer you 50% off for three months?",
+      "keyPhrases": [
+        "I'd like to cancel",
+        "No thank you, I've decided",
+        "Please go ahead and cancel it",
+        "Can you confirm that in an email?"
+      ]
+    },
+    {
+      "id": "shop-price-match",
+      "emoji": "⚖️",
+      "level": "intermediate",
+      "category": "购物消费",
+      "title": "要求价格匹配",
+      "brief": "出示别家更低价、争取同价",
+      "aiRole": "一位需要核实的收银主管",
+      "setting": "学生发现同款商品别家更便宜，要求价格匹配",
+      "goal": "让学生出示证据、说清诉求，并在被拒一次后换个说法争取",
+      "opener": "Let me take a look at that. Is it the same model?",
+      "keyPhrases": [
+        "I found it cheaper at...",
+        "Here's the listing",
+        "It's the exact same item",
+        "Is there anything you can do?"
+      ]
+    },
+    {
+      "id": "shop-gift",
+      "emoji": "🎁",
+      "level": "intermediate",
+      "category": "购物消费",
+      "title": "挑礼物请人推荐",
+      "brief": "说明对象和预算",
+      "aiRole": "一位很会推荐的店员",
+      "setting": "学生要给朋友挑生日礼物，没有头绪",
+      "goal": "让学生说清送礼对象、预算和场合，并在推荐中做出选择",
+      "opener": "Who's it for, and what's your budget?",
+      "keyPhrases": [
+        "It's for a close friend",
+        "Somewhere around fifty dollars",
+        "She's really into...",
+        "That sounds perfect"
+      ]
+    },
+    {
+      "id": "shop-complaint-service",
+      "emoji": "😤",
+      "level": "advanced",
+      "category": "购物消费",
+      "title": "投诉服务态度",
+      "brief": "冷静陈述、要求处理",
+      "aiRole": "一位一开始推卸责任的经理",
+      "setting": "学生在店里受到很差的服务，要求见经理",
+      "goal": "让学生冷静陈述事实、明确提出诉求，并在被敷衍后升级要求",
+      "opener": "I'm sure there's been a misunderstanding.",
+      "keyPhrases": [
+        "I'd like to explain what happened",
+        "That's not what I was told",
+        "What I'm asking for is...",
+        "Who else can I speak to?"
+      ]
+    },
+    {
+      "id": "cafe-order",
+      "emoji": "☕️",
+      "level": "basic",
+      "category": "餐饮美食",
+      "title": "在咖啡店点单",
+      "brief": "点一杯咖啡，说清楚规格和口味",
+      "aiRole": "一位友好的咖啡店店员",
+      "setting": "学生走进一家美式咖啡店，店里有点忙",
+      "goal": "让学生成功点到一杯饮品，并回答尺寸、冷热、是否加糖奶这几个追问",
+      "opener": "Hi there! Welcome in. What can I get started for you today?",
+      "keyPhrases": [
+        "I'd like a...",
+        "small / medium / large",
+        "for here or to go",
+        "with oat milk"
+      ]
+    },
+    {
+      "id": "restaurant",
+      "emoji": "🍽️",
+      "level": "basic",
+      "category": "餐饮美食",
+      "title": "餐厅点餐",
+      "brief": "看菜单点餐，并提出一个特殊要求",
+      "aiRole": "一位专业的餐厅服务员",
+      "setting": "一家中档西餐厅的晚餐时段",
+      "goal": "让学生点完一份主菜和一杯饮料，并提出一个要求（比如不要洋葱）",
+      "opener": "Good evening! Have you had a chance to look at the menu?",
+      "keyPhrases": [
+        "I'll have the...",
+        "Could I get that without...",
+        "What do you recommend?",
+        "the check, please"
+      ]
+    },
+    {
+      "id": "food-reserve",
+      "emoji": "📞",
+      "level": "basic",
+      "category": "餐饮美食",
+      "title": "打电话订位",
+      "brief": "报人数、时间、特殊要求",
+      "aiRole": "一位餐厅接线员",
+      "setting": "学生要为周五晚上订一张四人桌",
+      "goal": "让学生报清人数时间，并提出一个特殊要求（靠窗/过敏）",
+      "opener": "Thanks for calling. How many in your party?",
+      "keyPhrases": [
+        "A table for four, please",
+        "Friday around seven",
+        "Do you have anything by the window?",
+        "The name is..."
+      ]
+    },
+    {
+      "id": "food-fastfood",
+      "emoji": "🍔",
+      "level": "basic",
+      "category": "餐饮美食",
+      "title": "快餐店点餐",
+      "brief": "点套餐、选配菜、加料",
+      "aiRole": "一位语速很快的快餐店员",
+      "setting": "学生在快餐店柜台点餐，队伍很长",
+      "goal": "让学生完成点单、听懂追问并回答，最后确认总价",
+      "opener": "Hi, welcome in — what can I get for you?",
+      "keyPhrases": [
+        "I'll have the number three",
+        "Make it a combo",
+        "Can I get that without onions?",
+        "For here, please"
+      ]
+    },
+    {
+      "id": "food-allergy",
+      "emoji": "⚠️",
+      "level": "basic",
+      "category": "餐饮美食",
+      "title": "说明食物过敏",
+      "brief": "问配料、强调严重性",
+      "aiRole": "一位认真核对的服务员",
+      "setting": "学生对坚果过敏，点菜前要问清楚",
+      "goal": "让学生说明过敏、要求确认厨房做法，并得到明确答复",
+      "opener": "Any allergies I should know about?",
+      "keyPhrases": [
+        "I'm allergic to nuts",
+        "Is there any in the sauce?",
+        "Could you check with the kitchen?",
+        "It's pretty serious"
+      ]
+    },
+    {
+      "id": "food-wrong-order",
+      "emoji": "🍽️",
+      "level": "basic",
+      "category": "餐饮美食",
+      "title": "上错菜了",
+      "brief": "指出问题、要求更换",
+      "aiRole": "一位道歉并想办法补救的服务员",
+      "setting": "学生点的菜上错了，而且已经等了很久",
+      "goal": "让学生礼貌指出问题、要求换菜，并询问要等多久",
+      "opener": "Here you go — the grilled chicken.",
+      "keyPhrases": [
+        "I think there's been a mix-up",
+        "I ordered the...",
+        "How long will it take?",
+        "No worries, these things happen"
+      ]
+    },
+    {
+      "id": "food-bill",
+      "emoji": "💳",
+      "level": "basic",
+      "category": "餐饮美食",
+      "title": "买单和分账",
+      "brief": "要账单、分开付、算小费",
+      "aiRole": "一位服务员",
+      "setting": "学生和朋友吃完饭要分开付账",
+      "goal": "让学生要到账单、说明怎么分账，并处理小费",
+      "opener": "Can I get you anything else?",
+      "keyPhrases": [
+        "Just the check, please",
+        "Can we split it?",
+        "Separate cards, please",
+        "Is gratuity included?"
+      ]
+    },
+    {
+      "id": "food-coffee-custom",
+      "emoji": "☕️",
+      "level": "basic",
+      "category": "餐饮美食",
+      "title": "点一杯复杂的咖啡",
+      "brief": "说规格、奶、糖、温度",
+      "aiRole": "一位连锁咖啡店的店员",
+      "setting": "学生想点一杯定制的咖啡饮品",
+      "goal": "让学生完整说出尺寸、奶类、甜度和冷热，并报出名字",
+      "opener": "What can I get started for you?",
+      "keyPhrases": [
+        "A large iced latte",
+        "With oat milk, please",
+        "Half the syrup",
+        "The name is..."
+      ]
+    },
+    {
+      "id": "food-takeout",
+      "emoji": "🥡",
+      "level": "intermediate",
+      "category": "餐饮美食",
+      "title": "电话点外卖",
+      "brief": "点单、报地址、问送达时间",
+      "aiRole": "一位电话点单的餐厅员工",
+      "setting": "学生打电话订外卖送到家",
+      "goal": "让学生完成点单、报清地址电话，并问出预计送达时间",
+      "opener": "Pickup or delivery?",
+      "keyPhrases": [
+        "Delivery, please",
+        "The address is...",
+        "How long will that be?",
+        "Can I pay by card over the phone?"
+      ]
+    },
+    {
+      "id": "food-recommend",
+      "emoji": "👨‍🍳",
+      "level": "intermediate",
+      "category": "餐饮美食",
+      "title": "请服务员推荐菜",
+      "brief": "说口味偏好、问做法",
+      "aiRole": "一位很懂菜单的服务员",
+      "setting": "学生第一次来一家餐厅，看不懂菜单",
+      "goal": "让学生说出偏好和忌口，问清推荐菜的做法，并做出选择",
+      "opener": "First time here? I'm happy to walk you through it.",
+      "keyPhrases": [
+        "What do you recommend?",
+        "I don't eat pork",
+        "How is it prepared?",
+        "That sounds good, I'll try it"
+      ]
+    },
+    {
+      "id": "food-complaint-quality",
+      "emoji": "🧂",
+      "level": "intermediate",
+      "category": "餐饮美食",
+      "title": "菜品有问题",
+      "brief": "指出问题、要求处理",
+      "aiRole": "一位一开始有点防备的经理",
+      "setting": "学生的菜没熟/太咸，叫来了经理",
+      "goal": "让学生具体描述问题、提出诉求，并接受一个合理的解决方案",
+      "opener": "Is there something wrong with the dish?",
+      "keyPhrases": [
+        "It's undercooked",
+        "I'd rather not risk it",
+        "Could you take it off the bill?",
+        "Thank you for sorting that out"
+      ]
+    },
+    {
+      "id": "food-dietary",
+      "emoji": "🥗",
+      "level": "intermediate",
+      "category": "餐饮美食",
+      "title": "在聚餐上解释饮食习惯",
+      "brief": "说明自己不吃什么又不扫兴",
+      "aiRole": "一位热情劝菜的主人",
+      "setting": "学生在朋友家做客，主人一直劝他吃不能吃的东西",
+      "goal": "让学生礼貌说明、婉拒劝菜，并主动称赞别的菜",
+      "opener": "Come on, just a little bite!",
+      "keyPhrases": [
+        "I'm actually vegetarian",
+        "I really appreciate it, though",
+        "This one is amazing",
+        "Could I get more of that instead?"
+      ]
+    },
+    {
+      "id": "food-cook-together",
+      "emoji": "🍳",
+      "level": "intermediate",
+      "category": "餐饮美食",
+      "title": "和朋友一起做饭",
+      "brief": "分工、问步骤、找食材",
+      "aiRole": "一位在厨房里指挥的朋友",
+      "setting": "学生和朋友一起在厨房做一顿饭",
+      "goal": "让学生问清步骤、主动认领一项任务，并处理一个小失误",
+      "opener": "Can you start on the vegetables while I do this?",
+      "keyPhrases": [
+        "Where do you keep the...?",
+        "How fine should I chop these?",
+        "I think I burned it a little",
+        "What's next?"
+      ]
+    },
+    {
+      "id": "food-bar",
+      "emoji": "🍻",
+      "level": "intermediate",
+      "category": "餐饮美食",
+      "title": "在酒吧点单和搭话",
+      "brief": "点酒、开个话头",
+      "aiRole": "一位忙碌但友好的酒保",
+      "setting": "学生在酒吧点酒，顺便和旁边的人搭话",
+      "goal": "让学生完成点单，并和旁边的人开启一段简短对话",
+      "opener": "What'll it be?",
+      "keyPhrases": [
+        "What do you have on tap?",
+        "I'll take that one",
+        "Is this seat taken?",
+        "Can I get you one?"
+      ]
+    },
+    {
+      "id": "food-review",
+      "emoji": "⭐️",
+      "level": "advanced",
+      "category": "餐饮美食",
+      "title": "和店家谈差评",
+      "brief": "说明不满、听对方解释、决定怎么办",
+      "aiRole": "一位主动联系你的店主，态度诚恳",
+      "setting": "学生写了差评，店主打电话来沟通",
+      "goal": "让学生说清问题、听完解释，并给出是否修改评价的明确回应",
+      "opener": "I saw your review and I wanted to reach out personally.",
+      "keyPhrases": [
+        "I appreciate you calling",
+        "What bothered me most was...",
+        "I understand that happens",
+        "Let me think about it"
+      ]
+    },
+    {
+      "id": "ask-directions",
+      "emoji": "🗺️",
+      "level": "basic",
+      "category": "交通出行",
+      "title": "在街上问路",
+      "brief": "问怎么去地铁站，并听懂对方的指路",
+      "aiRole": "一位热心的本地路人",
+      "setting": "学生在一条陌生的街上，想找最近的地铁站",
+      "goal": "让学生问清方向，并能复述一遍确认自己听懂了",
+      "opener": "You look a little lost — do you need help finding something?",
+      "keyPhrases": [
+        "Excuse me, how do I get to...",
+        "turn left / right",
+        "go straight",
+        "how far is it"
+      ]
+    },
+    {
+      "id": "transit-bus",
+      "emoji": "🚌",
+      "level": "basic",
+      "category": "交通出行",
+      "title": "坐公交问路线",
+      "brief": "问几路车、在哪下、要多久",
+      "aiRole": "一位公交司机，说话简短",
+      "setting": "学生要坐公交去一个地方，不确定哪一路",
+      "goal": "让学生问出车次、下车站点和大概时间",
+      "opener": "Where you headed?",
+      "keyPhrases": [
+        "Does this bus go to...?",
+        "Which stop should I get off?",
+        "How many stops is that?",
+        "Can you let me know?"
+      ]
+    },
+    {
+      "id": "transit-subway",
+      "emoji": "🚇",
+      "level": "basic",
+      "category": "交通出行",
+      "title": "地铁买票和换乘",
+      "brief": "买票、问换乘",
+      "aiRole": "一位地铁站的工作人员",
+      "setting": "学生第一次坐地铁，不会买票也不知道怎么换乘",
+      "goal": "让学生买到票，并问清在哪换乘、往哪个方向",
+      "opener": "Need help with the machine?",
+      "keyPhrases": [
+        "How much is a single ride?",
+        "Do I need to transfer?",
+        "Which direction?",
+        "Is this the right platform?"
+      ]
+    },
+    {
+      "id": "transit-taxi",
+      "emoji": "🚕",
+      "level": "basic",
+      "category": "交通出行",
+      "title": "打车说目的地",
+      "brief": "说地址、问价格、要收据",
+      "aiRole": "一位话不多的出租车司机",
+      "setting": "学生打车去机场",
+      "goal": "让学生说清目的地、确认大致价格，并在下车时要收据",
+      "opener": "Where to?",
+      "keyPhrases": [
+        "To the airport, please",
+        "About how much will it be?",
+        "Could you take the highway?",
+        "Can I get a receipt?"
+      ]
+    },
+    {
+      "id": "transit-rideshare",
+      "emoji": "📲",
+      "level": "basic",
+      "category": "交通出行",
+      "title": "网约车找车和沟通",
+      "brief": "确认车牌、改上车点",
+      "aiRole": "一位打电话来确认位置的司机",
+      "setting": "学生叫了网约车但司机找不到人",
+      "goal": "让学生说清自己的位置特征，并约定一个好找的上车点",
+      "opener": "Hi, I'm here but I don't see you.",
+      "keyPhrases": [
+        "I'm by the main entrance",
+        "I'm wearing a red jacket",
+        "Can you pull up to...?",
+        "I see you now"
+      ]
+    },
+    {
+      "id": "transit-gas",
+      "emoji": "⛽️",
+      "level": "basic",
+      "category": "交通出行",
+      "title": "加油站加油",
+      "brief": "问怎么付、加多少",
+      "aiRole": "一位加油站店员",
+      "setting": "学生第一次在美国自助加油站加油",
+      "goal": "让学生问清付款流程和油号选择",
+      "opener": "Pump number?",
+      "keyPhrases": [
+        "I'm on pump four",
+        "Do I pay inside?",
+        "Which one is regular?",
+        "Fill it up, please"
+      ]
+    },
+    {
+      "id": "airport",
+      "emoji": "✈️",
+      "level": "intermediate",
+      "category": "交通出行",
+      "title": "机场值机与安检",
+      "brief": "办登机牌、托运行李、应对追问",
+      "aiRole": "一位效率很高的地勤人员",
+      "setting": "学生在国际航班的值机柜台，带一件托运行李",
+      "goal": "让学生完成值机，并处理一个意外（行李超重）",
+      "opener": "Good morning. May I see your passport and booking reference, please?",
+      "keyPhrases": [
+        "I'm checking one bag",
+        "Is there a window seat available?",
+        "How much is the excess baggage fee?",
+        "Which gate is it?"
+      ]
+    },
+    {
+      "id": "transit-delay",
+      "emoji": "⏳",
+      "level": "intermediate",
+      "category": "交通出行",
+      "title": "航班延误改签",
+      "brief": "问原因、要求改签或补偿",
+      "aiRole": "一位应对很多投诉的地勤",
+      "setting": "学生的航班延误了四小时，会赶不上转机",
+      "goal": "让学生说清转机风险、要求改签，并争取到餐食券或住宿",
+      "opener": "I'm afraid the delay is weather-related.",
+      "keyPhrases": [
+        "I have a connecting flight",
+        "Can you rebook me?",
+        "What are my options?",
+        "Is there any compensation?"
+      ]
+    },
+    {
+      "id": "transit-train",
+      "emoji": "🚆",
+      "level": "intermediate",
+      "category": "交通出行",
+      "title": "火车买票和座位",
+      "brief": "问班次、买票、选座",
+      "aiRole": "一位火车站售票员",
+      "setting": "学生要买一张周末的火车票",
+      "goal": "让学生问出班次和价格，选定座位类型并完成购票",
+      "opener": "Where and when are you traveling?",
+      "keyPhrases": [
+        "One way or round trip?",
+        "Is there an earlier train?",
+        "A window seat, if possible",
+        "Does it have Wi-Fi?"
+      ]
+    },
+    {
+      "id": "transit-ticket-fine",
+      "emoji": "🎫",
+      "level": "intermediate",
+      "category": "交通出行",
+      "title": "被查票没票",
+      "brief": "解释情况、争取从轻",
+      "aiRole": "一位按规矩办事的查票员",
+      "setting": "学生上车忘了买票，被查到了",
+      "goal": "让学生诚实说明、接受后果，并问清怎么缴罚款",
+      "opener": "Ticket, please. ... You don't have one?",
+      "keyPhrases": [
+        "I didn't realize I had to",
+        "I'm happy to pay now",
+        "Is there any way to...?",
+        "How do I pay the fine?"
+      ]
+    },
+    {
+      "id": "transit-car-rental",
+      "emoji": "🚗",
+      "level": "intermediate",
+      "category": "交通出行",
+      "title": "租车",
+      "brief": "问保险、油费、还车",
+      "aiRole": "一位会推销附加服务的租车员",
+      "setting": "学生在机场租一辆车",
+      "goal": "让学生问清保险和油费政策，拒绝不需要的附加项，并确认还车时间",
+      "opener": "Would you like to add full coverage?",
+      "keyPhrases": [
+        "What does the basic insurance cover?",
+        "Do I need to return it full?",
+        "I'll pass on that",
+        "What time do I bring it back?"
+      ]
+    },
+    {
+      "id": "transit-directions-driving",
+      "emoji": "🗺️",
+      "level": "intermediate",
+      "category": "交通出行",
+      "title": "问开车路线",
+      "brief": "听懂一长串路线指引",
+      "aiRole": "一位好心但说得很快的当地人",
+      "setting": "学生开车迷路，停下来问路",
+      "goal": "让学生听懂路线、复述确认，并问清有没有更好走的路",
+      "opener": "Okay so you're gonna wanna take the second left...",
+      "keyPhrases": [
+        "Could you say that again?",
+        "So I go straight and then...?",
+        "How far is that?",
+        "Is there an easier way?"
+      ]
+    },
+    {
+      "id": "transit-accident",
+      "emoji": "💥",
+      "level": "advanced",
+      "category": "交通出行",
+      "title": "发生小刮蹭",
+      "brief": "交换信息、不承认责任",
+      "aiRole": "一位情绪有点激动的对方司机",
+      "setting": "学生开车时和别人发生轻微剐蹭",
+      "goal": "让学生保持冷静、交换保险信息，并避免在现场承担责任",
+      "opener": "You came out of nowhere! Look at my bumper.",
+      "keyPhrases": [
+        "Let's exchange information",
+        "Is everyone okay?",
+        "I'd rather let the insurance decide",
+        "Can I take a photo?"
+      ]
+    },
+    {
+      "id": "transit-police",
+      "emoji": "🚓",
+      "level": "advanced",
+      "category": "交通出行",
+      "title": "被交警拦下",
+      "brief": "出示证件、礼貌应对",
+      "aiRole": "一位公事公办的交警",
+      "setting": "学生开车超速被拦下",
+      "goal": "让学生礼貌配合、出示证件，并在被开罚单后问清怎么处理",
+      "opener": "Do you know why I pulled you over?",
+      "keyPhrases": [
+        "Here's my license and registration",
+        "I wasn't aware of the limit",
+        "I understand, officer",
+        "How do I take care of this?"
+      ]
+    },
+    {
+      "id": "transit-lost-luggage",
+      "emoji": "🧳",
+      "level": "advanced",
+      "category": "交通出行",
+      "title": "行李丢了",
+      "brief": "描述行李、要求赔偿和补给",
+      "aiRole": "一位流程化应对的航空公司员工",
+      "setting": "学生落地后行李没出来",
+      "goal": "让学生完成挂失登记、问出赔偿政策，并争取到应急生活费",
+      "opener": "Let's file a report. Can you describe the bag?",
+      "keyPhrases": [
+        "It's a medium silver suitcase",
+        "Here's my baggage tag",
+        "I have nothing but what I'm wearing",
+        "What does the airline cover?"
+      ]
+    },
+    {
+      "id": "travel-booking",
+      "emoji": "🏨",
+      "level": "basic",
+      "category": "住宿旅行",
+      "title": "打电话订房",
+      "brief": "问房型、价格、早餐",
+      "aiRole": "一位酒店前台",
+      "setting": "学生要订一间下周的房间",
+      "goal": "让学生问出房型价格、是否含早餐，并完成预订",
+      "opener": "Thanks for calling. How can I help?",
+      "keyPhrases": [
+        "Do you have any rooms available?",
+        "Is breakfast included?",
+        "What's the rate per night?",
+        "I'd like to book that"
+      ]
+    },
+    {
+      "id": "travel-checkout",
+      "emoji": "🧳",
+      "level": "basic",
+      "category": "住宿旅行",
+      "title": "退房",
+      "brief": "结账、寄存行李、叫车",
+      "aiRole": "一位酒店前台",
+      "setting": "学生退房但航班在晚上",
+      "goal": "让学生完成退房、要求寄存行李，并请前台叫车",
+      "opener": "Checking out? How was your stay?",
+      "keyPhrases": [
+        "Can I leave my bags here?",
+        "What time do I need to be out?",
+        "Could you call me a taxi?",
+        "Here's the key card"
+      ]
+    },
+    {
+      "id": "travel-room-issue",
+      "emoji": "🛎️",
+      "level": "basic",
+      "category": "住宿旅行",
+      "title": "房间有问题",
+      "brief": "报修、要求换房",
+      "aiRole": "一位客房服务人员",
+      "setting": "学生房间的空调坏了，很闷热",
+      "goal": "让学生说清问题、要求处理，并在修不好时提出换房",
+      "opener": "Front desk, how can I help?",
+      "keyPhrases": [
+        "The air conditioning isn't working",
+        "It's really hot in here",
+        "Could someone take a look?",
+        "Is another room available?"
+      ]
+    },
+    {
+      "id": "travel-airbnb",
+      "emoji": "🏡",
+      "level": "basic",
+      "category": "住宿旅行",
+      "title": "和房东沟通入住",
+      "brief": "问门锁、Wi-Fi、注意事项",
+      "aiRole": "一位热心的 Airbnb 房东",
+      "setting": "学生入住短租房，需要问一些基本信息",
+      "goal": "让学生问出进门方式、Wi-Fi 密码和退房时间",
+      "opener": "Hi! Let me know when you get there.",
+      "keyPhrases": [
+        "How do I get in?",
+        "What's the Wi-Fi password?",
+        "When do I need to check out?",
+        "Is there parking nearby?"
+      ]
+    },
+    {
+      "id": "travel-tour",
+      "emoji": "📸",
+      "level": "basic",
+      "category": "住宿旅行",
+      "title": "参加一日游",
+      "brief": "问行程、时间、包不包午饭",
+      "aiRole": "一位导游",
+      "setting": "学生想报一个当地的一日游",
+      "goal": "让学生问清行程时长、包含内容和集合地点",
+      "opener": "Are you joining us today?",
+      "keyPhrases": [
+        "How long is the tour?",
+        "Is lunch included?",
+        "Where do we meet?",
+        "Can I pay here?"
+      ]
+    },
+    {
+      "id": "travel-museum",
+      "emoji": "🏛️",
+      "level": "basic",
+      "category": "住宿旅行",
+      "title": "买门票和问展览",
+      "brief": "问票价、学生票、开放时间",
+      "aiRole": "一位博物馆售票员",
+      "setting": "学生要买博物馆门票",
+      "goal": "让学生问出学生票价、闭馆时间，并问一个展览的位置",
+      "opener": "One adult?",
+      "keyPhrases": [
+        "Do you have a student discount?",
+        "What time do you close?",
+        "Where's the special exhibit?",
+        "Is there a guided tour?"
+      ]
+    },
+    {
+      "id": "travel-photo",
+      "emoji": "🤳",
+      "level": "basic",
+      "category": "住宿旅行",
+      "title": "请陌生人帮忙拍照",
+      "brief": "开口、说明怎么拍、道谢",
+      "aiRole": "一位愿意帮忙的游客",
+      "setting": "学生想请路人帮自己在景点拍张照",
+      "goal": "让学生礼貌开口、说清构图要求，并回礼帮对方拍",
+      "opener": "Sure, no problem! Like this?",
+      "keyPhrases": [
+        "Would you mind taking a photo?",
+        "Could you get the building in?",
+        "One more, please",
+        "Want me to take one of you?"
+      ]
+    },
+    {
+      "id": "hotel-checkin",
+      "emoji": "🏨",
+      "level": "intermediate",
+      "category": "住宿旅行",
+      "title": "酒店入住",
+      "brief": "办理入住，并询问酒店设施",
+      "aiRole": "一位酒店前台接待",
+      "setting": "学生带着行李抵达酒店前台，已经在网上订过房",
+      "goal": "让学生完成入住，并问清早餐时间和 WiFi 密码",
+      "opener": "Good afternoon! Checking in? Could I have your name and ID, please?",
+      "keyPhrases": [
+        "I have a reservation under...",
+        "What time is breakfast?",
+        "Is there a late checkout?",
+        "Could I get a wake-up call?"
+      ]
+    },
+    {
+      "id": "travel-plan-friend",
+      "emoji": "🗓️",
+      "level": "intermediate",
+      "category": "住宿旅行",
+      "title": "和朋友商量行程",
+      "brief": "提方案、协调分歧",
+      "aiRole": "一位想法不同的旅伴",
+      "setting": "学生和朋友在规划一次旅行，两人想去的地方不同",
+      "goal": "让学生提出方案、回应对方的不同意见，并达成一个折中安排",
+      "opener": "I was kind of hoping we'd do the beach instead.",
+      "keyPhrases": [
+        "What if we did both?",
+        "We could do that on day two",
+        "I really want to see...",
+        "Does that work for you?"
+      ]
+    },
+    {
+      "id": "travel-lost-passport",
+      "emoji": "🛂",
+      "level": "intermediate",
+      "category": "住宿旅行",
+      "title": "护照丢了",
+      "brief": "报案、联系领事馆",
+      "aiRole": "一位领事馆的工作人员",
+      "setting": "学生在国外丢了护照",
+      "goal": "让学生说清情况、问出补办流程和所需材料",
+      "opener": "When did you notice it was missing?",
+      "keyPhrases": [
+        "I think it was stolen",
+        "I've filed a police report",
+        "What documents do I need?",
+        "How long does it take?"
+      ]
+    },
+    {
+      "id": "travel-customs",
+      "emoji": "🛃",
+      "level": "intermediate",
+      "category": "住宿旅行",
+      "title": "过海关问询",
+      "brief": "回答目的、时长、携带物品",
+      "aiRole": "一位例行提问的海关官员",
+      "setting": "学生入境时被海关问话",
+      "goal": "让学生清楚回答来访目的、停留时间和住址，并如实申报物品",
+      "opener": "What's the purpose of your visit?",
+      "keyPhrases": [
+        "I'm here for tourism",
+        "About two weeks",
+        "I'm staying at...",
+        "I have nothing to declare"
+      ]
+    },
+    {
+      "id": "travel-overbooked",
+      "emoji": "😵",
+      "level": "intermediate",
+      "category": "住宿旅行",
+      "title": "酒店超售没房了",
+      "brief": "要求安排、争取补偿",
+      "aiRole": "一位道歉但强调没办法的前台",
+      "setting": "学生到了酒店，被告知房间超售",
+      "goal": "让学生坚持要求安排住处，并争取到升级或交通补偿",
+      "opener": "I'm so sorry, we're fully committed tonight.",
+      "keyPhrases": [
+        "I have a confirmed reservation",
+        "What are you going to do about it?",
+        "Will you cover the transport?",
+        "I'd like that in writing"
+      ]
+    },
+    {
+      "id": "travel-language-barrier",
+      "emoji": "🗣️",
+      "level": "intermediate",
+      "category": "住宿旅行",
+      "title": "听不懂时怎么办",
+      "brief": "请对方放慢、换个说法",
+      "aiRole": "一位语速很快、口音重的当地人",
+      "setting": "学生问路时完全听不懂对方在说什么",
+      "goal": "让学生礼貌地请对方放慢或重复，最后确认自己理解对了",
+      "opener": "Yeah so it's just past the roundabout innit, can't miss it.",
+      "keyPhrases": [
+        "Sorry, could you speak a bit slower?",
+        "I didn't catch that",
+        "Do you mean...?",
+        "Could you write it down?"
+      ]
+    },
+    {
+      "id": "travel-emergency-abroad",
+      "emoji": "🆘",
+      "level": "advanced",
+      "category": "住宿旅行",
+      "title": "在国外生病就医",
+      "brief": "描述症状、问保险、付费",
+      "aiRole": "一位急诊登记处的护士",
+      "setting": "学生在国外突然发烧，去急诊",
+      "goal": "让学生描述症状、说明保险情况，并问清费用怎么结算",
+      "opener": "What brings you in today?",
+      "keyPhrases": [
+        "I've had a fever since last night",
+        "I have travel insurance",
+        "Do I pay upfront?",
+        "How long is the wait?"
+      ]
+    },
+    {
+      "id": "travel-negotiate-refund",
+      "emoji": "💸",
+      "level": "advanced",
+      "category": "住宿旅行",
+      "title": "取消行程要退款",
+      "brief": "援引条款、坚持诉求",
+      "aiRole": "一位先搬出政策的旅行社客服",
+      "setting": "学生因故要取消已付款的行程，对方说不能退",
+      "goal": "让学生援引取消政策、坚持诉求，并在被拒后提出升级处理",
+      "opener": "Our policy says bookings are non-refundable.",
+      "keyPhrases": [
+        "I cancelled within the window",
+        "Could you check the terms again?",
+        "I'd like to speak to a supervisor",
+        "What's the best you can do?"
+      ]
+    },
+    {
+      "id": "self-intro",
+      "emoji": "👋",
+      "level": "basic",
+      "category": "社交往来",
+      "title": "第一次见面自我介绍",
+      "brief": "介绍自己的名字、来处和职业",
+      "aiRole": "一位刚认识的同龄朋友",
+      "setting": "在一个语言交换活动上，两人刚坐到同一桌",
+      "goal": "让学生完整介绍自己，并至少反问对方一个问题",
+      "opener": "Hey, I don't think we've met! I'm Alex. What's your name?",
+      "keyPhrases": [
+        "Nice to meet you",
+        "I'm from...",
+        "I work as...",
+        "How about you?"
+      ]
+    },
+    {
+      "id": "social-party",
+      "emoji": "🎉",
+      "level": "basic",
+      "category": "社交往来",
+      "title": "到派对上破冰",
+      "brief": "介绍自己、找话题",
+      "aiRole": "一位派对上认识的人，友好",
+      "setting": "学生到朋友的派对上，只认识主人",
+      "goal": "让学生完成自我介绍并把对话延续到第三轮",
+      "opener": "Hey, I don't think we've met. I'm Sam.",
+      "keyPhrases": [
+        "I came with...",
+        "How do you two know each other?",
+        "What do you do?",
+        "Nice to meet you"
+      ]
+    },
+    {
+      "id": "social-exchange-contact",
+      "emoji": "📇",
+      "level": "basic",
+      "category": "社交往来",
+      "title": "要联系方式",
+      "brief": "自然地开口加好友",
+      "aiRole": "一位聊得挺好的新朋友",
+      "setting": "学生和新认识的人聊得不错，想留个联系方式",
+      "goal": "让学生自然地提出交换联系方式并约一个后续",
+      "opener": "Yeah, that was a fun conversation.",
+      "keyPhrases": [
+        "Are you on WeChat?",
+        "Let me get your number",
+        "We should grab coffee sometime",
+        "I'll text you"
+      ]
+    },
+    {
+      "id": "social-compliment",
+      "emoji": "😊",
+      "level": "basic",
+      "category": "社交往来",
+      "title": "称赞和回应称赞",
+      "brief": "夸人、接住别人的夸奖",
+      "aiRole": "一位会回夸你的朋友",
+      "setting": "学生想称赞朋友的新造型/新成就",
+      "goal": "让学生给出具体的称赞，并得体地接住对方的回夸",
+      "opener": "Oh stop it — your presentation was way better than mine.",
+      "keyPhrases": [
+        "That looks great on you",
+        "You really nailed it",
+        "That's so nice of you to say",
+        "I appreciate that"
+      ]
+    },
+    {
+      "id": "social-invite",
+      "emoji": "📨",
+      "level": "basic",
+      "category": "社交往来",
+      "title": "邀请别人",
+      "brief": "发出邀请、给细节、确认",
+      "aiRole": "一位有兴趣但要确认时间的朋友",
+      "setting": "学生想邀请朋友周末一起去做点什么",
+      "goal": "让学生发出邀请、说清时间地点，并在对方犹豫时给出灵活方案",
+      "opener": "Maybe — what time were you thinking?",
+      "keyPhrases": [
+        "Are you free on Saturday?",
+        "We're meeting around noon",
+        "No pressure either way",
+        "Let me know by Friday"
+      ]
+    },
+    {
+      "id": "social-catchup",
+      "emoji": "☎️",
+      "level": "basic",
+      "category": "社交往来",
+      "title": "和久未联系的朋友叙旧",
+      "brief": "问近况、分享自己的",
+      "aiRole": "一位很久没见的老朋友",
+      "setting": "学生和半年没联系的朋友打电话",
+      "goal": "让学生问出对方的近况、分享自己的变化，并约一次见面",
+      "opener": "It's been forever! How have you been?",
+      "keyPhrases": [
+        "A lot has changed actually",
+        "What about you?",
+        "That's amazing news",
+        "We have to meet up"
+      ]
+    },
+    {
+      "id": "social-condolence",
+      "emoji": "🕊️",
+      "level": "intermediate",
+      "category": "社交往来",
+      "title": "安慰难过的人",
+      "brief": "表达关心、不说错话",
+      "aiRole": "一位刚经历挫折、情绪低落的朋友",
+      "setting": "朋友刚失去了工作/宠物，心情很差",
+      "goal": "让学生表达关心、避免说教，并提出具体的帮助",
+      "opener": "I just... I don't really know what to do next.",
+      "keyPhrases": [
+        "I'm so sorry",
+        "That's really tough",
+        "Do you want to talk about it?",
+        "I'm here if you need anything"
+      ]
+    },
+    {
+      "id": "social-disagree-friend",
+      "emoji": "🤔",
+      "level": "intermediate",
+      "category": "社交往来",
+      "title": "和朋友意见不合",
+      "brief": "表达不同意见又不伤感情",
+      "aiRole": "一位观点很坚定的朋友",
+      "setting": "朋友说了一个学生不认同的看法",
+      "goal": "让学生礼貌地表达不同意见、给出理由，并让对话平和收尾",
+      "opener": "Come on, you can't seriously disagree with that.",
+      "keyPhrases": [
+        "I see it a bit differently",
+        "That's a fair point, but...",
+        "Have you considered...?",
+        "We can agree to disagree"
+      ]
+    },
+    {
+      "id": "social-boundary",
+      "emoji": "🛑",
+      "level": "intermediate",
+      "category": "社交往来",
+      "title": "设定界限",
+      "brief": "拒绝越界的要求",
+      "aiRole": "一位反复要求帮忙的熟人",
+      "setting": "有人一再借钱/占用学生的时间",
+      "goal": "让学生明确拒绝、说明原因，并在被追问时坚持立场",
+      "opener": "Just this one last time, I promise.",
+      "keyPhrases": [
+        "I'm not comfortable with that",
+        "I've helped out a few times now",
+        "I need to say no this time",
+        "I hope you understand"
+      ]
+    },
+    {
+      "id": "social-networking",
+      "emoji": "🤝",
+      "level": "intermediate",
+      "category": "社交往来",
+      "title": "行业活动上社交",
+      "brief": "自我介绍、找共同点、留印象",
+      "aiRole": "一位业内前辈，时间有限",
+      "setting": "学生在行业活动上想认识一位前辈",
+      "goal": "让学生做一个简短有力的自我介绍、问出一个有价值的问题，并请求后续联系",
+      "opener": "So what brings you to this event?",
+      "keyPhrases": [
+        "I work in...",
+        "I've been following your work",
+        "What would you tell someone starting out?",
+        "Could I connect with you on LinkedIn?"
+      ]
+    },
+    {
+      "id": "social-host",
+      "emoji": "🏠",
+      "level": "intermediate",
+      "category": "社交往来",
+      "title": "在家招待客人",
+      "brief": "迎客、寒暄、安排",
+      "aiRole": "一位第一次来家里的客人",
+      "setting": "学生第一次在自己家招待朋友",
+      "goal": "让学生完成迎客、招呼饮食，并自然地引导话题",
+      "opener": "Wow, your place is nice!",
+      "keyPhrases": [
+        "Come on in",
+        "Can I get you something to drink?",
+        "Make yourself at home",
+        "Dinner's almost ready"
+      ]
+    },
+    {
+      "id": "social-gift-etiquette",
+      "emoji": "🎀",
+      "level": "intermediate",
+      "category": "社交往来",
+      "title": "送礼和收礼",
+      "brief": "送出、推辞、致谢",
+      "aiRole": "一位带了礼物来的朋友",
+      "setting": "朋友来做客带了礼物，学生也准备了一份",
+      "goal": "让学生得体地收礼致谢、并在送出时说明心意",
+      "opener": "It's nothing much, I just saw it and thought of you.",
+      "keyPhrases": [
+        "You really didn't have to",
+        "I love it, thank you",
+        "I got you something too",
+        "I hope you like it"
+      ]
+    },
+    {
+      "id": "social-awkward-exit",
+      "emoji": "🚪",
+      "level": "intermediate",
+      "category": "社交往来",
+      "title": "礼貌地结束对话",
+      "brief": "找台阶离开",
+      "aiRole": "一位聊起来停不下来的人",
+      "setting": "学生在活动上被一个人拉着聊了很久，想脱身",
+      "goal": "让学生找到自然的收尾方式，礼貌离开而不失礼",
+      "opener": "Oh and another thing —",
+      "keyPhrases": [
+        "It's been great talking to you",
+        "I should probably go say hi to...",
+        "Let's continue this another time",
+        "Enjoy the rest of your evening"
+      ]
+    },
+    {
+      "id": "social-conflict-repair",
+      "emoji": "🩹",
+      "level": "advanced",
+      "category": "社交往来",
+      "title": "和朋友吵架后和解",
+      "brief": "承认问题、表达感受、修复",
+      "aiRole": "一位还有点生气但愿意谈的朋友",
+      "setting": "学生和朋友上周吵了一架，现在想和好",
+      "goal": "让学生主动开口、承认自己的部分、听对方说完，并提出怎么往前走",
+      "opener": "I'm still kind of upset about what you said.",
+      "keyPhrases": [
+        "I've been thinking about it",
+        "You were right that I...",
+        "I'd like to understand your side",
+        "Where do we go from here?"
+      ]
+    },
+    {
+      "id": "social-culture-gap",
+      "emoji": "🌏",
+      "level": "advanced",
+      "category": "社交往来",
+      "title": "解释文化差异",
+      "brief": "讲清自己的文化又不说教",
+      "aiRole": "一位好奇但带点刻板印象的外国朋友",
+      "setting": "有人对学生的文化提出了一个带偏见的问题",
+      "goal": "让学生冷静回应、纠正误解，并把对话引向互相了解",
+      "opener": "Is it true that everyone in China...?",
+      "keyPhrases": [
+        "That's a common misconception",
+        "It really depends on...",
+        "Where did you hear that?",
+        "It's more complicated than that"
+      ]
+    },
+    {
+      "id": "health-appointment",
+      "emoji": "📞",
+      "level": "basic",
+      "category": "医疗健康",
+      "title": "预约看医生",
+      "brief": "说症状、约时间",
+      "aiRole": "一位诊所前台",
+      "setting": "学生要预约一次看诊",
+      "goal": "让学生说明症状紧急程度、约到一个时间，并确认要带什么",
+      "opener": "What seems to be the problem?",
+      "keyPhrases": [
+        "I'd like to make an appointment",
+        "It's not urgent",
+        "Do you have anything this week?",
+        "What should I bring?"
+      ]
+    },
+    {
+      "id": "health-pharmacy-rx",
+      "emoji": "💊",
+      "level": "basic",
+      "category": "医疗健康",
+      "title": "取处方药",
+      "brief": "报姓名、问用法和副作用",
+      "aiRole": "一位药剂师",
+      "setting": "学生去药房取医生开的处方药",
+      "goal": "让学生取到药、问清服用方法和副作用",
+      "opener": "Have you taken this medication before?",
+      "keyPhrases": [
+        "This is my first time",
+        "How many times a day?",
+        "Any side effects I should know about?",
+        "Can I take it with food?"
+      ]
+    },
+    {
+      "id": "health-dentist",
+      "emoji": "🦷",
+      "level": "basic",
+      "category": "医疗健康",
+      "title": "看牙医",
+      "brief": "描述牙痛、问治疗方案",
+      "aiRole": "一位牙医",
+      "setting": "学生牙疼了一周去看牙医",
+      "goal": "让学生描述疼痛位置和程度，并问清治疗方案和费用",
+      "opener": "Where exactly does it hurt?",
+      "keyPhrases": [
+        "It's this one in the back",
+        "It hurts when I drink something cold",
+        "What are my options?",
+        "How much will that cost?"
+      ]
+    },
+    {
+      "id": "health-eye",
+      "emoji": "👓",
+      "level": "basic",
+      "category": "医疗健康",
+      "title": "配眼镜",
+      "brief": "验光、选镜框、问价格",
+      "aiRole": "一位眼镜店的验光师",
+      "setting": "学生要配一副新眼镜",
+      "goal": "让学生完成验光沟通、说出镜框偏好，并问清取镜时间",
+      "opener": "Any changes in your vision lately?",
+      "keyPhrases": [
+        "Things look blurry far away",
+        "I'd like something lightweight",
+        "Do you take my insurance?",
+        "When will they be ready?"
+      ]
+    },
+    {
+      "id": "doctor-visit",
+      "emoji": "🏥",
+      "level": "intermediate",
+      "category": "医疗健康",
+      "title": "看医生描述症状",
+      "brief": "说清楚哪里不舒服、持续多久",
+      "aiRole": "一位耐心的全科医生",
+      "setting": "学生因为感冒和喉咙痛来到诊所",
+      "goal": "让学生描述清楚症状、持续时间和严重程度，并听懂医嘱",
+      "opener": "Hi, come on in and have a seat. So, what brings you in today?",
+      "keyPhrases": [
+        "I've had a sore throat for...",
+        "It hurts when I...",
+        "Do I need antibiotics?",
+        "any side effects"
+      ]
+    },
+    {
+      "id": "health-symptoms-detail",
+      "emoji": "🤒",
+      "level": "intermediate",
+      "category": "医疗健康",
+      "title": "详细描述症状",
+      "brief": "说清部位、持续时间、加重因素",
+      "aiRole": "一位追问细节的医生",
+      "setting": "学生持续头痛一个月来就诊",
+      "goal": "让学生说清症状的部位、频率、诱因，并回答医生的追问",
+      "opener": "Tell me more about the headaches.",
+      "keyPhrases": [
+        "It's mostly on one side",
+        "Usually in the afternoon",
+        "It gets worse when I...",
+        "I've tried taking painkillers"
+      ]
+    },
+    {
+      "id": "health-insurance",
+      "emoji": "🏥",
+      "level": "intermediate",
+      "category": "医疗健康",
+      "title": "问医保能报多少",
+      "brief": "问覆盖范围、自付额",
+      "aiRole": "一位保险公司客服",
+      "setting": "学生要做一个检查，想先问清能不能报销",
+      "goal": "让学生问出覆盖比例、自付额，并确认需不需要转诊单",
+      "opener": "Let me pull up your plan.",
+      "keyPhrases": [
+        "Is this procedure covered?",
+        "What's my deductible?",
+        "Do I need a referral?",
+        "Can you send that in writing?"
+      ]
+    },
+    {
+      "id": "health-second-opinion",
+      "emoji": "🔄",
+      "level": "intermediate",
+      "category": "医疗健康",
+      "title": "想换个医生看看",
+      "brief": "委婉提出、要求转诊和病历",
+      "aiRole": "一位有点被冒犯的医生",
+      "setting": "学生想找另一位医生再看看",
+      "goal": "让学生礼貌提出、要求病历副本，并维持良好关系",
+      "opener": "Are you not satisfied with the treatment?",
+      "keyPhrases": [
+        "I'd just like another perspective",
+        "It's nothing personal",
+        "Could I get a copy of my records?",
+        "I appreciate everything you've done"
+      ]
+    },
+    {
+      "id": "health-mental",
+      "emoji": "🧠",
+      "level": "intermediate",
+      "category": "医疗健康",
+      "title": "谈心理健康",
+      "brief": "开口说压力和情绪",
+      "aiRole": "一位温和的心理咨询师",
+      "setting": "学生最近压力很大，第一次去做心理咨询",
+      "goal": "让学生说出困扰、描述影响，并问清咨询怎么进行",
+      "opener": "What made you decide to come in?",
+      "keyPhrases": [
+        "I've been feeling overwhelmed",
+        "It's affecting my sleep",
+        "I've never done this before",
+        "How does this usually work?"
+      ]
+    },
+    {
+      "id": "health-physio",
+      "emoji": "🦵",
+      "level": "intermediate",
+      "category": "医疗健康",
+      "title": "康复训练沟通",
+      "brief": "描述疼痛变化、问动作要领",
+      "aiRole": "一位物理治疗师",
+      "setting": "学生膝盖受伤，在做康复训练",
+      "goal": "让学生反馈疼痛变化、问清动作要领，并提出一个顾虑",
+      "opener": "How did the exercises go this week?",
+      "keyPhrases": [
+        "It's getting a bit better",
+        "This one still hurts",
+        "Am I doing this right?",
+        "Should I push through the pain?"
+      ]
+    },
+    {
+      "id": "health-emergency-room",
+      "emoji": "🚑",
+      "level": "advanced",
+      "category": "医疗健康",
+      "title": "急诊分诊",
+      "brief": "快速说清情况、争取优先",
+      "aiRole": "一位忙碌的分诊护士",
+      "setting": "学生陪朋友去急诊，情况看起来比较急",
+      "goal": "让学生简明说清情况和病史，并在等待过久时再次沟通",
+      "opener": "Take a seat, we'll call you when we can.",
+      "keyPhrases": [
+        "He's having trouble breathing",
+        "It started about an hour ago",
+        "He's allergic to...",
+        "Is there any way to speed this up?"
+      ]
+    },
+    {
+      "id": "health-explain-diagnosis",
+      "emoji": "📋",
+      "level": "advanced",
+      "category": "医疗健康",
+      "title": "听懂诊断结果",
+      "brief": "追问专业名词、确认下一步",
+      "aiRole": "一位说了很多术语的医生",
+      "setting": "医生给出了一个学生听不太懂的诊断",
+      "goal": "让学生请医生用简单话解释、确认治疗方案，并复述一遍确认理解",
+      "opener": "The imaging shows some inflammation in the joint capsule.",
+      "keyPhrases": [
+        "Could you explain that in simpler terms?",
+        "What does that mean for me?",
+        "So the plan is to...?",
+        "Let me make sure I understand"
+      ]
+    },
+    {
+      "id": "bank-open-account",
+      "emoji": "🏦",
+      "level": "basic",
+      "category": "银行与手续",
+      "title": "开银行账户",
+      "brief": "问账户类型、手续费、所需材料",
+      "aiRole": "一位银行柜员",
+      "setting": "学生刚到美国要开一个银行账户",
+      "goal": "让学生问出账户类型区别、月费和所需材料，并完成开户",
+      "opener": "Are you looking for checking or savings?",
+      "keyPhrases": [
+        "What's the difference?",
+        "Is there a monthly fee?",
+        "What do I need to bring?",
+        "I'll go with checking"
+      ]
+    },
+    {
+      "id": "bank-card-lost",
+      "emoji": "💳",
+      "level": "basic",
+      "category": "银行与手续",
+      "title": "银行卡丢了",
+      "brief": "挂失、补卡、查可疑交易",
+      "aiRole": "一位银行客服",
+      "setting": "学生的银行卡丢了，担心被盗刷",
+      "goal": "让学生完成挂失、申请补卡，并查询最近的可疑交易",
+      "opener": "I can freeze the card right now. Anything look unfamiliar?",
+      "keyPhrases": [
+        "I lost my card",
+        "There's a charge I don't recognize",
+        "Can you send a new one?",
+        "How long will that take?"
+      ]
+    },
+    {
+      "id": "bank-transfer",
+      "emoji": "💱",
+      "level": "basic",
+      "category": "银行与手续",
+      "title": "跨境汇款",
+      "brief": "问汇率、手续费、到账时间",
+      "aiRole": "一位银行柜员",
+      "setting": "学生要往国内汇一笔钱",
+      "goal": "让学生问清汇率、手续费和到账时间，并完成汇款",
+      "opener": "How much would you like to send?",
+      "keyPhrases": [
+        "What's today's rate?",
+        "How much is the fee?",
+        "When will it arrive?",
+        "Is there a limit?"
+      ]
+    },
+    {
+      "id": "bank-dispute",
+      "emoji": "⚠️",
+      "level": "intermediate",
+      "category": "银行与手续",
+      "title": "争议一笔扣款",
+      "brief": "举证、要求退回",
+      "aiRole": "一位需要走流程的银行客服",
+      "setting": "学生账户上有一笔没授权的扣款",
+      "goal": "让学生说清争议交易、提出退款要求，并问清调查时长",
+      "opener": "When did you first notice the charge?",
+      "keyPhrases": [
+        "I never authorized this",
+        "I still have the card",
+        "I'd like to dispute it",
+        "How long is the investigation?"
+      ]
+    },
+    {
+      "id": "bank-loan",
+      "emoji": "📑",
+      "level": "intermediate",
+      "category": "银行与手续",
+      "title": "咨询贷款",
+      "brief": "问利率、期限、资格",
+      "aiRole": "一位贷款顾问",
+      "setting": "学生想了解一笔小额贷款",
+      "goal": "让学生问出利率、还款期限和申请条件，并说明自己的情况",
+      "opener": "What's the loan for?",
+      "keyPhrases": [
+        "What interest rate could I get?",
+        "How long is the term?",
+        "What do I need to qualify?",
+        "Can I pay it off early?"
+      ]
+    },
+    {
+      "id": "bank-credit",
+      "emoji": "📈",
+      "level": "intermediate",
+      "category": "银行与手续",
+      "title": "申请信用卡",
+      "brief": "问额度、年费、积分",
+      "aiRole": "一位会推销高端卡的银行员工",
+      "setting": "学生想申请第一张信用卡",
+      "goal": "让学生问清年费和额度，拒绝不合适的高端卡，并选定一张",
+      "opener": "Have you considered our premium card?",
+      "keyPhrases": [
+        "Is there an annual fee?",
+        "What's the starting limit?",
+        "I'd prefer something simpler",
+        "How do the rewards work?"
+      ]
+    },
+    {
+      "id": "bank-tax",
+      "emoji": "🧮",
+      "level": "intermediate",
+      "category": "银行与手续",
+      "title": "问报税问题",
+      "brief": "描述情况、问要交什么表",
+      "aiRole": "一位报税顾问",
+      "setting": "学生第一次在美国报税，不知道怎么办",
+      "goal": "让学生说清自己的收入情况，问出需要哪些表格和截止日期",
+      "opener": "Are you on a student visa?",
+      "keyPhrases": [
+        "This is my first time filing",
+        "I only had one job",
+        "Which forms do I need?",
+        "When is the deadline?"
+      ]
+    },
+    {
+      "id": "bank-visa-office",
+      "emoji": "🛂",
+      "level": "intermediate",
+      "category": "银行与手续",
+      "title": "办签证/居留手续",
+      "brief": "问材料、流程、时间",
+      "aiRole": "一位窗口办事人员",
+      "setting": "学生要办理居留身份的延期",
+      "goal": "让学生问清所需材料清单、办理时长和费用",
+      "opener": "Do you have your application filled out?",
+      "keyPhrases": [
+        "What documents do I need?",
+        "How long does processing take?",
+        "Is there an expedited option?",
+        "Can I check the status online?"
+      ]
+    },
+    {
+      "id": "bank-dmv",
+      "emoji": "🚙",
+      "level": "intermediate",
+      "category": "银行与手续",
+      "title": "考驾照和换本",
+      "brief": "问流程、约考试",
+      "aiRole": "一位车管所窗口人员",
+      "setting": "学生要把国内驾照换成本地驾照",
+      "goal": "让学生问清换本流程、需要考什么，并预约一次考试",
+      "opener": "Do you have an international permit?",
+      "keyPhrases": [
+        "I have a license from China",
+        "Do I need to take the test?",
+        "How do I schedule it?",
+        "What's the fee?"
+      ]
+    },
+    {
+      "id": "bank-phone-hold",
+      "emoji": "⏱️",
+      "level": "intermediate",
+      "category": "银行与手续",
+      "title": "电话客服转接与等待",
+      "brief": "听懂语音菜单、坚持转人工",
+      "aiRole": "一个自动语音系统，之后是人工客服",
+      "setting": "学生打客服电话，被自动语音绕来绕去",
+      "goal": "让学生成功转到人工、说清问题，并在被再次转接时坚持",
+      "opener": "Please say the reason for your call.",
+      "keyPhrases": [
+        "Speak to a representative",
+        "I've already been transferred twice",
+        "Can you help me directly?",
+        "Please don't transfer me again"
+      ]
+    },
+    {
+      "id": "bank-phone-scam",
+      "emoji": "🎭",
+      "level": "advanced",
+      "category": "银行与手续",
+      "title": "识破电话诈骗",
+      "brief": "不泄露信息、挂断核实",
+      "aiRole": "一位自称银行安全部门的骗子",
+      "setting": "学生接到一个自称银行的电话，要求提供验证码",
+      "goal": "让学生拒绝提供任何敏感信息、提出主动回拨核实，并结束通话",
+      "opener": "For security, I just need the code we sent to your phone.",
+      "keyPhrases": [
+        "I'm not comfortable sharing that",
+        "How do I know this is really the bank?",
+        "I'll call the number on my card",
+        "I'm going to hang up now"
+      ]
+    },
+    {
+      "id": "bank-negotiate-fee",
+      "emoji": "💰",
+      "level": "advanced",
+      "category": "银行与手续",
+      "title": "要求免掉一笔费用",
+      "brief": "援引记录、坚持诉求",
+      "aiRole": "一位先说\"这是政策\"的客服",
+      "setting": "学生因为一次逾期被收了滞纳金，想免掉",
+      "goal": "让学生说明自己的良好记录、明确提出诉求，并在被拒后升级",
+      "opener": "Unfortunately that fee is standard policy.",
+      "keyPhrases": [
+        "I've been a customer for years",
+        "This is my first late payment",
+        "Could you waive it as a courtesy?",
+        "Is there a supervisor available?"
+      ]
+    },
+    {
+      "id": "rent-viewing",
+      "emoji": "🔑",
+      "level": "basic",
+      "category": "租房与居住",
+      "title": "看房",
+      "brief": "问租金、押金、包不包水电",
+      "aiRole": "一位带看房的房东",
+      "setting": "学生去看一套要租的公寓",
+      "goal": "让学生问出租金、押金、包含费用，并提出一个顾虑",
+      "opener": "Take your time, have a look around.",
+      "keyPhrases": [
+        "How much is the rent?",
+        "Is utilities included?",
+        "What's the deposit?",
+        "Is the neighborhood quiet?"
+      ]
+    },
+    {
+      "id": "rent-application",
+      "emoji": "📄",
+      "level": "basic",
+      "category": "租房与居住",
+      "title": "提交租房申请",
+      "brief": "问材料、信用记录、担保人",
+      "aiRole": "一位公寓租赁办公室的职员",
+      "setting": "学生要申请租一套公寓",
+      "goal": "让学生问清申请材料、没有信用记录怎么办，并了解审批时长",
+      "opener": "We'll need to run a credit check.",
+      "keyPhrases": [
+        "I don't have a credit history here",
+        "Can I use a guarantor?",
+        "What documents do you need?",
+        "How long until I hear back?"
+      ]
+    },
+    {
+      "id": "rent-repair-request",
+      "emoji": "🔨",
+      "level": "basic",
+      "category": "租房与居住",
+      "title": "报修",
+      "brief": "说清问题、催进度",
+      "aiRole": "一位反应慢的房东",
+      "setting": "学生家的水龙头漏水两周了没人管",
+      "goal": "让学生说清问题和已等待时间，并要求一个明确的处理时间",
+      "opener": "Yeah, I've been meaning to get to that.",
+      "keyPhrases": [
+        "It's been leaking for two weeks",
+        "It's getting worse",
+        "When can someone come?",
+        "Could you give me a date?"
+      ]
+    },
+    {
+      "id": "rent-utilities",
+      "emoji": "💡",
+      "level": "basic",
+      "category": "租房与居住",
+      "title": "开通水电网",
+      "brief": "开户、约上门、问费用",
+      "aiRole": "一位公用事业公司客服",
+      "setting": "学生搬进新家要开通电和网络",
+      "goal": "让学生完成开户、约上门时间，并问清首月费用",
+      "opener": "When would you like service to start?",
+      "keyPhrases": [
+        "I just moved in",
+        "What's the setup fee?",
+        "Can someone come Saturday?",
+        "Is there a contract?"
+      ]
+    },
+    {
+      "id": "rent-lease-terms",
+      "emoji": "📜",
+      "level": "intermediate",
+      "category": "租房与居住",
+      "title": "看合同条款",
+      "brief": "问违约金、转租、涨租",
+      "aiRole": "一位不太愿意改条款的房东",
+      "setting": "学生在签租约前想问清几条条款",
+      "goal": "让学生问清提前退租的代价、能不能转租，并争取一条修改",
+      "opener": "It's a standard lease, most people just sign it.",
+      "keyPhrases": [
+        "What happens if I move out early?",
+        "Am I allowed to sublet?",
+        "Can rent increase mid-lease?",
+        "Could we adjust this clause?"
+      ]
+    },
+    {
+      "id": "rent-noisy-neighbor",
+      "emoji": "🔊",
+      "level": "intermediate",
+      "category": "租房与居住",
+      "title": "和吵闹的邻居沟通",
+      "brief": "提出问题又不结仇",
+      "aiRole": "一位半夜放音乐的邻居，起初有点冲",
+      "setting": "楼上邻居每天半夜很吵",
+      "goal": "让学生冷静提出问题、说明影响，并达成一个具体约定",
+      "opener": "It's not even that late, come on.",
+      "keyPhrases": [
+        "I can hear it through the floor",
+        "I have to be up at six",
+        "Could you keep it down after eleven?",
+        "I'd rather sort this out between us"
+      ]
+    },
+    {
+      "id": "rent-roommate-money",
+      "emoji": "🧾",
+      "level": "intermediate",
+      "category": "租房与居住",
+      "title": "和室友算账",
+      "brief": "分摊账单、催还钱",
+      "aiRole": "一位总忘记付钱的室友",
+      "setting": "室友三个月没交自己那份水电费",
+      "goal": "让学生说清具体金额、提出还款方式，并避免撕破脸",
+      "opener": "Oh man, I totally forgot again.",
+      "keyPhrases": [
+        "It comes to $180 total",
+        "That's three months now",
+        "Could you send it this week?",
+        "Maybe we set up auto-pay?"
+      ]
+    },
+    {
+      "id": "rent-deposit-back",
+      "emoji": "💵",
+      "level": "intermediate",
+      "category": "租房与居住",
+      "title": "要回押金",
+      "brief": "举证房屋状况、争取全额",
+      "aiRole": "一位想扣钱的房东",
+      "setting": "学生退租后房东要扣一部分押金",
+      "goal": "让学生指出争议项、拿出证据，并争取到大部分押金",
+      "opener": "There was some damage to the wall.",
+      "keyPhrases": [
+        "That was there when I moved in",
+        "I have photos from move-in day",
+        "Normal wear and tear isn't deductible",
+        "I'd like an itemized list"
+      ]
+    },
+    {
+      "id": "rent-move-out",
+      "emoji": "📦",
+      "level": "intermediate",
+      "category": "租房与居住",
+      "title": "通知退租",
+      "brief": "按合同提前通知、约验房",
+      "aiRole": "一位按流程办事的房东",
+      "setting": "学生要在两个月后退租",
+      "goal": "让学生按合同要求正式通知、约定验房时间，并问清清洁要求",
+      "opener": "I'll need that in writing, thirty days out.",
+      "keyPhrases": [
+        "I'm giving my notice today",
+        "My last day will be...",
+        "When can we do the walkthrough?",
+        "What condition does it need to be in?"
+      ]
+    },
+    {
+      "id": "rent-sublet",
+      "emoji": "🔄",
+      "level": "intermediate",
+      "category": "租房与居住",
+      "title": "找人转租",
+      "brief": "介绍房子、回答提问",
+      "aiRole": "一位有兴趣但很谨慎的看房人",
+      "setting": "学生要出国半年，想把房子转租出去",
+      "goal": "让学生介绍房子优点、如实回答缺点，并说清转租的条件",
+      "opener": "What's the catch? It seems cheap.",
+      "keyPhrases": [
+        "It's only for six months",
+        "The landlord has to approve it",
+        "To be honest, the kitchen is small",
+        "Utilities run about..."
+      ]
+    },
+    {
+      "id": "rent-insurance",
+      "emoji": "🛡️",
+      "level": "intermediate",
+      "category": "租房与居住",
+      "title": "买租房保险",
+      "brief": "问保额、免赔、理赔",
+      "aiRole": "一位保险经纪",
+      "setting": "学生要买一份租房保险",
+      "goal": "让学生问清保障范围、保额和免赔额，并选定一个方案",
+      "opener": "What's the approximate value of your belongings?",
+      "keyPhrases": [
+        "What does it cover?",
+        "Is theft included?",
+        "What's the deductible?",
+        "How do I file a claim?"
+      ]
+    },
+    {
+      "id": "rent-eviction-threat",
+      "emoji": "⚖️",
+      "level": "advanced",
+      "category": "租房与居住",
+      "title": "面对不合理的驱逐",
+      "brief": "援引法律、坚持权利",
+      "aiRole": "一位威胁要赶人的房东",
+      "setting": "房东以不合理的理由要求学生一周内搬走",
+      "goal": "让学生冷静援引合同和法律、拒绝不合理要求，并说明下一步",
+      "opener": "I want you out by the end of the week.",
+      "keyPhrases": [
+        "That's not what the lease says",
+        "You have to give proper notice",
+        "I'd like this in writing",
+        "I'll be seeking legal advice"
+      ]
+    },
+    {
+      "id": "work-first-day",
+      "emoji": "🪪",
+      "level": "basic",
+      "category": "职场基础",
+      "title": "入职第一天",
+      "brief": "自我介绍、问流程",
+      "aiRole": "一位带新人的同事",
+      "setting": "学生第一天上班，被带着认识环境",
+      "goal": "让学生完成自我介绍、问出几个实际问题（打卡、午饭、工位）",
+      "opener": "Welcome aboard! Let me show you around.",
+      "keyPhrases": [
+        "Nice to meet everyone",
+        "Where do I sit?",
+        "What time do people take lunch?",
+        "Who should I ask if I'm stuck?"
+      ]
+    },
+    {
+      "id": "work-email-basic",
+      "emoji": "✉️",
+      "level": "basic",
+      "category": "职场基础",
+      "title": "口头交代一封邮件",
+      "brief": "说清收件人、要点、语气",
+      "aiRole": "一位帮你确认措辞的同事",
+      "setting": "学生要发一封请求协助的邮件，先和同事对一下",
+      "goal": "让学生说清邮件目的和要点，并采纳一条修改建议",
+      "opener": "What are you trying to get across?",
+      "keyPhrases": [
+        "I need to ask them for...",
+        "Should I cc the manager?",
+        "Is that too direct?",
+        "How would you word it?"
+      ]
+    },
+    {
+      "id": "work-meeting-join",
+      "emoji": "🗒️",
+      "level": "basic",
+      "category": "职场基础",
+      "title": "会议上发言",
+      "brief": "插话、表达看法",
+      "aiRole": "一位主持会议的经理",
+      "setting": "学生在会上想提出一个想法但插不上话",
+      "goal": "让学生找到时机插话、清楚表达想法，并回应一个追问",
+      "opener": "Anything else before we wrap up?",
+      "keyPhrases": [
+        "Can I add something?",
+        "I think we should consider...",
+        "From my side...",
+        "Happy to look into that"
+      ]
+    },
+    {
+      "id": "work-ask-help",
+      "emoji": "🆘",
+      "level": "basic",
+      "category": "职场基础",
+      "title": "向同事求助",
+      "brief": "说清卡在哪、请教做法",
+      "aiRole": "一位乐于帮忙但很忙的同事",
+      "setting": "学生被一个任务卡住了两小时",
+      "goal": "让学生说清已经试过什么、具体卡在哪，并约定一个不打扰对方的时间",
+      "opener": "Sure, what's up? I've got about five minutes.",
+      "keyPhrases": [
+        "I'm stuck on...",
+        "I've already tried...",
+        "Could you point me in the right direction?",
+        "Is there a better time?"
+      ]
+    },
+    {
+      "id": "work-sick-leave",
+      "emoji": "🤧",
+      "level": "basic",
+      "category": "职场基础",
+      "title": "请病假",
+      "brief": "通知、交接、说明返岗时间",
+      "aiRole": "一位经理",
+      "setting": "学生生病了要请一天假",
+      "goal": "让学生通知请假、说明手头工作怎么办，并给出预计返岗时间",
+      "opener": "Sorry to hear that. Take care of yourself.",
+      "keyPhrases": [
+        "I'm not feeling well today",
+        "I've handed off the urgent items",
+        "I should be back tomorrow",
+        "I'll check email if anything comes up"
+      ]
+    },
+    {
+      "id": "work-lunch-invite",
+      "emoji": "🥪",
+      "level": "basic",
+      "category": "职场基础",
+      "title": "约同事吃午饭",
+      "brief": "发出邀请、闲聊",
+      "aiRole": "一位刚认识的同事",
+      "setting": "学生想约新同事一起吃午饭",
+      "goal": "让学生发出邀请，并在饭桌上开启一段非工作闲聊",
+      "opener": "Sure, I could use a break. Where were you thinking?",
+      "keyPhrases": [
+        "Want to grab lunch?",
+        "There's a place around the corner",
+        "How long have you been here?",
+        "What do you usually do on weekends?"
+      ]
+    },
+    {
+      "id": "small-talk-work",
+      "emoji": "💼",
+      "level": "intermediate",
+      "category": "职场基础",
+      "title": "同事间的闲聊",
+      "brief": "在茶水间和同事聊周末和工作",
+      "aiRole": "一位友好健谈的同事",
+      "setting": "周一早上，两人在公司茶水间等咖啡机",
+      "goal": "让学生自然地接话并把对话延续三轮以上，不冷场",
+      "opener": "Morning! Long weekend, huh? Did you get up to anything fun?",
+      "keyPhrases": [
+        "Not much, just...",
+        "How was yours?",
+        "That sounds great",
+        "I know what you mean"
+      ]
+    },
+    {
+      "id": "work-clarify-task",
+      "emoji": "🎯",
+      "level": "intermediate",
+      "category": "职场基础",
+      "title": "把任务问清楚",
+      "brief": "确认范围、优先级、交付时间",
+      "aiRole": "一位交代得很笼统的上级",
+      "setting": "上级丢过来一个说不清楚的任务",
+      "goal": "让学生问出具体交付物、优先级和截止时间，并复述确认",
+      "opener": "Just put something together on the sales thing, okay?",
+      "keyPhrases": [
+        "What format were you thinking?",
+        "How detailed should it be?",
+        "When do you need it?",
+        "So to confirm, you want..."
+      ]
+    },
+    {
+      "id": "work-status-update",
+      "emoji": "📣",
+      "level": "intermediate",
+      "category": "职场基础",
+      "title": "汇报进度",
+      "brief": "说清进展、风险、需要什么",
+      "aiRole": "一位关心结果的上级",
+      "setting": "学生要在周会上汇报项目进展",
+      "goal": "让学生讲清已完成、进行中和阻塞项，并明确提出需要的支持",
+      "opener": "Where are we on this?",
+      "keyPhrases": [
+        "We've finished...",
+        "The main risk is...",
+        "I'm blocked on...",
+        "What I need is..."
+      ]
+    },
+    {
+      "id": "work-disagree-politely",
+      "emoji": "🙋",
+      "level": "intermediate",
+      "category": "职场基础",
+      "title": "和同事有不同意见",
+      "brief": "提出异议、给替代方案",
+      "aiRole": "一位对自己方案很有信心的同事",
+      "setting": "同事的方案学生认为有问题",
+      "goal": "让学生指出具体风险、提出替代方案，并接受可能不被采纳",
+      "opener": "I've done it this way for years, it works.",
+      "keyPhrases": [
+        "I see where you're coming from",
+        "My concern is that...",
+        "What if we tried...?",
+        "Happy to go with your call"
+      ]
+    },
+    {
+      "id": "work-feedback-receive",
+      "emoji": "📝",
+      "level": "intermediate",
+      "category": "职场基础",
+      "title": "接受批评",
+      "brief": "不辩解、问具体、提改进",
+      "aiRole": "一位直接但善意的上级",
+      "setting": "上级指出了学生工作中的几个问题",
+      "goal": "让学生不辩解地听完、问出具体例子，并提出改进计划",
+      "opener": "I think the quality has slipped a bit lately.",
+      "keyPhrases": [
+        "Thanks for telling me",
+        "Could you give me an example?",
+        "That's fair",
+        "Here's what I'll do differently"
+      ]
+    },
+    {
+      "id": "work-handover",
+      "emoji": "🔀",
+      "level": "intermediate",
+      "category": "职场基础",
+      "title": "工作交接",
+      "brief": "讲清进度、坑、联系人",
+      "aiRole": "一位接手你工作的同事",
+      "setting": "学生要把手上的项目交接给别人",
+      "goal": "让学生讲清当前进度、已知问题和关键联系人，并约定后续答疑方式",
+      "opener": "So where should I start?",
+      "keyPhrases": [
+        "The current status is...",
+        "One thing to watch out for...",
+        "The main contact is...",
+        "Ping me anytime this week"
+      ]
+    },
+    {
+      "id": "work-overtime",
+      "emoji": "🌙",
+      "level": "intermediate",
+      "category": "职场基础",
+      "title": "被要求加班",
+      "brief": "说明困难、协商方案",
+      "aiRole": "一位施压但讲道理的上级",
+      "setting": "上级临时要求学生周末加班",
+      "goal": "让学生说明自己的困难、提出替代方案，并达成一个折中",
+      "opener": "I know it's short notice, but we really need this.",
+      "keyPhrases": [
+        "I have a commitment on Saturday",
+        "Could I do Sunday instead?",
+        "What's the actual deadline?",
+        "Let's see if we can split it"
+      ]
+    },
+    {
+      "id": "work-intro-client",
+      "emoji": "🤵",
+      "level": "intermediate",
+      "category": "职场基础",
+      "title": "第一次见客户",
+      "brief": "介绍公司、了解需求",
+      "aiRole": "一位话不多、要看实力的客户",
+      "setting": "学生第一次独立见客户",
+      "goal": "让学生做简短介绍、问出客户的核心需求，并约定下一步",
+      "opener": "So tell me what you can do for us.",
+      "keyPhrases": [
+        "We specialize in...",
+        "What's the biggest challenge you're facing?",
+        "Let me make sure I understand",
+        "I'll send a proposal by..."
+      ]
+    },
+    {
+      "id": "work-praise-team",
+      "emoji": "👏",
+      "level": "intermediate",
+      "category": "职场基础",
+      "title": "公开表扬同事",
+      "brief": "具体、真诚、不尴尬",
+      "aiRole": "一位被表扬后有点不好意思的同事",
+      "setting": "学生想在团队会上表扬同事的贡献",
+      "goal": "让学生给出具体的表扬内容，并把功劳说清楚",
+      "opener": "Oh, it really wasn't just me.",
+      "keyPhrases": [
+        "I want to call out...",
+        "What made the difference was...",
+        "Credit where it's due",
+        "We should do more of that"
+      ]
+    },
+    {
+      "id": "job-interview",
+      "emoji": "🎯",
+      "level": "advanced",
+      "category": "职场进阶",
+      "title": "英文面试",
+      "brief": "回答自我介绍和优缺点这类经典问题",
+      "aiRole": "一位专业但友善的面试官",
+      "setting": "一家外企的第二轮面试，视频会议形式",
+      "goal": "让学生完成自我介绍，并用具体例子回答一个行为面试问题",
+      "opener": "Thanks for making the time today. To start, could you walk me through your background?",
+      "keyPhrases": [
+        "I have X years of experience in...",
+        "In my previous role, I...",
+        "One example would be...",
+        "What does success look like in this role?"
+      ]
+    },
+    {
+      "id": "negotiate-deadline",
+      "emoji": "⏰",
+      "level": "advanced",
+      "category": "职场进阶",
+      "title": "和上级协商延期",
+      "brief": "说明困难、提出替代方案、争取更多时间",
+      "aiRole": "一位讲道理但有压力的上级",
+      "setting": "项目原定周五交付，学生发现做不完",
+      "goal": "让学生说明原因、给出替代方案，并谈成一个双方接受的新时间",
+      "opener": "You wanted to talk about the Friday deadline? What's the situation?",
+      "keyPhrases": [
+        "I want to flag a risk...",
+        "What I can commit to is...",
+        "Would it help if we...",
+        "to be realistic about scope"
+      ]
+    },
+    {
+      "id": "career-salary",
+      "emoji": "💼",
+      "level": "advanced",
+      "category": "职场进阶",
+      "title": "谈薪资",
+      "brief": "给出期望、应对压价",
+      "aiRole": "一位试图压价的招聘经理",
+      "setting": "学生进入了薪资谈判环节",
+      "goal": "让学生给出有依据的期望区间、回应压价，并争取到非薪资条件",
+      "opener": "That's a bit above our range for this role.",
+      "keyPhrases": [
+        "Based on my research, the market rate is...",
+        "I'm looking for something in the range of...",
+        "Is there flexibility elsewhere?",
+        "What would it take to get there?"
+      ]
+    },
+    {
+      "id": "career-promotion",
+      "emoji": "📊",
+      "level": "advanced",
+      "category": "职场进阶",
+      "title": "争取晋升",
+      "brief": "摆成绩、提要求",
+      "aiRole": "一位含糊其辞的上级",
+      "setting": "学生认为自己该升职了，去找上级谈",
+      "goal": "让学生摆出具体成绩、明确提出诉求，并要一个可衡量的时间表",
+      "opener": "Let's revisit this next cycle.",
+      "keyPhrases": [
+        "Over the past year I've...",
+        "I'd like to be considered for...",
+        "What would I need to demonstrate?",
+        "Can we set a timeline?"
+      ]
+    },
+    {
+      "id": "career-resign",
+      "emoji": "👋",
+      "level": "advanced",
+      "category": "职场进阶",
+      "title": "提出离职",
+      "brief": "通知、交接、保持关系",
+      "aiRole": "一位试图挽留的上级",
+      "setting": "学生决定离职，去和上级谈",
+      "goal": "让学生清楚表达决定、拒绝挽留，并承诺好好交接",
+      "opener": "Is there anything that would change your mind?",
+      "keyPhrases": [
+        "I've decided to move on",
+        "It's not about the money",
+        "I want to make the transition smooth",
+        "I'm grateful for the opportunity"
+      ]
+    },
+    {
+      "id": "career-behavioral",
+      "emoji": "🧩",
+      "level": "advanced",
+      "category": "职场进阶",
+      "title": "行为面试题",
+      "brief": "用 STAR 结构讲例子",
+      "aiRole": "一位追问细节的面试官",
+      "setting": "面试官问\"讲一次你解决冲突的经历\"",
+      "goal": "让学生用情境-任务-行动-结果的结构完整讲一个例子，并回答追问",
+      "opener": "Tell me about a time you had a conflict with a coworker.",
+      "keyPhrases": [
+        "The situation was...",
+        "My role was to...",
+        "What I did was...",
+        "In the end, we..."
+      ]
+    },
+    {
+      "id": "career-weakness",
+      "emoji": "🪞",
+      "level": "advanced",
+      "category": "职场进阶",
+      "title": "回答缺点问题",
+      "brief": "真诚又不自毁",
+      "aiRole": "一位不接受套路答案的面试官",
+      "setting": "面试官问\"你最大的缺点是什么\"",
+      "goal": "让学生给出一个真实的缺点、说明正在怎么改进，并顶住追问",
+      "opener": "That sounds like a strength in disguise. Try again.",
+      "keyPhrases": [
+        "Honestly, I tend to...",
+        "It's caused problems when...",
+        "What I've been doing about it is...",
+        "I'm not fully there yet"
+      ]
+    },
+    {
+      "id": "career-why-us",
+      "emoji": "🎯",
+      "level": "advanced",
+      "category": "职场进阶",
+      "title": "回答\"为什么选我们\"",
+      "brief": "讲出具体理由",
+      "aiRole": "一位听腻了套话的面试官",
+      "setting": "面试官问为什么想来这家公司",
+      "goal": "让学生给出具体到公司业务的理由，并反问一个有深度的问题",
+      "opener": "Everyone says that. What specifically?",
+      "keyPhrases": [
+        "I looked at your recent...",
+        "What drew me in was...",
+        "It lines up with my experience in...",
+        "Can I ask how the team is structured?"
+      ]
+    },
+    {
+      "id": "career-present",
+      "emoji": "📽️",
+      "level": "advanced",
+      "category": "职场进阶",
+      "title": "向高层做汇报",
+      "brief": "讲重点、控节奏、答质询",
+      "aiRole": "一位打断提问的高管",
+      "setting": "学生要向公司高层汇报一个项目",
+      "goal": "让学生先讲结论、被打断后不慌，并给出有数据支撑的回答",
+      "opener": "Let me stop you there — what's the bottom line?",
+      "keyPhrases": [
+        "The short answer is...",
+        "Let me come back to that",
+        "The data shows...",
+        "I'll follow up with the details"
+      ]
+    },
+    {
+      "id": "career-crisis",
+      "emoji": "🔥",
+      "level": "advanced",
+      "category": "职场进阶",
+      "title": "汇报一个搞砸的事",
+      "brief": "承担责任、给方案",
+      "aiRole": "一位关注解决方案的上级",
+      "setting": "学生的失误导致了一个不小的问题",
+      "goal": "让学生如实说明、承担责任、给出补救方案和防复发措施",
+      "opener": "How did this happen?",
+      "keyPhrases": [
+        "I want to be upfront about this",
+        "The mistake was mine",
+        "Here's what I'm doing to fix it",
+        "To prevent it happening again..."
+      ]
+    },
+    {
+      "id": "career-delegate",
+      "emoji": "🧑‍🤝‍🧑",
+      "level": "advanced",
+      "category": "职场进阶",
+      "title": "给下属分配任务",
+      "brief": "讲清目标、给空间、约检查点",
+      "aiRole": "一位经验不足、有点犹豫的下属",
+      "setting": "学生第一次带人，要分配一个任务",
+      "goal": "让学生讲清目标和标准、给出自主空间，并约定检查点",
+      "opener": "I'm not sure I've done anything like this before.",
+      "keyPhrases": [
+        "The goal is...",
+        "How you get there is up to you",
+        "Let's check in on Wednesday",
+        "Come to me if you hit a wall"
+      ]
+    },
+    {
+      "id": "career-difficult-coworker",
+      "emoji": "🧊",
+      "level": "advanced",
+      "category": "职场进阶",
+      "title": "处理难搞的同事",
+      "brief": "直接沟通、就事论事",
+      "aiRole": "一位总是消极抵制的同事",
+      "setting": "有个同事总是不配合学生的工作",
+      "goal": "让学生就具体行为沟通、不做人身评价，并达成一个可验证的约定",
+      "opener": "I just don't think it's a priority right now.",
+      "keyPhrases": [
+        "I want to talk about what happened on...",
+        "When that happens, it means...",
+        "What would make this work for you?",
+        "Can we agree on...?"
+      ]
+    },
+    {
+      "id": "career-cross-culture",
+      "emoji": "🌐",
+      "level": "advanced",
+      "category": "职场进阶",
+      "title": "跨文化团队协作",
+      "brief": "处理沟通风格差异",
+      "aiRole": "一位沟通风格非常直接的外国同事",
+      "setting": "学生和一位说话很冲的外国同事合作",
+      "goal": "让学生适应对方的直接风格、表达自己的需求，并建立一个沟通约定",
+      "opener": "Your update was too vague. Just give me the numbers.",
+      "keyPhrases": [
+        "Fair enough, here they are",
+        "I'd find it helpful if...",
+        "Let's agree on a format",
+        "That works better for me too"
+      ]
+    },
+    {
+      "id": "career-networking-followup",
+      "emoji": "🔗",
+      "level": "advanced",
+      "category": "职场进阶",
+      "title": "面试后跟进",
+      "brief": "追问进度、保持体面",
+      "aiRole": "一位回复含糊的招聘人员",
+      "setting": "面试后两周没消息，学生主动跟进",
+      "goal": "让学生礼貌跟进、问出明确时间点，并在对方含糊时争取一个答复期限",
+      "opener": "We're still finalizing things internally.",
+      "keyPhrases": [
+        "I wanted to follow up on...",
+        "I'm still very interested",
+        "Do you have a rough timeline?",
+        "When should I check back?"
+      ]
+    },
+    {
+      "id": "career-say-no-boss",
+      "emoji": "✋",
+      "level": "advanced",
+      "category": "职场进阶",
+      "title": "对上级说不",
+      "brief": "拒绝超额任务、给出取舍",
+      "aiRole": "一位不断加任务的上级",
+      "setting": "上级又丢来一个任务，学生已经饱和",
+      "goal": "让学生说明当前负荷、请对方排优先级，并达成取舍",
+      "opener": "Can you just squeeze this in too?",
+      "keyPhrases": [
+        "I can take it on, but something has to give",
+        "Right now I'm working on...",
+        "Which should I deprioritize?",
+        "If I do this, that will slip to..."
+      ]
+    },
+    {
+      "id": "fun-movie",
+      "emoji": "🎬",
+      "level": "basic",
+      "category": "兴趣与休闲",
+      "title": "聊一部电影",
+      "brief": "说剧情、评价、推荐",
+      "aiRole": "一位刚看完同一部电影的朋友",
+      "setting": "学生和朋友聊刚看完的电影",
+      "goal": "让学生说出自己的看法、给出理由，并推荐另一部",
+      "opener": "So what did you think?",
+      "keyPhrases": [
+        "I really liked it",
+        "The ending felt rushed",
+        "My favorite part was...",
+        "If you liked that, you should watch..."
+      ]
+    },
+    {
+      "id": "fun-music",
+      "emoji": "🎵",
+      "level": "basic",
+      "category": "兴趣与休闲",
+      "title": "聊音乐口味",
+      "brief": "说喜欢什么、为什么",
+      "aiRole": "一位音乐品味不同的朋友",
+      "setting": "学生和朋友聊各自喜欢的音乐",
+      "goal": "让学生描述自己的口味、问出对方的，并找到一个交集",
+      "opener": "I'm mostly into indie stuff. You?",
+      "keyPhrases": [
+        "I'm more of a... person",
+        "What got you into that?",
+        "I've never really listened to...",
+        "Send me something to try"
+      ]
+    },
+    {
+      "id": "fun-sports-watch",
+      "emoji": "🏀",
+      "level": "basic",
+      "category": "兴趣与休闲",
+      "title": "一起看比赛",
+      "brief": "聊比分、球队、结果",
+      "aiRole": "一位球队死忠粉朋友",
+      "setting": "学生和朋友一起看一场球赛",
+      "goal": "让学生参与讨论、表达立场，并在球队输时安慰对方",
+      "opener": "Did you see that?! That was a foul!",
+      "keyPhrases": [
+        "That was close",
+        "Who's your team?",
+        "They've been on a roll",
+        "There's always next season"
+      ]
+    },
+    {
+      "id": "fun-sports-play",
+      "emoji": "⚽️",
+      "level": "basic",
+      "category": "兴趣与休闲",
+      "title": "加入一场球局",
+      "brief": "问能不能加、问规则",
+      "aiRole": "一位在公园打球的人",
+      "setting": "学生在公园看到有人打球，想加入",
+      "goal": "让学生开口请求加入、问清规则，并在结束时道谢约下次",
+      "opener": "Sure, we need one more. You played before?",
+      "keyPhrases": [
+        "Mind if I join?",
+        "How do you usually play it?",
+        "I'm a bit rusty",
+        "Same time next week?"
+      ]
+    },
+    {
+      "id": "fun-gaming",
+      "emoji": "🎮",
+      "level": "basic",
+      "category": "兴趣与休闲",
+      "title": "联机打游戏",
+      "brief": "组队、沟通战术",
+      "aiRole": "一位一起联机的队友",
+      "setting": "学生和陌生队友联机打游戏",
+      "goal": "让学生用简短指令沟通、配合队友，并在输了之后保持风度",
+      "opener": "You wanna push mid or hold back?",
+      "keyPhrases": [
+        "Let's hold for now",
+        "I'm low on health",
+        "Nice one!",
+        "Good game, everyone"
+      ]
+    },
+    {
+      "id": "fun-hobby-explain",
+      "emoji": "🧶",
+      "level": "intermediate",
+      "category": "兴趣与休闲",
+      "title": "介绍自己的爱好",
+      "brief": "讲清是什么、怎么入门的",
+      "aiRole": "一位完全不了解这个爱好的人",
+      "setting": "有人问起学生的小众爱好",
+      "goal": "让学生用对方能懂的话解释、说出吸引自己的地方，并邀请对方试试",
+      "opener": "I've honestly never heard of that.",
+      "keyPhrases": [
+        "It's basically...",
+        "I got into it when...",
+        "What I like about it is...",
+        "You should try it sometime"
+      ]
+    },
+    {
+      "id": "fun-book-club",
+      "emoji": "📕",
+      "level": "intermediate",
+      "category": "兴趣与休闲",
+      "title": "读书会讨论",
+      "brief": "表达观点、回应别人",
+      "aiRole": "一位观点不同的读书会成员",
+      "setting": "学生在读书会上讨论一本小说",
+      "goal": "让学生提出自己的解读、回应不同意见，并引用书里的细节",
+      "opener": "I read that character completely differently.",
+      "keyPhrases": [
+        "The way I saw it...",
+        "There's a part where...",
+        "That's interesting, I hadn't thought of that",
+        "Maybe both readings work"
+      ]
+    },
+    {
+      "id": "fun-concert",
+      "emoji": "🎤",
+      "level": "intermediate",
+      "category": "兴趣与休闲",
+      "title": "看演出和买票",
+      "brief": "问票、找座位、聊感受",
+      "aiRole": "一位场馆工作人员，之后是旁边的观众",
+      "setting": "学生去看一场演唱会",
+      "goal": "让学生完成找座、和旁边的人简单交流，并聊演出感受",
+      "opener": "Can I see your ticket? You're just down there.",
+      "keyPhrases": [
+        "Is this section 108?",
+        "First time seeing them?",
+        "That song was incredible",
+        "Do you know what's next?"
+      ]
+    },
+    {
+      "id": "fun-cooking-class",
+      "emoji": "🍜",
+      "level": "intermediate",
+      "category": "兴趣与休闲",
+      "title": "上烹饪课",
+      "brief": "听步骤、提问、求助",
+      "aiRole": "一位边做边讲的厨师老师",
+      "setting": "学生参加一节烹饪课",
+      "goal": "让学生听懂步骤、在跟不上时提问，并描述自己做出来的结果",
+      "opener": "Now fold it gently — don't overwork the dough.",
+      "keyPhrases": [
+        "Sorry, how much of that?",
+        "Like this?",
+        "Mine looks different",
+        "What did I do wrong?"
+      ]
+    },
+    {
+      "id": "fun-volunteer",
+      "emoji": "🤲",
+      "level": "intermediate",
+      "category": "兴趣与休闲",
+      "title": "做志愿者",
+      "brief": "报名、问职责、和人协作",
+      "aiRole": "一位志愿活动的组织者",
+      "setting": "学生第一次参加志愿活动",
+      "goal": "让学生问清自己的职责和时长，并在现场向他人求助",
+      "opener": "Thanks for coming! Have you done this before?",
+      "keyPhrases": [
+        "This is my first time",
+        "What should I be doing?",
+        "How long is the shift?",
+        "Who do I report to?"
+      ]
+    },
+    {
+      "id": "fun-pet",
+      "emoji": "🐕",
+      "level": "intermediate",
+      "category": "兴趣与休闲",
+      "title": "聊宠物和照顾",
+      "brief": "问品种、习惯、求建议",
+      "aiRole": "一位遛狗的陌生人",
+      "setting": "学生在公园遇到遛狗的人，想搭话",
+      "goal": "让学生开启对话、问出养宠经验，并请教一个具体问题",
+      "opener": "He's friendly, you can pet him.",
+      "keyPhrases": [
+        "What breed is he?",
+        "How old?",
+        "I'm thinking of getting one",
+        "Is it a lot of work?"
+      ]
+    },
+    {
+      "id": "fun-photography",
+      "emoji": "📷",
+      "level": "intermediate",
+      "category": "兴趣与休闲",
+      "title": "聊摄影技巧",
+      "brief": "问参数、请教构图",
+      "aiRole": "一位经验丰富的摄影爱好者",
+      "setting": "学生想学摄影，向人请教",
+      "goal": "让学生问出具体的技巧建议，并说明自己现在的问题",
+      "opener": "What kind of shots are you trying to get?",
+      "keyPhrases": [
+        "My photos always come out dark",
+        "What settings would you use?",
+        "How do you decide the composition?",
+        "That's really helpful"
+      ]
+    },
+    {
+      "id": "fun-fitness-plan",
+      "emoji": "🏃",
+      "level": "intermediate",
+      "category": "兴趣与休闲",
+      "title": "和教练定训练计划",
+      "brief": "说目标、听方案、提异议",
+      "aiRole": "一位很有想法的私人教练",
+      "setting": "学生请了教练，第一次定训练计划",
+      "goal": "让学生说清目标和限制，听懂方案，并对一项安排提出调整",
+      "opener": "We'll start with four sessions a week.",
+      "keyPhrases": [
+        "My goal is to...",
+        "I can only make it three times",
+        "My knee is a problem",
+        "Can we adjust that part?"
+      ]
+    },
+    {
+      "id": "fun-travel-story",
+      "emoji": "🧭",
+      "level": "advanced",
+      "category": "兴趣与休闲",
+      "title": "讲一段旅行经历",
+      "brief": "讲故事、铺垫、抖包袱",
+      "aiRole": "一位听得津津有味、会追问的朋友",
+      "setting": "朋友让学生讲一次难忘的旅行",
+      "goal": "让学生讲一个有起承转合的故事，并回应追问补充细节",
+      "opener": "Wait, so what happened next?",
+      "keyPhrases": [
+        "So there we were...",
+        "The funny part is...",
+        "I'd never been so...",
+        "Looking back on it now..."
+      ]
+    },
+    {
+      "id": "phone-complaint",
+      "emoji": "📞",
+      "level": "intermediate",
+      "category": "观点与谈判",
+      "title": "打电话投诉",
+      "brief": "网购的东西有问题，打电话要求退换",
+      "aiRole": "一位按流程办事但还算客气的客服",
+      "setting": "学生收到的耳机右声道没声音，打客服电话",
+      "goal": "让学生说清问题、提出诉求，并坚持到拿到一个明确的解决方案",
+      "opener": "Thank you for calling customer support. My name is Jordan. How can I help you today?",
+      "keyPhrases": [
+        "I'd like to report a problem with...",
+        "It stopped working after...",
+        "I'd prefer a replacement",
+        "Could you confirm that in writing?"
+      ]
+    },
+    {
+      "id": "view-pros-cons",
+      "emoji": "⚖️",
+      "level": "intermediate",
+      "category": "观点与谈判",
+      "title": "分析利弊",
+      "brief": "列出两面、给出结论",
+      "aiRole": "一位让你帮忙分析的朋友",
+      "setting": "朋友在纠结一个决定，让学生帮着分析",
+      "goal": "让学生条理清楚地列出利弊，并给出自己的建议和理由",
+      "opener": "I really can't decide. What would you do?",
+      "keyPhrases": [
+        "On the one hand...",
+        "But then again...",
+        "The way I'd weigh it...",
+        "If it were me, I'd..."
+      ]
+    },
+    {
+      "id": "view-explain-choice",
+      "emoji": "🧠",
+      "level": "intermediate",
+      "category": "观点与谈判",
+      "title": "解释自己的决定",
+      "brief": "讲清理由、回应质疑",
+      "aiRole": "一位不太理解你决定的家人",
+      "setting": "家人不理解学生做的一个选择",
+      "goal": "让学生讲清理由、回应担忧，并让对方至少理解自己的立场",
+      "opener": "I just don't see why you'd give that up.",
+      "keyPhrases": [
+        "The reason is...",
+        "I know it seems risky",
+        "I've thought about that",
+        "I need you to trust me on this"
+      ]
+    },
+    {
+      "id": "view-persuade",
+      "emoji": "🎯",
+      "level": "intermediate",
+      "category": "观点与谈判",
+      "title": "说服别人接受方案",
+      "brief": "摆理由、回应顾虑",
+      "aiRole": "一位持保留意见的同伴",
+      "setting": "学生想说服同伴采纳自己的方案",
+      "goal": "让学生给出三个层次的理由、逐一回应顾虑，并争取到同意",
+      "opener": "I'm not sold. What if it doesn't work?",
+      "keyPhrases": [
+        "Here's why I think it works",
+        "If that happens, we can...",
+        "What would convince you?",
+        "Can we try it for a week?"
+      ]
+    },
+    {
+      "id": "view-current-events",
+      "emoji": "📰",
+      "level": "intermediate",
+      "category": "观点与谈判",
+      "title": "聊时事新闻",
+      "brief": "表达看法、避免冒犯",
+      "aiRole": "一位立场不同但讲理的人",
+      "setting": "学生和人聊到一个有争议的新闻",
+      "goal": "让学生表达看法、承认对方观点中合理的部分，并保持对话文明",
+      "opener": "I think that's completely the wrong approach.",
+      "keyPhrases": [
+        "I can see why people feel that way",
+        "My take is a bit different",
+        "Where I'd agree with you is...",
+        "It's a complicated issue"
+      ]
+    },
+    {
+      "id": "view-give-advice",
+      "emoji": "💡",
+      "level": "intermediate",
+      "category": "观点与谈判",
+      "title": "给别人建议",
+      "brief": "先听再说、不强加",
+      "aiRole": "一位在诉苦的朋友",
+      "setting": "朋友在倾诉一个难题，似乎想要建议",
+      "goal": "让学生先确认对方想不想要建议，再给出具体可行的意见",
+      "opener": "Ugh, I don't know what to do.",
+      "keyPhrases": [
+        "Do you want advice or just to vent?",
+        "Have you thought about...?",
+        "When that happened to me...",
+        "It's your call in the end"
+      ]
+    },
+    {
+      "id": "view-storytelling",
+      "emoji": "📖",
+      "level": "intermediate",
+      "category": "观点与谈判",
+      "title": "把一件事讲清楚",
+      "brief": "按顺序、有重点",
+      "aiRole": "一位不了解背景的听众",
+      "setting": "学生要向别人讲清一件复杂的事情的来龙去脉",
+      "goal": "让学生按时间顺序讲清背景、经过、结果，并突出关键转折",
+      "opener": "Hold on, start from the beginning.",
+      "keyPhrases": [
+        "So it all started when...",
+        "The key thing to know is...",
+        "And that's when...",
+        "So that's where we are now"
+      ]
+    },
+    {
+      "id": "view-summarize",
+      "emoji": "📌",
+      "level": "intermediate",
+      "category": "观点与谈判",
+      "title": "概括别人说的话",
+      "brief": "复述要点、确认理解",
+      "aiRole": "一位说了一大段话的同事",
+      "setting": "同事讲了很长一段，学生需要确认自己听懂了",
+      "goal": "让学生用一两句话概括对方的要点，并确认有没有遗漏",
+      "opener": "...anyway, that's roughly the situation.",
+      "keyPhrases": [
+        "So if I've got this right...",
+        "The main points are...",
+        "Did I miss anything?",
+        "Let me play that back to you"
+      ]
+    },
+    {
+      "id": "debate-opinion",
+      "emoji": "💭",
+      "level": "advanced",
+      "category": "观点与谈判",
+      "title": "表达并捍卫观点",
+      "brief": "就一个有争议的话题给出立场并回应反驳",
+      "aiRole": "一位喜欢刨根问底但不刻薄的辩论伙伴",
+      "setting": "两人在讨论「远程办公是不是更高效」",
+      "goal": "让学生给出明确立场、至少两条论据，并回应一次反驳",
+      "opener": "So — remote work. I think it kills team culture. Where do you land on that?",
+      "keyPhrases": [
+        "I'd argue that...",
+        "That's a fair point, but...",
+        "The evidence suggests...",
+        "It depends on whether..."
+      ]
+    },
+    {
+      "id": "view-negotiate-split",
+      "emoji": "🤝",
+      "level": "advanced",
+      "category": "观点与谈判",
+      "title": "谈一个分歧的折中",
+      "brief": "各让一步、守住底线",
+      "aiRole": "一位也有底线的对方",
+      "setting": "两人要为一件事达成一个双方都能接受的方案",
+      "goal": "让学生明确自己的底线、找出可让步的部分，并促成协议",
+      "opener": "I can't go any lower than that.",
+      "keyPhrases": [
+        "What matters most to me is...",
+        "I could be flexible on...",
+        "Would it help if...?",
+        "Let's split the difference"
+      ]
+    },
+    {
+      "id": "view-defend-data",
+      "emoji": "📈",
+      "level": "advanced",
+      "category": "观点与谈判",
+      "title": "用数据支撑观点",
+      "brief": "引用证据、回应质疑",
+      "aiRole": "一位质疑你数据的人",
+      "setting": "学生的观点被质疑数据不靠谱",
+      "goal": "让学生说明数据来源、承认局限，并重申结论仍然成立",
+      "opener": "Where did those numbers even come from?",
+      "keyPhrases": [
+        "The data comes from...",
+        "You're right that the sample is small",
+        "Even so, the trend holds",
+        "I can share the source"
+      ]
+    },
+    {
+      "id": "view-devils-advocate",
+      "emoji": "😈",
+      "level": "advanced",
+      "category": "观点与谈判",
+      "title": "为反方辩护",
+      "brief": "站在对立面论证",
+      "aiRole": "一位要求你论证反方的辩论伙伴",
+      "setting": "学生被要求为自己不认同的立场辩护",
+      "goal": "让学生完整地构建反方论证，并承认自己真实的立场",
+      "opener": "Now argue the other side. Convince me.",
+      "keyPhrases": [
+        "The strongest case against is...",
+        "One could argue that...",
+        "For the sake of argument...",
+        "Personally I don't agree, but..."
+      ]
+    },
+    {
+      "id": "view-apologize-formal",
+      "emoji": "📜",
+      "level": "advanced",
+      "category": "观点与谈判",
+      "title": "正式道歉",
+      "brief": "承认、说明影响、补救",
+      "aiRole": "一位受到影响、态度冷淡的对方",
+      "setting": "学生的行为给别人造成了实际损失，需要正式道歉",
+      "goal": "让学生承认具体错误、说明影响、提出补救，并不为自己找借口",
+      "opener": "It caused a lot of problems on our end.",
+      "keyPhrases": [
+        "I want to apologize for...",
+        "I understand the impact was...",
+        "There's no excuse",
+        "Here's what I'd like to do to make it right"
+      ]
+    },
+    {
+      "id": "view-mediate",
+      "emoji": "🕊️",
+      "level": "advanced",
+      "category": "观点与谈判",
+      "title": "调解两个人的矛盾",
+      "brief": "中立、引导、促成",
+      "aiRole": "两位各执一词的同事",
+      "setting": "学生被夹在两个吵架的同事中间",
+      "goal": "让学生保持中立、让双方各说一遍，并引导出一个共同方案",
+      "opener": "He never listens to anything I say!",
+      "keyPhrases": [
+        "Let's hear both sides",
+        "So what I'm hearing is...",
+        "Where do you two actually agree?",
+        "Can we try this going forward?"
+      ]
+    },
+    {
+      "id": "view-public-speech",
+      "emoji": "🎙️",
+      "level": "advanced",
+      "category": "观点与谈判",
+      "title": "做一段即兴发言",
+      "brief": "开场、要点、收尾",
+      "aiRole": "一位临时点名让你发言的主持人",
+      "setting": "学生在活动上被临时叫上台说几句",
+      "goal": "让学生有结构地即兴讲三点，并做一个像样的收尾",
+      "opener": "And now a few words from our guest — come on up!",
+      "keyPhrases": [
+        "Thank you for having me",
+        "There are three things I'd like to say",
+        "To give you an example...",
+        "I'll leave you with this"
+      ]
     }
+  ],
+  "chapters": [
+    "校园生活",
+    "日常生活",
+    "购物消费",
+    "餐饮美食",
+    "交通出行",
+    "住宿旅行",
+    "社交往来",
+    "医疗健康",
+    "银行与手续",
+    "租房与居住",
+    "职场基础",
+    "职场进阶",
+    "兴趣与休闲",
+    "观点与谈判"
   ]
 }

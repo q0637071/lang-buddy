@@ -677,26 +677,29 @@
   // 服务端早就有了（/api/scenarios/* 和聊天里的 scenarioId），一直缺的是这层界面。
   // 走过的场景由服务端记（第一次说话就算走过，不用手动点完成），这里只负责画。
 
-  // 地图上的行进顺序：由易到难，不按 scenarios.json 里的存储顺序。
-  // 没列进来的分类排在最后，这样以后加新分类不会凭空消失。
-  const SCENE_ZONE_ORDER = ['校园', '日常生活', '购物', '社交', '出行', '生活应急', '职场', '表达观点'];
+  // 章节顺序由服务端给（data/scenarios.json 里的 chapters），加一章只改数据
   const SCENE_LEVEL_ORDER = { basic: 0, intermediate: 1, advanced: 2 };
+  // 上一章通关到这个比例，下一章才开。定 0.6 而不是 1.0：
+  // 卡着必须全清才能往下，会把人堵死在一个不感兴趣的章节里。
+  const SCENE_UNLOCK_RATIO = 0.6;
 
-  let sceneList = [];       // 排好序的全部场景
-  let sceneTodayId = null;  // 今天推荐哪个
+  let sceneAll = [];         // 全部 200 个
+  let sceneChapters = [];    // 章节名，按顺序
+  let sceneChapterIdx = 0;   // 当前看的是第几章
+  let sceneTodayId = null;
 
-  function sortedScenes(list) {
-    return list.slice().sort((a, b) => {
-      const za = SCENE_ZONE_ORDER.indexOf(a.category);
-      const zb = SCENE_ZONE_ORDER.indexOf(b.category);
-      // indexOf 返回 -1 的（新分类）要排到最后，不能让 -1 冒到最前面
-      const ra = za === -1 ? SCENE_ZONE_ORDER.length : za;
-      const rb = zb === -1 ? SCENE_ZONE_ORDER.length : zb;
-      if (ra !== rb) return ra - rb;
-      const la = SCENE_LEVEL_ORDER[a.level] ?? 9;
-      const lb = SCENE_LEVEL_ORDER[b.level] ?? 9;
-      return la - lb;
-    });
+  function scenesOf(chapter) {
+    return sceneAll.filter(s => s.category === chapter)
+      .sort((a, b) => (SCENE_LEVEL_ORDER[a.level] ?? 9) - (SCENE_LEVEL_ORDER[b.level] ?? 9));
+  }
+  const chapterDone = (c) => scenesOf(c).filter(s => s.doneCount > 0).length;
+
+  // 第一章永远开着；之后每一章要看上一章过了多少
+  function chapterUnlocked(i) {
+    if (i <= 0) return true;
+    const prev = scenesOf(sceneChapters[i - 1]);
+    if (!prev.length) return true;
+    return chapterDone(sceneChapters[i - 1]) / prev.length >= SCENE_UNLOCK_RATIO;
   }
 
   async function renderScenarios() {
@@ -705,12 +708,27 @@
         api('/scenarios/list'),
         api('/scenarios/daily').catch(() => null),
       ]);
-      sceneList = sortedScenes(listData.scenarios || []);
-      // 用户说的是"每天一个"，所以只取计划里的第一个当今日场景。
-      // 服务端一次给三个，多出来的两个不丢——它们在地图上照样能点。
-      const today = dailyData?.plan?.[0] || null;
-      sceneTodayId = today?.id || null;
+      sceneAll = listData.scenarios || [];
+      // 服务端没给章节列表时，退回"按出现顺序去重"，保证地图还能用
+      sceneChapters = (listData.chapters && listData.chapters.length)
+        ? listData.chapters
+        : [...new Set(sceneAll.map(s => s.category))];
 
+      // 默认落在"正在打的那一章"：第一个没通关且已解锁的章节
+      let idx = sceneChapters.findIndex((c, i) =>
+        chapterUnlocked(i) && chapterDone(c) < scenesOf(c).length);
+      if (idx === -1) idx = 0;
+      sceneChapterIdx = idx;
+
+      // 今日场景不能指向一个锁着的章节——推给用户一个他点不开的关卡很荒谬。
+      // 先在服务端给的每日计划里挑一个已解锁的；都不合格就退回"当前章节里
+      // 下一个没过的关"，这样任何时候都有一个能点得动的今日目标。
+      const unlocked = new Set(
+        sceneChapters.filter((c, i) => chapterUnlocked(i)));
+      const today = (dailyData?.plan || []).find(p => unlocked.has(p.category))
+        || scenesOf(sceneChapters[idx]).find(s => !s.doneCount)
+        || null;
+      sceneTodayId = today?.id || null;
       const box = $('#sceneToday');
       if (today) {
         $('#sceneTodayEmoji').textContent = today.emoji || '💬';
@@ -722,75 +740,122 @@
         box.hidden = true;
       }
 
-      const done = sceneList.filter(s => s.doneCount > 0).length;
-      $('#sceneProgressText').textContent = `${done} / ${sceneList.length}`;
+      const done = sceneAll.filter(s => s.doneCount > 0).length;
+      $('#sceneProgressText').textContent = `${done} / ${sceneAll.length} 关`;
       $('#sceneProgressFill').style.width =
-        sceneList.length ? `${Math.round(done / sceneList.length * 100)}%` : '0%';
+        sceneAll.length ? `${Math.round(done / sceneAll.length * 100)}%` : '0%';
 
+      renderChapterTabs();
       layoutSceneMap();
     } catch (err) {
       toast(err.message || '情景地图加载失败');
     }
   }
 
+  function renderChapterTabs() {
+    const box = $safe('#sceneChapters');
+    if (!box) return;
+    box.innerHTML = sceneChapters.map((c, i) => {
+      const rows = scenesOf(c);
+      const d = chapterDone(c);
+      const open = chapterUnlocked(i);
+      const cls = ['scene-chip'];
+      if (i === sceneChapterIdx) cls.push('active');
+      if (!open) cls.push('locked');
+      if (d === rows.length && rows.length) cls.push('cleared');
+      return `<button type="button" class="${cls.join(' ')}" data-chapter="${i}">
+        ${open ? '' : '🔒 '}${escapeHtml(c)}
+        <span class="scene-chip-num">${d}/${rows.length}</span>
+      </button>`;
+    }).join('');
+    // 让当前章节滚进可视范围，否则第 12 章时要自己横向拖很久
+    const on = box.querySelector('.scene-chip.active');
+    if (on) on.scrollIntoView({ block: 'nearest', inline: 'center' });
+  }
+
+  $('#sceneChapters').addEventListener('click', (e) => {
+    const chip = e.target.closest('.scene-chip');
+    if (!chip) return;
+    const i = Number(chip.dataset.chapter);
+    if (!chapterUnlocked(i)) {
+      // 直接说"先过前一章"没用——前一章可能自己也锁着，等于让人去解一个
+      // 同样打不开的锁。要指向他现在真能动手的那一章。
+      let k = i;
+      while (k > 0 && !chapterUnlocked(k)) k--;
+      const cur = sceneChapters[k];
+      const need = Math.max(1, Math.ceil(scenesOf(cur).length * SCENE_UNLOCK_RATIO) - chapterDone(cur));
+      toast(k === i - 1
+        ? `再过 ${need} 关「${cur}」，这一章就开了`
+        : `还没解锁。从「${cur}」开始，再过 ${need} 关就能往下走`);
+      return;
+    }
+    sceneChapterIdx = i;
+    renderChapterTabs();
+    layoutSceneMap();
+    $('#sceneMap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
   // 节点沿一条正弦曲线铺开。位置必须按容器实际宽度算，所以每次显示和
   // 窗口变化时都要重算；宽度为 0 时直接跳过——算出来会是 NaN，
   // 写进 SVG 的 d 属性会让整条路径消失（这个坑在功能星球上踩过一次）。
+  // 一次只画当前这一章（12-15 关）。200 关全铺在一条路上是两万多像素高，
+  // 滚到第 12 章要划几十屏，等于没有地图。
   function layoutSceneMap() {
     const stage = $safe('#sceneMap');
     const nodesBox = $safe('#sceneMapNodes');
     const svg = $safe('#sceneMapPath');
-    if (!stage || !nodesBox || !svg || !sceneList.length) return;
+    if (!stage || !nodesBox || !svg || !sceneChapters.length) return;
+    const chapter = sceneChapters[sceneChapterIdx];
+    const rows = scenesOf(chapter);
+    if (!rows.length) return;
     const W = stage.clientWidth;
-    if (!(W > 0)) return;
+    if (!(W > 0)) return;   // 宽度为 0 时算出来是 NaN，整条路径会消失
 
-    const STEP = W < 420 ? 96 : 112;      // 相邻两个点的垂直间距
+    const STEP = W < 420 ? 96 : 112;
     const TOP = 54;
-    const amp = Math.min(W * 0.3, 118);   // 左右摆动幅度
+    const amp = Math.min(W * 0.3, 118);
     const cx = W / 2;
-    const H = TOP + (sceneList.length - 1) * STEP + 70;
+    const H = TOP + (rows.length - 1) * STEP + 70;
 
     stage.style.height = H + 'px';
     nodesBox.style.height = H + 'px';
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
 
-    const pts = sceneList.map((s, i) => ({
-      x: cx + amp * Math.sin(i * 0.82),
-      y: TOP + i * STEP,
-    }));
+    const pts = rows.map((s, i) => ({ x: cx + amp * Math.sin(i * 0.82), y: TOP + i * STEP }));
 
-    // 用二次贝塞尔把相邻两点连成平滑的路，控制点取在两点之间的横向拐角处
     let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
     for (let i = 1; i < pts.length; i++) {
       const p = pts[i], q = pts[i - 1];
       const my = (q.y + p.y) / 2;
       d += ` C ${q.x.toFixed(1)} ${my.toFixed(1)}, ${p.x.toFixed(1)} ${my.toFixed(1)}, ${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
     }
-    svg.innerHTML =
-      `<path d="${d}" fill="none" stroke="var(--border)" stroke-width="4" stroke-linecap="round"/>`;
+    svg.innerHTML = `<path d="${d}" fill="none" stroke="var(--border)" stroke-width="4" stroke-linecap="round"/>`;
 
-    // 节点和区域标签
-    let html = '';
-    let lastZone = null;
-    sceneList.forEach((s, i) => {
+    const LV = { basic: '入门', intermediate: '进阶', advanced: '高阶' };
+    nodesBox.innerHTML = rows.map((s, i) => {
       const p = pts[i];
-      if (s.category !== lastZone) {
-        lastZone = s.category;
-        // 标签放在这一段的对侧，避免压住节点本身
-        const onLeft = p.x > cx;
-        const zx = onLeft ? 6 : W - 6;
-        html += `<div class="scene-zone" style="left:${zx}px;top:${(p.y - 34).toFixed(1)}px;${onLeft ? '' : 'transform:translate(-100%,-50%);'}">${escapeHtml(s.category)}</div>`;
-      }
       const cls = ['scene-node'];
       if (s.doneCount > 0) cls.push('done');
       if (s.id === sceneTodayId) cls.push('today');
-      html += `<button type="button" class="${cls.join(' ')}" data-scene="${escapeHtml(s.id)}"
+      return `<button type="button" class="${cls.join(' ')}" data-scene="${escapeHtml(s.id)}"
+        title="${escapeHtml(LV[s.level] || s.level)} · ${escapeHtml(s.brief || '')}"
         style="left:${p.x.toFixed(1)}px;top:${p.y.toFixed(1)}px;">
+        <span class="scene-node-num">${i + 1}</span>
         <span class="scene-node-dot">${escapeHtml(s.emoji || '💬')}${s.doneCount > 0 ? '<span class="scene-node-flag">✓</span>' : ''}</span>
         <span class="scene-node-label">${escapeHtml(s.title)}</span>
       </button>`;
-    });
-    nodesBox.innerHTML = html;
+    }).join('');
+
+    // 整章通关了给个奖励提示，这是"过关"最值得做的一下
+    const doneN = rows.filter(s => s.doneCount > 0).length;
+    const banner = $safe('#sceneChapterDone');
+    if (banner) {
+      const all = doneN === rows.length;
+      banner.textContent = all
+        ? `🏅 「${chapter}」全章通关！${sceneChapterIdx + 1 < sceneChapters.length ? '下一章已解锁' : '你已走完整张地图'}`
+        : '';
+      banner.hidden = !all;
+    }
   }
 
   // 窗口尺寸变了要重排，否则横竖屏切换后节点会错位

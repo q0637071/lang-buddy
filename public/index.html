@@ -395,7 +395,7 @@
   <section class="view" id="view-scenarios" hidden>
     <div class="container container-narrow">
       <h2 class="page-title">情景地图</h2>
-      <p class="page-sub">一天走一个场景，和 AI 演一遍真实对话。练过的会自动插上旗子。</p>
+      <p class="page-sub">200 关分成 14 章，一天走一关。和 AI 把场景演一遍，过关的自动插上旗子。</p>
 
       <div class="scene-today" id="sceneToday" hidden>
         <div class="scene-today-tag">今日场景</div>
@@ -416,6 +416,10 @@
         </div>
         <div class="scene-progress-bar"><div class="scene-progress-fill" id="sceneProgressFill"></div></div>
       </div>
+
+      <!-- 章节切换。200 关分成 14 章，一次只画一章 -->
+      <div class="scene-chapters" id="sceneChapters"></div>
+      <div class="scene-chapter-done" id="sceneChapterDone" hidden></div>
 
       <div class="scene-map" id="sceneMap">
         <svg class="scene-map-path" id="sceneMapPath" aria-hidden="true"></svg>

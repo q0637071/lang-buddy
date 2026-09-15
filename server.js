@@ -1881,6 +1881,11 @@ function readScenarios() {
 function findScenario(id) {
   return readScenarios().find(s => s.id === id) || null;
 }
+// 章节顺序在数据文件里定，不写死在前端——加一章只改数据，不用动代码
+function readScenarioChapters() {
+  readScenarios();
+  return scenariosCache.chapters || [];
+}
 
 // AI 对话的"对象"（人设）。和场景是两回事：场景决定聊什么，人设决定跟谁聊，
 // 两者可以叠加——同一个咖啡点单场景，换成严格教练和换成闲聊朋友，体验完全不同。
@@ -2033,6 +2038,7 @@ app.get('/api/scenarios/list', requireAuth, (req, res) => {
   const user = db.users[req.session.userId];
   const done = user.scenarioLog || {};
   res.json({
+    chapters: readScenarioChapters(),
     scenarios: readScenarios().map(s => ({
       id: s.id, emoji: s.emoji, title: s.title, brief: s.brief,
       level: s.level, category: s.category, keyPhrases: s.keyPhrases,
