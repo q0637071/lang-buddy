@@ -682,6 +682,9 @@
   // 上一章通关到这个比例，下一章才开。定 0.6 而不是 1.0：
   // 卡着必须全清才能往下，会把人堵死在一个不感兴趣的章节里。
   const SCENE_UNLOCK_RATIO = 0.6;
+  // 章节锁的总开关。现在先关掉，让所有章节都能直接进去看。
+  // 要恢复"按章解锁"，把这里改回 true 就行，解锁的算法原样留着没删。
+  const SCENE_LOCK_ENABLED = false;
 
   let sceneAll = [];         // 全部 200 个
   let sceneChapters = [];    // 章节名，按顺序
@@ -696,6 +699,7 @@
 
   // 第一章永远开着；之后每一章要看上一章过了多少
   function chapterUnlocked(i) {
+    if (!SCENE_LOCK_ENABLED) return true;
     if (i <= 0) return true;
     const prev = scenesOf(sceneChapters[i - 1]);
     if (!prev.length) return true;
@@ -1056,9 +1060,12 @@
     const banner = $safe('#sceneChapterDone');
     if (banner) {
       const all = doneN === rows.length;
-      banner.textContent = all
-        ? `🏅 「${chapter}」全章通关！${sceneChapterIdx + 1 < sceneChapters.length ? '下一章已解锁' : '你已走完整张地图'}`
-        : '';
+      const more = sceneChapterIdx + 1 < sceneChapters.length;
+      // 锁关着的时候别说"下一章已解锁"——它本来就一直开着，这话是假的
+      const tail = !more ? '你已走完整张地图'
+        : SCENE_LOCK_ENABLED ? '下一章已解锁'
+        : `接着走「${sceneChapters[sceneChapterIdx + 1]}」`;
+      banner.textContent = all ? `🏅 「${chapter}」全章通关！${tail}` : '';
       banner.hidden = !all;
     }
   }
