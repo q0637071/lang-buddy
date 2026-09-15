@@ -798,6 +798,94 @@
   // 节点沿一条正弦曲线铺开。位置必须按容器实际宽度算，所以每次显示和
   // 窗口变化时都要重算；宽度为 0 时直接跳过——算出来会是 NaN，
   // 写进 SVG 的 d 属性会让整条路径消失（这个坑在功能星球上踩过一次）。
+  // 地图两侧的草木。必须是"给定章节就固定"的，不能用 Math.random——
+  // 每次重排（切章、转屏）草丛都换位置的话，看起来像页面在抽搐。
+  function seededRandom(seed) {
+    let a = seed * 747796405 + 2891336453;
+    return () => {
+      a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // 一丛灌木：底下一圈影子撑出体积，上面三四个深浅不同的椭圆。
+  // 没有影子的话叠出来是几个平贴的色块，一眼就假。
+  function bush(x, y, r, hue) {
+    const e = (cx, cy, rx, ry, fill, op) =>
+      `<ellipse cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" rx="${rx.toFixed(1)}" ry="${ry.toFixed(1)}" fill="${fill}"${op ? ` opacity="${op}"` : ''}/>`;
+    return e(x, y + r * .48, r * .95, r * .3, '#3c5f1e', '.25')
+      + e(x - r * .55, y + r * .18, r * .72, r * .62, hue[0])
+      + e(x + r * .52, y + r * .22, r * .66, r * .58, hue[0])
+      + e(x, y - r * .28, r * .85, r * .74, hue[1])
+      + e(x - r * .2, y - r * .5, r * .4, r * .34, hue[2])
+      + e(x - r * .38, y - r * .58, r * .18, r * .15, '#9fd15e', '.55');
+  }
+
+  // 草丛：三根小草叶，撒在空地上填空
+  function grassTuft(x, y, s, color) {
+    const p = (dx, h, bend) =>
+      `<path d="M ${(x + dx).toFixed(1)} ${y.toFixed(1)} q ${bend} ${(-h / 2).toFixed(1)} ${(bend / 2).toFixed(1)} ${(-h).toFixed(1)}" fill="none" stroke="${color}" stroke-width="${(s * .22).toFixed(1)}" stroke-linecap="round"/>`;
+    return p(-s * .4, s, 2) + p(0, s * 1.25, -1.5) + p(s * .4, s * .85, 2.5);
+  }
+
+  function sceneDecor(W, H, seed) {
+    const rnd = seededRandom(seed + 1);
+    const GREENS = [
+      ['#4e7c2a', '#5d9133', '#6ea63d'],
+      ['#3f6b22', '#4f8129', '#5f9633'],
+      ['#57892f', '#67a038', '#79b545'],
+    ];
+    let out = '';
+
+    // 草地上的斑块，打散纯色
+    for (let i = 0; i < 26; i++) {
+      const x = rnd() * W, y = rnd() * H;
+      const r = 26 + rnd() * 54;
+      out += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="${r.toFixed(1)}" ry="${(r * .45).toFixed(1)}" fill="#ffffff" opacity="${(0.03 + rnd() * .05).toFixed(3)}"/>`;
+    }
+
+    // 两侧的草木带。锚点故意放到画布外一点，让草丛从边缘"探"进来、边上被裁掉。
+    // 宽屏上两边空得慌，就让草丛能往里长一些——能往里长多少取决于路面占了多宽，
+    // 写死一个值的话手机上草会压到关卡名上。
+    const amp = Math.min(W * 0.3, 148);
+    const inward = Math.max(0, W / 2 - amp - 70);
+    const step = 74;
+    for (let y = 28; y < H - 10; y += step) {
+      for (const side of [0, 1]) {
+        const jitterY = y + (rnd() - .5) * 26;
+        const r = 26 + rnd() * 20;
+        // base 是"贴着边、略微探到画布外"，pen 是再往里长多少
+        const base = -18 + rnd() * 22;
+        const pen = rnd() * inward;
+        const x = side ? W - base - pen : base + pen;
+        out += bush(x, jitterY, r, GREENS[Math.floor(rnd() * GREENS.length)]);
+        // 偶尔配一小丛花，纯粹为了不那么单调
+        if (rnd() > .55) {
+          const fx = x + (side ? -1 : 1) * (r * .9 + rnd() * 14);
+          const fy = jitterY + (rnd() - .5) * 30;
+          const c = ['#f2c0d8', '#ffe07a', '#b9dcff'][Math.floor(rnd() * 3)];
+          out += `<circle cx="${fx.toFixed(1)}" cy="${fy.toFixed(1)}" r="3.4" fill="${c}"/>`
+            + `<circle cx="${(fx + 7).toFixed(1)}" cy="${(fy + 5).toFixed(1)}" r="2.6" fill="${c}" opacity=".85"/>`;
+        }
+      }
+    }
+
+    // 草丛和小石头，撒在空地上。中间那条 120px 宽的带子留给路和关卡，
+    // 不然草会长到路面上、还挡住关卡名字。
+    const cx = W / 2;
+    const keepClear = amp + 55;   // 路面和关卡名占掉的中间地带
+    for (let i = 0; i < 46; i++) {
+      const x = rnd() * W, y = 20 + rnd() * (H - 40);
+      if (Math.abs(x - cx) < keepClear) continue;
+      out += rnd() > .3
+        ? grassTuft(x, y, 9 + rnd() * 7, rnd() > .5 ? '#4f8129' : '#5f9633')
+        : `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="${(4 + rnd() * 4).toFixed(1)}" ry="${(3 + rnd() * 2.5).toFixed(1)}" fill="#8aa06a" opacity=".55"/>`;
+    }
+    return out;
+  }
+
   // 一次只画当前这一章（12-15 关）。200 关全铺在一条路上是两万多像素高，
   // 滚到第 12 章要划几十屏，等于没有地图。
   function layoutSceneMap() {
@@ -811,9 +899,9 @@
     const W = stage.clientWidth;
     if (!(W > 0)) return;   // 宽度为 0 时算出来是 NaN，整条路径会消失
 
-    const STEP = W < 420 ? 96 : 112;
-    const TOP = 54;
-    const amp = Math.min(W * 0.3, 118);
+    const STEP = W < 420 ? 108 : 122;   // 关卡名会换成两行，间距小了就会撞上下一关
+    const TOP = 58;
+    const amp = Math.min(W * 0.3, 148);
     const cx = W / 2;
     const H = TOP + (rows.length - 1) * STEP + 70;
 
@@ -829,7 +917,16 @@
       const my = (q.y + p.y) / 2;
       d += ` C ${q.x.toFixed(1)} ${my.toFixed(1)}, ${p.x.toFixed(1)} ${my.toFixed(1)}, ${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
     }
-    svg.innerHTML = `<path d="${d}" fill="none" stroke="var(--border)" stroke-width="4" stroke-linecap="round"/>`;
+    // 土路 + 两边的草木。描三层：深色描边压出路沿、土色路面、中间一条浅色虚线，
+    // 三层用同一个 d，所以路一定跟着关卡走，不会出现"路和点对不上"。
+    svg.innerHTML =
+      sceneDecor(W, H, sceneChapterIdx)
+      + `<path d="${d}" fill="none" stroke="#5b8a2e" stroke-width="34" stroke-linecap="round" stroke-linejoin="round" opacity=".55"/>`
+      + `<path d="${d}" fill="none" stroke="#c8a96a" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>`
+      + `<path d="${d}" fill="none" stroke="#dcc28e" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>`
+      // 路面上的碎石质感：一层粗虚线压暗、一层细虚线提亮，比纯色路面有土感
+      + `<path d="${d}" fill="none" stroke="#b9975a" stroke-width="12" stroke-linecap="round" stroke-dasharray="3 26" opacity=".5"/>`
+      + `<path d="${d}" fill="none" stroke="#efdcb0" stroke-width="5" stroke-linecap="round" stroke-dasharray="10 30" opacity=".55"/>`;
 
     const LV = { basic: '入门', intermediate: '进阶', advanced: '高阶' };
     nodesBox.innerHTML = rows.map((s, i) => {
@@ -840,8 +937,7 @@
       return `<button type="button" class="${cls.join(' ')}" data-scene="${escapeHtml(s.id)}"
         title="${escapeHtml(LV[s.level] || s.level)} · ${escapeHtml(s.brief || '')}"
         style="left:${p.x.toFixed(1)}px;top:${p.y.toFixed(1)}px;">
-        <span class="scene-node-num">${i + 1}</span>
-        <span class="scene-node-dot">${escapeHtml(s.emoji || '💬')}${s.doneCount > 0 ? '<span class="scene-node-flag">✓</span>' : ''}</span>
+        <span class="scene-node-dot">${escapeHtml(s.emoji || '💬')}<span class="scene-node-num">${i + 1}</span>${s.doneCount > 0 ? '<span class="scene-node-flag">✓</span>' : ''}</span>
         <span class="scene-node-label">${escapeHtml(s.title)}</span>
       </button>`;
     }).join('');
