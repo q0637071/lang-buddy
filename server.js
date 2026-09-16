@@ -1412,6 +1412,35 @@ app.get('/api/meta/languages', (req, res) => {
 
 // ==================== AI 1对1 对话 ====================
 
+// ---- 每位老师一条独立的对话线 ----
+// 原来全用户共一个 user.chatHistory，换老师时新老师会继承一段她没参与过的对话：
+// 跟面试官做完模拟面试再切到"闲聊的朋友"，模型拿到的还是那份面试记录，
+// 要么继续面试你、要么突然改口，两种都别扭。分线之后，上下文和人设永远配套。
+const CHAT_THREAD_MAX = 60;   // 每条线最多存 30 轮
+function threadKey(personaId) {
+  const p = personaId ? findPersona(personaId) : null;
+  return p ? p.id : (readPersonas()[0]?.id || 'default');
+}
+/// 把老的单条 chatHistory 搬到默认老师名下。只搬一次，搬完把老字段删掉。
+/// 不能直接丢——那是用户真实的聊天记录。
+function migrateChatThreads(user) {
+  if (!user.chatThreads || typeof user.chatThreads !== 'object') user.chatThreads = {};
+  if (!Array.isArray(user.chatHistory)) { delete user.chatHistory; return false; }
+  if (user.chatHistory.length) {
+    const key = threadKey(null);
+    // 默认那条线上已经有东西就接在前面，别覆盖
+    user.chatThreads[key] = user.chatHistory.concat(user.chatThreads[key] || [])
+      .slice(-CHAT_THREAD_MAX);
+  }
+  delete user.chatHistory;
+  return true;
+}
+function chatThread(user, key) {
+  migrateChatThreads(user);
+  const t = user.chatThreads[key];
+  return Array.isArray(t) ? t : [];
+}
+
 app.post('/api/chat', allowMemberOrFreeQuota('chat', { type: 'window', windowMs: 5 * 60 * 1000 }), rateLimit(15), async (req, res) => {
   const { message, history, inputLang, replyLang, scenarioId, personaId } = req.body || {};
   if (!message || !String(message).trim()) return res.status(400).json({ error: '消息不能为空' });
@@ -1479,10 +1508,17 @@ ${persona.prompt}` : '';
     user.chatCount = (user.chatCount || 0) + 1;
     // 把这轮对话存到用户账号下，下次登录（换设备也一样）能接着上次的对话继续，
     // 只保留最近60条（30轮），避免无限增长
-    if (!Array.isArray(user.chatHistory)) user.chatHistory = [];
-    user.chatHistory.push({ role: 'user', content: String(message).trim() });
-    user.chatHistory.push({ role: 'ai', content: reply });
-    if (user.chatHistory.length > 60) user.chatHistory = user.chatHistory.slice(-60);
+    // 存进这位老师自己的那条线，别人的线不受影响。
+    // 情景练习不入库：那是一次性的角色扮演，混进"我跟这位老师的日常对话"里，
+    // 下次进来会看到半截咖啡店点单，莫名其妙。过没过关由 scenarioLog 单独记。
+    migrateChatThreads(user);
+    if (!scenario) {
+      const tk = threadKey(personaId);
+      const thread = Array.isArray(user.chatThreads[tk]) ? user.chatThreads[tk] : [];
+      thread.push({ role: 'user', content: String(message).trim() });
+      thread.push({ role: 'ai', content: reply });
+      user.chatThreads[tk] = thread.slice(-CHAT_THREAD_MAX);
+    }
 
     // 情景练习的完成记录。以"当天说过话"为准而不是等用户点完成——
     // 没人会记得去点，那样的完成率数据也没意义
@@ -1509,15 +1545,26 @@ ${persona.prompt}` : '';
 app.get('/api/chat/history', requireAuth, (req, res) => {
   const db = loadDB();
   const user = db.users[req.session.userId];
-  res.json({ history: Array.isArray(user.chatHistory) ? user.chatHistory : [] });
+  const key = threadKey(req.query.personaId);
+  const changed = migrateChatThreads(user);
+  if (changed) saveDB(db);
+  res.json({ personaId: key, history: chatThread(user, key) });
 });
 
+// 默认只清当前这位老师的那条线。传 all=true 才全清——
+// "清空对话"在按老师分线之后，最自然的理解是"清掉我跟这个人说过的"，
+// 一按就把八条线全抹了太狠。
 app.post('/api/chat/clear', requireAuth, (req, res) => {
   const db = loadDB();
   const user = db.users[req.session.userId];
-  user.chatHistory = [];
+  migrateChatThreads(user);
+  if (req.body?.all) {
+    user.chatThreads = {};
+  } else {
+    delete user.chatThreads[threadKey(req.body?.personaId)];
+  }
   saveDB(db);
-  res.json({ ok: true });
+  res.json({ ok: true, cleared: req.body?.all ? 'all' : threadKey(req.body?.personaId) });
 });
 
 // ==================== 数字人实时视频对话（Tavus） ====================

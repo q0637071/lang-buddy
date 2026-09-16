@@ -639,22 +639,20 @@
       '🎁 非会员每天可免费体验 5 分钟 AI 对话，开通会员畅享无限时长。',
       '🎁 当前可试用 1 分钟 AI 对话，在"我的"页面验证手机号即可解锁每天 5 分钟。');
     $('#tutorPanel').hidden = false;
-    renderPersonaRow('personaRowChat', false);
+    // 必须先把老师列表拿到。下面接对话线要知道"当前是哪位老师"，
+    // 不等的话第一次进页面会退回那句没有名字的通用问候，头像也是空的。
+    await renderPersonaRow('personaRowChat', false);
 
     const toggle = $('#autoSpeakToggle');
     toggle.checked = state.autoSpeak;
     toggle.onchange = () => { state.autoSpeak = toggle.checked; };
 
-    // 第一次进入这个页面时，把上次登录留下的对话记录从服务端接回来接着聊
+    // 把当前这位老师的对话线接回来接着聊。不再拉全局那一条：
+    // 每位老师各聊各的，换人不会看到别人的对话
     if (!state.chatHistoryLoaded) {
       state.chatHistoryLoaded = true;
-      try {
-        const data = await api('/chat/history');
-        if (Array.isArray(data.history) && data.history.length) {
-          state.chatHistory = data.history;
-          replayChatHistory(data.history);
-        }
-      } catch { /* 拿不到历史记录不影响正常使用，忽略即可 */ }
+      state.threadPersona = null;
+      await loadPersonaThread();
     }
 
     const inputSel = $('#chatInputLang');
@@ -665,10 +663,7 @@
     inputSel.onchange = () => { state.chatInputLang = inputSel.value; };
     replySel.onchange = () => { state.chatReplyLang = replySel.value; populateVoiceSelect(); };
 
-    if (state.chatHistory.length === 0) {
-      const langN = langName(state.chatReplyLang);
-      appendMsg('ai', `你好！我是你的${langN}私教 👋 我们可以用打字或语音练习对话，随时开始吧！`);
-    }
+    if (state.chatHistory.length === 0 && !state.scene) greetForPersona();
     setupSpeech();
     populateVoiceSelect();
   }
@@ -1146,6 +1141,7 @@
     state.scene = null;
     state.chatHistory = [];
     state.chatHistoryLoaded = false;  // 下次进对话页把原来的闲聊记录接回来
+    state.threadPersona = null;       // 强制重新拉一次，否则会停在场景留下的空屏
     $('#chatWindow').innerHTML = '';
     updateSceneBanner();
     showView('scenarios');
@@ -1238,13 +1234,14 @@
 
   // 生成聊天气泡旁边的小头像。用户没设头像就用昵称首字显示成彩色圆底，
   // 这样即使从没设置过也不会是空白的灰圈
-  function buildAvatarEl(role) {
+  function buildAvatarEl(role, personaId) {
     const el = document.createElement('div');
     el.className = 'msg-avatar ' + (role === 'user' ? 'msg-avatar-user' : 'msg-avatar-ai');
     if (role === 'ai') {
-      // 显示"你正在跟哪位老师聊"。原来用的是那个黄色卡通形象的缩小版，
-      // 但形象和对话对象没有任何关系——你选了 Olivia 面试官，旁边却蹲着个团子。
-      paintPersonaAvatar(el, personaList.find(x => x.id === currentPersonaId()));
+      // 显示"这句话是哪位老师说的"。注意是"说这句话的人"而不是"当前选中的人"——
+      // 按当前选中的人画，换老师之后 Olivia 说过的话会顶着 Lucy 的脸，等于篡改记录。
+      const id = personaId || currentPersonaId();
+      paintPersonaAvatar(el, personaList.find(x => x.id === id));
       return el;
     }
     const av = state.user?.avatar;
@@ -1262,7 +1259,7 @@
     return el;
   }
 
-  function buildMsgEl(role, text) {
+  function buildMsgEl(role, text, personaId) {
     // 外层负责排版（头像 + 气泡左右分布），气泡本身还是原来那个 .msg
     const row = document.createElement('div');
     row.className = 'msg-row ' + (role === 'user' ? 'msg-row-user' : 'msg-row-ai');
@@ -1279,15 +1276,17 @@
       bubble.appendChild(speak);
     }
 
-    row.appendChild(buildAvatarEl(role));
+    row.appendChild(buildAvatarEl(role, personaId));
     row.appendChild(bubble);
     return row;
   }
 
   function appendMsg(role, text, opts = {}) {
-    state.chatHistory.push({ role, content: text });
+    // 记下这句是谁说的。不记的话，之后换了老师再重画，就分不出谁是谁了
+    const speaker = role === 'ai' ? (opts.personaId || currentPersonaId()) : null;
+    state.chatHistory.push({ role, content: text, ...(speaker ? { personaId: speaker } : {}) });
     const win = $('#chatWindow');
-    win.appendChild(buildMsgEl(role, text));
+    win.appendChild(buildMsgEl(role, text, speaker));
     win.scrollTop = win.scrollHeight;
     if (role === 'ai' && state.autoSpeak) {
       speakText(text, null, opts.onSpeakEnd);
@@ -1313,30 +1312,41 @@
     }
   }
 
-  // 换了老师之后，屏幕上已有的 AI 气泡头像要跟着换。
-  // 关键是"先把新照片下好，再一次性换上去"：直接改 src 的话，
-  // 新图下载这段时间每一格都是空白，一屏头像会齐刷刷闪一下。
-  function refreshChatAvatars() {
-    const cur = currentPersonaId();
-    const p = personaList.find(x => x.id === cur);
-    const todo = $all('#chatWindow .msg-avatar-ai').filter(el => el.dataset.persona !== cur);
-    if (!todo.length) return;
-    const paint = () => todo.forEach(el => paintPersonaAvatar(el, p));
-    if (p?.photo) {
-      const pre = new Image();
-      pre.onload = pre.onerror = paint;   // 失败也要换，否则永远停在上一位老师
-      pre.src = p.photo;
-      if (pre.complete) paint();          // 已经在缓存里就别等下一帧
-    } else {
-      paint();
+  // 换老师 = 换一条对话线。每位老师各聊各的，就像换了个联系人：
+  // 切过去看到的是跟她说过的话，切回来原来那段还在。
+  // （原来全站共用一条记录，换人之后新老师会继承一段她没参与过的对话，
+  //   模型拿着面试记录去扮演"闲聊的朋友"，怎么答都别扭。）
+  async function loadPersonaThread() {
+    const win = $safe('#chatWindow');
+    if (!win || state.scene) return;   // 情景练习中不切线，那是另一码事
+    const id = currentPersonaId();
+    if (!id || state.threadPersona === id) return;
+    state.threadPersona = id;
+    try {
+      const d = await api('/chat/history?personaId=' + encodeURIComponent(id));
+      state.chatHistory = Array.isArray(d.history) ? d.history : [];
+    } catch {
+      state.chatHistory = [];   // 拿不到就当空的，别把上一位老师的记录留在屏幕上
     }
+    state.chatHistoryLoaded = true;
+    replayChatHistory(state.chatHistory);
+    if (!state.chatHistory.length) greetForPersona();
+  }
+
+  /// 空对话时的开场白。带上老师的名字，才看得出确实换人了
+  function greetForPersona() {
+    const p = personaList.find(x => x.id === currentPersonaId());
+    const langN = langName(state.chatReplyLang);
+    appendMsg('ai', p
+      ? `你好，我是 ${p.name}（${p.title}）👋 ${p.brief}，我们开始吧！`
+      : `你好！我是你的${langN}私教 👋 我们可以用打字或语音练习对话，随时开始吧！`);
   }
 
   // 把服务端存的历史对话原样铺回聊天窗口（不重新入队 state.chatHistory，也不触发自动朗读）
   function replayChatHistory(history) {
     const win = $('#chatWindow');
     win.innerHTML = '';
-    history.forEach(({ role, content }) => win.appendChild(buildMsgEl(role, content)));
+    history.forEach(({ role, content, personaId }) => win.appendChild(buildMsgEl(role, content, personaId)));
     win.scrollTop = win.scrollHeight;
   }
 
@@ -1376,7 +1386,12 @@
   }
 
   async function sendChatMessage(message) {
-    appendMsg('user', message);
+    // 记下这句是发给谁的。回复回来时如果人已经换了，就不能再往屏幕上贴——
+    // 否则 Olivia 的回答会落进 Lucy 的对话里（回复在路上时切老师就会这样）。
+    // 服务端已经把它存进 Olivia 那条线了，切回去照样看得到。
+    const sentTo = currentPersonaId();
+    const sentScene = state.scene?.id || null;
+    appendMsg('user', message, { personaId: sentTo });
     $('#chatSendBtn').disabled = true;
     showTypingBubble();
     if (state.voiceCallActive) setCallStatus('thinking', '💭 AI 正在思考...');
@@ -1389,13 +1404,15 @@
           inputLang: state.chatInputLang,
           replyLang: state.chatReplyLang,
           // 跟谁聊。后端据此决定 AI 用什么身份、什么风格、纠不纠错
-          personaId: currentPersonaId(),
+          personaId: sentTo,
           // 在演哪个场景。后端据此给 AI 角色和目标，并记下"这个场景练过了"
-          scenarioId: state.scene?.id || undefined,
+          scenarioId: sentScene || undefined,
         },
       });
       hideTypingBubble();
-      appendMsg('ai', data.reply, { onSpeakEnd: nextVoiceTurn });
+      const stale = currentPersonaId() !== sentTo || (state.scene?.id || null) !== sentScene;
+      if (stale) return;   // 人/场景已经换了，这条回复不属于现在这屏
+      appendMsg('ai', data.reply, { onSpeakEnd: nextVoiceTurn, personaId: sentTo });
       if (state.voiceCallActive) setCallStatus('speaking', '🔊 AI 正在说话...');
     } catch (err) {
       hideTypingBubble();
@@ -1430,14 +1447,17 @@
   });
 
   $('#btnClearChat').addEventListener('click', async () => {
-    if (!confirm('确定要清空所有对话记录吗？此操作无法撤销。')) return;
+    // 分线之后要说清楚清的是谁——一按就把八位老师的记录全抹了太狠，
+    // 而且话术上"清空所有对话"和实际行为也对不上
+    const p = personaList.find(x => x.id === currentPersonaId());
+    const who = p ? `和 ${p.name} 的` : '';
+    if (!confirm(`确定要清空${who}对话记录吗？其他老师的记录不受影响。此操作无法撤销。`)) return;
     try {
-      await api('/chat/clear', { method: 'POST' });
+      await api('/chat/clear', { method: 'POST', body: { personaId: currentPersonaId() } });
       state.chatHistory = [];
       $('#chatWindow').innerHTML = '';
-      const langN = langName(state.chatReplyLang);
-      appendMsg('ai', `你好！我是你的${langN}私教 👋 我们可以用打字或语音练习对话，随时开始吧！`);
-      toast('对话记录已清空');
+      greetForPersona();
+      toast(p ? `已清空和 ${p.name} 的对话` : '对话记录已清空');
     } catch (err) {
       toast(err.message);
     }
@@ -1879,7 +1899,7 @@
         safeSetItem(PERSONA_KEY, btn.dataset.persona);
         updatePersonaSelection(box);             // 只改选中态和说明，不重画
         if (isCall) renderCallFace();
-        refreshChatAvatars();                    // 已经在屏幕上的气泡也换成新老师
+        loadPersonaThread();                     // 换到这位老师自己的对话线
       });
     });
     box.dataset.personaBuilt = String(personaList.length);
