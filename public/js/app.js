@@ -1244,19 +1244,7 @@
     if (role === 'ai') {
       // 显示"你正在跟哪位老师聊"。原来用的是那个黄色卡通形象的缩小版，
       // 但形象和对话对象没有任何关系——你选了 Olivia 面试官，旁边却蹲着个团子。
-      // 老师还没加载出来时先留空，别拿卡通图顶上。
-      const p = personaList.find(x => x.id === currentPersonaId());
-      el.dataset.persona = p?.id || '';
-      if (p?.photo) {
-        const img = document.createElement('img');
-        img.src = p.photo;
-        img.alt = p.name || '';
-        img.loading = 'lazy';
-        el.appendChild(img);
-      } else {
-        el.textContent = p?.emoji || '💬';
-      }
-      if (p) el.title = p.name + ' · ' + p.title;
+      paintPersonaAvatar(el, personaList.find(x => x.id === currentPersonaId()));
       return el;
     }
     const av = state.user?.avatar;
@@ -1310,13 +1298,38 @@
 
   // 换了老师之后，屏幕上已有的 AI 气泡头像要跟着换，
   // 否则同一屏里会出现两位老师的脸，像是刚才那几句是别人说的。
+  /// 把一个头像格子画成某位老师。就地改，不换节点——换节点等于让浏览器
+  /// 重新建 <img>，新图没下完之前那一格是空的，看上去就是"闪一下"。
+  function paintPersonaAvatar(el, p) {
+    el.dataset.persona = p?.id || '';
+    el.title = p ? p.name + ' · ' + p.title : '';
+    if (p?.photo) {
+      let img = el.querySelector('img');
+      if (!img) { img = document.createElement('img'); el.textContent = ''; el.appendChild(img); }
+      if (img.getAttribute('src') !== p.photo) img.src = p.photo;
+      img.alt = p.name || '';
+    } else {
+      el.textContent = p?.emoji || '💬';
+    }
+  }
+
+  // 换了老师之后，屏幕上已有的 AI 气泡头像要跟着换。
+  // 关键是"先把新照片下好，再一次性换上去"：直接改 src 的话，
+  // 新图下载这段时间每一格都是空白，一屏头像会齐刷刷闪一下。
   function refreshChatAvatars() {
     const cur = currentPersonaId();
-    $all('#chatWindow .msg-avatar-ai').forEach(old => {
-      // 本来就是这位老师就别动。无差别重建 <img> 同样会闪一下
-      if (old.dataset.persona === cur) return;
-      old.replaceWith(buildAvatarEl('ai'));
-    });
+    const p = personaList.find(x => x.id === cur);
+    const todo = $all('#chatWindow .msg-avatar-ai').filter(el => el.dataset.persona !== cur);
+    if (!todo.length) return;
+    const paint = () => todo.forEach(el => paintPersonaAvatar(el, p));
+    if (p?.photo) {
+      const pre = new Image();
+      pre.onload = pre.onerror = paint;   // 失败也要换，否则永远停在上一位老师
+      pre.src = p.photo;
+      if (pre.complete) paint();          // 已经在缓存里就别等下一帧
+    } else {
+      paint();
+    }
   }
 
   // 把服务端存的历史对话原样铺回聊天窗口（不重新入队 state.chatHistory，也不触发自动朗读）
