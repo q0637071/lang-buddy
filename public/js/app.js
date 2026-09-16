@@ -1242,8 +1242,20 @@
     const el = document.createElement('div');
     el.className = 'msg-avatar ' + (role === 'user' ? 'msg-avatar-user' : 'msg-avatar-ai');
     if (role === 'ai') {
-      // 用当前所选形象的缩小版，保证聊天里的小头像和上方大图是同一个形象
-      el.innerHTML = miniAvatarSvg(state.avatarStyle, 34) || '🌟';
+      // 显示"你正在跟哪位老师聊"。原来用的是那个黄色卡通形象的缩小版，
+      // 但形象和对话对象没有任何关系——你选了 Olivia 面试官，旁边却蹲着个团子。
+      // 老师还没加载出来时先留空，别拿卡通图顶上。
+      const p = personaList.find(x => x.id === currentPersonaId());
+      if (p?.photo) {
+        const img = document.createElement('img');
+        img.src = p.photo;
+        img.alt = p.name || '';
+        img.loading = 'lazy';
+        el.appendChild(img);
+      } else {
+        el.textContent = p?.emoji || '💬';
+      }
+      if (p) el.title = p.name + ' · ' + p.title;
       return el;
     }
     const av = state.user?.avatar;
@@ -1293,6 +1305,15 @@
     } else if (opts.onSpeakEnd) {
       opts.onSpeakEnd();
     }
+  }
+
+  // 换了老师之后，屏幕上已有的 AI 气泡头像要跟着换，
+  // 否则同一屏里会出现两位老师的脸，像是刚才那几句是别人说的。
+  function refreshChatAvatars() {
+    $all('#chatWindow .msg-avatar-ai').forEach(old => {
+      const fresh = buildAvatarEl('ai');
+      old.replaceWith(fresh);
+    });
   }
 
   // 把服务端存的历史对话原样铺回聊天窗口（不重新入队 state.chatHistory，也不触发自动朗读）
@@ -1834,6 +1855,7 @@
       btn.addEventListener('click', () => {
         safeSetItem(PERSONA_KEY, btn.dataset.persona);
         renderPersonaRow(containerId, isCall);   // 重画一次，更新选中态和说明
+        refreshChatAvatars();                    // 已经在屏幕上的气泡也换成新老师
       });
     });
     if (isCall) renderCallFace();
@@ -2418,18 +2440,13 @@
       if (head) head.style.transformOrigin = cfg.transformOrigin;
     }
     $all('.avatar-style-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.style === key));
-    // 已经在屏幕上的 AI 气泡也要跟着换，否则要等下一条回复才看得出切换生效
-    $all('.msg-avatar-ai').forEach(el => { el.innerHTML = miniAvatarSvg(key, 34) || '🌟'; });
     safeSetItem('lb_avatar_style', key);
   }
 
-  $all('.avatar-style-btn').forEach(btn => {
-    btn.addEventListener('click', () => applyAvatarStyle(btn.dataset.style));
-  });
-
-  renderAvatarStyleButtons();
+  // 形象切换那排按钮已经从页面上去掉了，所以这里不再绑事件、不再在启动时调用
+  // applyAvatarStyle。特别是不能再让它去刷 .msg-avatar-ai——那会把聊天里的
+  // 老师头像又盖回卡通形象，正好和刚改的相反。
   renderTtsNotices();
-  applyAvatarStyle(safeGetItem('lb_avatar_style') || 'ghost');
 
   // ---------- AI 头像：嘴型随语音张合，配合轻微摆动的"说话姿势" ----------
   // 优先用 SpeechSynthesisUtterance 的 boundary 事件（按实际读到哪个词触发），

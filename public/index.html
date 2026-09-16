@@ -203,16 +203,8 @@
         <button class="btn btn-primary btn-sm" id="btnTutorUpgrade">立即开通会员</button>
       </div>
       <div id="tutorPanel" hidden>
-        <!-- 大头像和“待机中”已移除。下面这排切换按钮留着：
-             它现在决定的是每条 AI 回复旁边那个小头像（buildAvatarEl 里用的同一个形象）。 -->
-        <div class="ai-avatar-wrap">
-          <div class="avatar-style-picker" id="avatarStylePicker">
-            <button type="button" class="avatar-style-btn" data-style="ghost" title="萌怪">🌟</button>
-            <button type="button" class="avatar-style-btn" data-style="robot" title="机器人">🤖</button>
-            <button type="button" class="avatar-style-btn" data-style="human" title="人像">👧</button>
-            <button type="button" class="avatar-style-btn" data-style="western" title="西方女生">👱‍♀️</button>
-          </div>
-        </div>
+        <!-- 大卡通头像和那排形象切换按钮都已移除。
+             聊天里 AI 那边的小头像改成“你正在跟哪位老师聊”，见 buildAvatarEl。 -->
         <div class="lang-pair-row">
           <label>我用 <select id="chatInputLang"></select> 输入</label>
           <span class="lang-pair-arrow">→</span>
