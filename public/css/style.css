@@ -1132,3 +1132,171 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--p
   box-shadow: 0 5px 0 rgba(180,120,10,.35), 0 0 0 6px rgba(255,211,77,.3), 0 8px 18px rgba(25,55,10,.3); }
 .scene-node.today .scene-node-dot::after { border-color: #ffd34d; inset: -10px; }
 .scene-node-flag { width: 22px; height: 22px; background: #22c55e; border: 2px solid #fff; font-size: 11px; right: -6px; top: -6px; }
+
+/* ==================== AI 对话页（重做） ==================== */
+/* 原来是四排散装控件压在聊天框上面，手机上要划很久才看到对话本身。
+   现在设置收进一张卡，对话区自成一块，两者边界清楚。 */
+
+.tutor-setup {
+  background: #fff; border: 1px solid var(--border); border-radius: 18px;
+  padding: 14px 14px 12px; margin-bottom: 14px; box-shadow: var(--shadow-sm);
+}
+
+/* —— 老师条 —— */
+.tutor-setup .persona-row { position: relative; margin-bottom: 12px; }
+/* 右边一道渐隐，暗示还能往右滑。8 位老师在手机上一屏放不下 */
+.tutor-setup .persona-row::after {
+  content: ''; position: absolute; right: 0; top: 0; bottom: 8px; width: 34px;
+  background: linear-gradient(90deg, rgba(255,255,255,0), #fff 82%);
+  pointer-events: none; border-radius: 0 12px 12px 0;
+}
+.tutor-setup .persona-strip { gap: 10px; padding-bottom: 6px; }
+.tutor-setup .persona-chip {
+  width: 82px; padding: 11px 6px 9px; gap: 5px;
+  background: #fbfbfd; border: 1.5px solid #edeef4; border-radius: 15px;
+  transition: transform .16s cubic-bezier(.2,.8,.3,1), border-color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+.tutor-setup .persona-chip:hover { background: #fff; border-color: #dcdfe9; transform: translateY(-1px); }
+.tutor-setup .persona-chip.active {
+  background: #fff; border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(10,186,181,.13), 0 6px 16px rgba(10,186,181,.14);
+  transform: translateY(-2px);
+}
+.tutor-setup .persona-photo { width: 44px; height: 44px; }
+.tutor-setup .persona-emoji { font-size: 26px; }
+.tutor-setup .persona-chip.active .persona-photo { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--primary); }
+.tutor-setup .persona-name { font-size: 12.5px; letter-spacing: .01em; }
+.tutor-setup .persona-title { font-size: 10.5px; }
+.tutor-setup .persona-brief {
+  font-size: 12.5px; color: var(--text-muted); margin-top: 2px; padding: 0 2px;
+}
+
+/* —— 一行紧凑的控件 —— */
+.tutor-controls {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px;
+  border-top: 1px solid #f0f1f6; padding-top: 11px; margin-top: 10px;
+}
+.tc-item { display: flex; align-items: center; gap: 7px; min-width: 0; }
+/* 标签绝不能竖排。"AI 声音"原来在窄屏上被挤成一列三个字 */
+.tc-label { font-size: 12px; color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }
+.tc-arrow { color: #c3c7d4; font-size: 12px; flex-shrink: 0; }
+.tutor-controls select {
+  padding: 5px 24px 5px 9px; border-radius: 9px; border: 1px solid var(--border);
+  font-size: 13px; font-weight: 600; color: var(--text); background: #fbfbfd;
+  max-width: 190px; text-overflow: ellipsis;
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5 6 8l3-3.5' fill='none' stroke='%238b90a0' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 7px center; background-size: 11px;
+  cursor: pointer;
+}
+.tutor-controls select:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+.tc-icon {
+  width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--border);
+  background: #fff; color: var(--primary); font-size: 10px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  transition: background .15s ease, border-color .15s ease;
+}
+.tc-icon:hover { background: var(--primary-light); border-color: var(--primary); }
+
+/* 自动朗读：换成一个真正的开关，比一个裸 checkbox 干净 */
+.tc-switch { display: flex; align-items: center; gap: 7px; cursor: pointer; user-select: none; margin-left: auto; }
+.tc-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.tc-track {
+  width: 34px; height: 20px; border-radius: 99px; background: #dfe1e9;
+  position: relative; transition: background .18s ease; flex-shrink: 0;
+}
+.tc-dot {
+  position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(20,25,50,.25);
+  transition: transform .18s cubic-bezier(.2,.8,.3,1);
+}
+.tc-switch input:checked + .tc-track { background: var(--primary); }
+.tc-switch input:checked + .tc-track .tc-dot { transform: translateX(14px); }
+.tc-switch input:focus-visible + .tc-track { outline: 2px solid var(--primary); outline-offset: 2px; }
+.tc-switch-text { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+
+/* —— 对话区 —— */
+.chat-shell {
+  background: #fff; border: 1px solid var(--border); border-radius: 18px;
+  box-shadow: var(--shadow-sm); overflow: hidden;
+}
+.chat-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 14px; border-bottom: 1px solid #f0f1f6;
+  background: linear-gradient(180deg, #fcfcfe, #fff);
+}
+.chat-head-who {
+  font-size: 13px; font-weight: 600; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0;
+}
+.chat-head-who span { font-weight: 500; color: var(--text-muted); }
+.chat-head-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.chat-head-btn {
+  border: 1px solid var(--border); background: #fff; color: var(--text-muted);
+  border-radius: 99px; padding: 5px 11px; font-size: 12.5px; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.chat-head-btn:hover { background: var(--primary-light); color: var(--primary-dark); border-color: var(--primary); }
+.chat-head-btn-icon { width: 28px; padding: 0; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 13px; }
+.chat-head-btn.on { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+/* 聊天框本身：去掉外框和圆角（已经由 chat-shell 承担），留出更多呼吸 */
+.chat-shell .chat-window {
+  border: none; border-radius: 0; box-shadow: none; margin-bottom: 0;
+  height: 460px; padding: 18px 16px; gap: 14px; background: #fff;
+}
+.chat-shell .call-status-bar { border: none; border-radius: 0; box-shadow: none; margin-bottom: 0; border-top: 1px solid #f0f1f6; }
+
+/* 气泡：字大一点、行距松一点，圆角更饱满 */
+.chat-shell .msg { font-size: 15px; line-height: 1.6; padding: 11px 15px; border-radius: 17px; }
+.chat-shell .msg-ai { background: #f4f5f9; border-bottom-left-radius: 6px; }
+.chat-shell .msg-user { border-bottom-right-radius: 6px; box-shadow: 0 2px 8px rgba(10,186,181,.22); }
+.chat-shell .msg-avatar { width: 32px; height: 32px; }
+
+/* 输入区：麦克风、输入框、发送合成一条，像一个整体而不是三个零件 */
+.chat-shell .chat-input-row {
+  padding: 10px 12px; border-top: 1px solid #f0f1f6; gap: 8px;
+  background: linear-gradient(180deg, #fff, #fcfcfe);
+}
+.chat-shell .chat-input-row input {
+  border-radius: 99px; padding: 11px 16px; background: #f6f7fa; border-color: transparent;
+  transition: background .15s ease, border-color .15s ease;
+}
+.chat-shell .chat-input-row input:focus {
+  outline: none; background: #fff; border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(10,186,181,.12);
+}
+.chat-shell .mic-btn { width: 40px; height: 40px; background: #f6f7fa; border-color: transparent; }
+.chat-shell .mic-btn:hover { background: var(--primary-light); }
+.chat-shell .chat-input-row .btn-primary { border-radius: 99px; padding: 10px 20px; }
+
+@media (max-width: 480px) {
+  .tutor-setup { padding: 12px 12px 10px; border-radius: 16px; }
+  .tutor-setup .persona-chip { width: 74px; }
+  .tutor-setup .persona-photo { width: 40px; height: 40px; }
+  .tutor-controls { gap: 8px 12px; }
+  .tc-switch { margin-left: 0; }
+  .tutor-controls select { max-width: 132px; }
+  .chat-shell .chat-window { height: 50vh; min-height: 300px; padding: 14px 12px; }
+  .chat-head-btn { padding: 5px 9px; font-size: 12px; }
+}
+
+/* 试用提示条收窄。原来是一整块橙色，手机上要占掉 180px，
+   对话本身被推到屏幕外——它只是一句提示，不该比内容还显眼。 */
+.paywall-banner {
+  padding: 9px 12px; gap: 10px; margin-bottom: 12px; border-radius: 13px;
+  background: #fffaf3; border-color: #f6e3cc; box-shadow: none;
+  flex-wrap: nowrap; align-items: center;
+}
+.paywall-banner p { font-size: 12.5px; line-height: 1.5; color: #8a5a2b; min-width: 0; }
+.paywall-banner .btn {
+  padding: 6px 13px; font-size: 12.5px; border-radius: 99px; white-space: nowrap;
+}
+@media (max-width: 480px) {
+  .paywall-banner { flex-wrap: wrap; gap: 8px; }
+  .paywall-banner p { font-size: 12px; }
+}
+
+/* 对话页标题轻一点，别跟内容抢视线 */
+#view-tutor .page-title { font-size: 21px; margin-bottom: 14px; letter-spacing: -.01em; }

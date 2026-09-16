@@ -203,29 +203,30 @@
         <button class="btn btn-primary btn-sm" id="btnTutorUpgrade">立即开通会员</button>
       </div>
       <div id="tutorPanel" hidden>
-        <!-- 大卡通头像和那排形象切换按钮都已移除。
-             聊天里 AI 那边的小头像改成“你正在跟哪位老师聊”，见 buildAvatarEl。 -->
-        <div class="lang-pair-row">
-          <label>我用 <select id="chatInputLang"></select> 输入</label>
-          <span class="lang-pair-arrow">→</span>
-          <label>AI 用 <select id="chatReplyLang"></select> 回答</label>
-        </div>
-        <!-- 跟谁聊：决定 AI 的性格和纠错力度。下面的"AI 声音"是浏览器朗读用的，两回事 -->
-        <div class="persona-row" id="personaRowChat"></div>
-        <div class="lang-pair-row">
-          <label>AI 声音 <select id="voiceSelect"></select></label>
-          <button type="button" class="btn btn-icon btn-icon-sm" id="btnPreviewVoice" title="试听">🔊</button>
-        </div>
-        <div class="tutor-toolbar">
-          <label class="auto-speak-toggle">
-            <input type="checkbox" id="autoSpeakToggle" checked>
-            🔊 自动朗读 AI 回复
-          </label>
-          <div style="display:flex;gap:8px;">
-            <button type="button" class="btn btn-ghost btn-sm" id="btnClearChat" title="清空对话记录">🗑️ 清空对话</button>
-            <button type="button" class="btn btn-outline btn-sm" id="btnVoiceCall">🎧 开启语音对话模式</button>
+        <!-- 设置收进一张卡里。原来是四排散装控件（语言、老师、声音、
+             工具栏）堆在聊天框上面，手机上要划很久才能看到对话本身。 -->
+        <div class="tutor-setup">
+          <div class="persona-row" id="personaRowChat"></div>
+          <div class="tutor-controls">
+            <div class="tc-item">
+              <span class="tc-label">语言</span>
+              <select id="chatInputLang"></select>
+              <span class="tc-arrow" aria-hidden="true">→</span>
+              <select id="chatReplyLang"></select>
+            </div>
+            <div class="tc-item">
+              <span class="tc-label">声音</span>
+              <select id="voiceSelect"></select>
+              <button type="button" class="tc-icon" id="btnPreviewVoice" title="试听">▶</button>
+            </div>
+            <label class="tc-switch" title="AI 回复后自动读出来">
+              <input type="checkbox" id="autoSpeakToggle" checked>
+              <span class="tc-track"><span class="tc-dot"></span></span>
+              <span class="tc-switch-text">自动朗读</span>
+            </label>
           </div>
         </div>
+
         <!-- 情景练习进行中的横幅。不显示的话，用户会忘了自己正在一个设定里，
              AI 一直扮演店员就显得莫名其妙 -->
         <div class="scene-banner" id="sceneBanner" hidden>
@@ -237,18 +238,29 @@
           <button type="button" class="btn btn-ghost btn-sm" id="btnSceneExit">退出情景</button>
         </div>
 
-        <div class="chat-window" id="chatWindow"></div>
+        <!-- 对话区：标题栏、消息、输入框合成一块，边界清楚一点 -->
+        <div class="chat-shell">
+          <div class="chat-head">
+            <div class="chat-head-who" id="chatHeadWho"></div>
+            <div class="chat-head-actions">
+              <button type="button" class="chat-head-btn" id="btnVoiceCall">🎧 语音模式</button>
+              <button type="button" class="chat-head-btn chat-head-btn-icon" id="btnClearChat" title="清空对话记录" aria-label="清空对话记录">✕</button>
+            </div>
+          </div>
 
-        <div class="call-status-bar" id="callStatusBar" hidden>
-          <div class="call-status-indicator" id="callStatusIndicator">🎙️ 正在聆听...</div>
-          <button type="button" class="btn btn-danger btn-sm" id="btnEndVoiceCall">结束语音对话</button>
+          <div class="chat-window" id="chatWindow"></div>
+
+          <div class="call-status-bar" id="callStatusBar" hidden>
+            <div class="call-status-indicator" id="callStatusIndicator">🎙️ 正在聆听...</div>
+            <button type="button" class="btn btn-danger btn-sm" id="btnEndVoiceCall">结束语音对话</button>
+          </div>
+
+          <form class="chat-input-row" id="chatForm">
+            <button type="button" class="mic-btn" id="micBtn" title="语音输入">🎙️</button>
+            <input type="text" id="chatInput" placeholder="用目标语言打字，或点麦克风说话…" maxlength="500" autocomplete="off">
+            <button type="submit" class="btn btn-primary" id="chatSendBtn">发送</button>
+          </form>
         </div>
-
-        <form class="chat-input-row" id="chatForm">
-          <button type="button" class="mic-btn" id="micBtn" title="语音输入">🎙️</button>
-          <input type="text" id="chatInput" placeholder="用目标语言打字，或点击麦克风说话..." maxlength="500" autocomplete="off">
-          <button type="submit" class="btn btn-primary" id="chatSendBtn">发送</button>
-        </form>
         <p class="hint" id="voiceHint"></p>
       </div>
     </div>

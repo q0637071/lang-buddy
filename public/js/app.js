@@ -1883,6 +1883,7 @@
       });
     });
     box.dataset.personaBuilt = String(personaList.length);
+    updateChatHead();
     if (isCall) renderCallFace();
   }
 
@@ -1893,6 +1894,17 @@
       b.classList.toggle('active', b.dataset.persona === cur));
     const brief = box.querySelector('.persona-brief');
     if (brief) brief.textContent = personaList.find(p => p.id === cur)?.brief || '';
+    updateChatHead();
+  }
+
+  /// 对话区标题栏写清楚"正在跟谁说话"。老师条滚上去之后，光看气泡分不清是谁。
+  function updateChatHead() {
+    const el = $safe('#chatHeadWho');
+    if (!el) return;
+    const p = personaList.find(x => x.id === currentPersonaId());
+    el.innerHTML = p
+      ? `正在和 ${escapeHtml(p.name)} <span>· ${escapeHtml(p.title)}</span>`
+      : '对话';
   }
 
   /// 面授页顶部那张大头像。选谁显示谁——接通后看到的应该是同一张脸，
