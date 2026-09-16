@@ -1246,6 +1246,7 @@
       // 但形象和对话对象没有任何关系——你选了 Olivia 面试官，旁边却蹲着个团子。
       // 老师还没加载出来时先留空，别拿卡通图顶上。
       const p = personaList.find(x => x.id === currentPersonaId());
+      el.dataset.persona = p?.id || '';
       if (p?.photo) {
         const img = document.createElement('img');
         img.src = p.photo;
@@ -1310,9 +1311,11 @@
   // 换了老师之后，屏幕上已有的 AI 气泡头像要跟着换，
   // 否则同一屏里会出现两位老师的脸，像是刚才那几句是别人说的。
   function refreshChatAvatars() {
+    const cur = currentPersonaId();
     $all('#chatWindow .msg-avatar-ai').forEach(old => {
-      const fresh = buildAvatarEl('ai');
-      old.replaceWith(fresh);
+      // 本来就是这位老师就别动。无差别重建 <img> 同样会闪一下
+      if (old.dataset.persona === cur) return;
+      old.replaceWith(buildAvatarEl('ai'));
     });
   }
 
@@ -1834,6 +1837,13 @@
     await loadPersonas();
     if (!personaList.length) { box.hidden = true; return; }
     box.hidden = false;
+    // 已经画过就只改选中态，不要重画。重新赋 innerHTML 会把 8 张 <img> 全部
+    // 销毁再新建，浏览器得重新取图解码——点一下老师，所有头像闪一下就是这么来的。
+    if (box.dataset.personaBuilt === String(personaList.length)) {
+      updatePersonaSelection(box);
+      if (isCall) renderCallFace();
+      return;
+    }
     const cur = currentPersonaId();
     const hint = isCall && personaSameFace
       ? '<div class="persona-hint">几位老师目前共用同一个数字人形象，性格和说话方式不同</div>'
@@ -1854,11 +1864,22 @@
     box.querySelectorAll('[data-persona]').forEach(btn => {
       btn.addEventListener('click', () => {
         safeSetItem(PERSONA_KEY, btn.dataset.persona);
-        renderPersonaRow(containerId, isCall);   // 重画一次，更新选中态和说明
+        updatePersonaSelection(box);             // 只改选中态和说明，不重画
+        if (isCall) renderCallFace();
         refreshChatAvatars();                    // 已经在屏幕上的气泡也换成新老师
       });
     });
+    box.dataset.personaBuilt = String(personaList.length);
     if (isCall) renderCallFace();
+  }
+
+  /// 只改"选中的是谁"，不碰那些 <img>。切换老师时走这条路，头像才不会闪。
+  function updatePersonaSelection(box) {
+    const cur = currentPersonaId();
+    box.querySelectorAll('.persona-chip').forEach(b =>
+      b.classList.toggle('active', b.dataset.persona === cur));
+    const brief = box.querySelector('.persona-brief');
+    if (brief) brief.textContent = personaList.find(p => p.id === cur)?.brief || '';
   }
 
   /// 面授页顶部那张大头像。选谁显示谁——接通后看到的应该是同一张脸，
