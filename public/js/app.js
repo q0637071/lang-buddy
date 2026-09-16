@@ -1211,7 +1211,11 @@
     // 第一项是"跟随老师"，默认就选它：男老师出男声、女老师出女声。
     // 想固定用某个音色的人再自己挑，挑了就一直按他挑的来。
     const auto = getPreferredVoice(lang);
-    const autoLabel = auto ? `跟随老师（${auto.name.replace(/^Microsoft /, '')}）` : '跟随老师';
+    const g = personaGender();
+    // 三种情况要说清楚，否则"跟随老师"是个黑盒，出了问题没法判断卡在哪
+    const autoLabel = auto ? `跟随老师（${auto.name.replace(/^Microsoft /, '')}）`
+      : g ? `跟随老师（本机没有${g === 'male' ? '男' : '女'}声，用服务端朗读）`
+      : '跟随老师';
     select.innerHTML = `<option value="">${escapeHtml(autoLabel)}</option>`
       + list.map(v => `<option value="${escapeHtml(v.name)}">${escapeHtml(v.name.replace(/^Microsoft /, ''))}</option>`).join('');
     select.value = (saved && list.some(v => v.name === saved)) ? saved : '';
@@ -2198,6 +2202,20 @@
     if (!window.speechSynthesis) {
       speakViaServer(text, onEnd);
       return;
+    }
+    // 设备上挑不出同性别的音色时，改走服务端朗读。
+    // 浏览器暴露的音色名字很多是 "Google US English" 这种看不出男女的，
+    // 匹配不到就回退系统默认声音——多半还是女声，于是"选男老师出男声"失效。
+    // 服务端那边是实打实的男声/女声（Groq），不看用户装了什么语音包。
+    // 只在 AI 对话页这么做：背单词那些地方朗读的是单词，跟老师性别无关。
+    const onTutorPage = !$safe('#view-tutor')?.hidden;
+    if (onTutorPage && !serverTtsBroken) {
+      const l = lang || replyLangBcp47();
+      const pinned = safeGetItem(voicePrefKey(l));   // 用户自己挑过就听他的，不抢
+      if (!pinned && personaGender() && !getPreferredVoice(l)) {
+        speakViaServer(text, onEnd);
+        return;
+      }
     }
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(text);
