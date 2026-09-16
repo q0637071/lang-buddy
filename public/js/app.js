@@ -1208,8 +1208,13 @@
     }
     select.disabled = false;
     const saved = safeGetItem(voicePrefKey(lang));
-    select.innerHTML = list.map(v => `<option value="${escapeHtml(v.name)}">${escapeHtml(v.name.replace(/^Microsoft /, ''))}</option>`).join('');
-    if (saved && list.some(v => v.name === saved)) select.value = saved;
+    // 第一项是"跟随老师"，默认就选它：男老师出男声、女老师出女声。
+    // 想固定用某个音色的人再自己挑，挑了就一直按他挑的来。
+    const auto = getPreferredVoice(lang);
+    const autoLabel = auto ? `跟随老师（${auto.name.replace(/^Microsoft /, '')}）` : '跟随老师';
+    select.innerHTML = `<option value="">${escapeHtml(autoLabel)}</option>`
+      + list.map(v => `<option value="${escapeHtml(v.name)}">${escapeHtml(v.name.replace(/^Microsoft /, ''))}</option>`).join('');
+    select.value = (saved && list.some(v => v.name === saved)) ? saved : '';
   }
 
   $('#voiceSelect').addEventListener('change', () => {
@@ -1222,10 +1227,37 @@
     speakText(sample[state.chatReplyLang] || sample.en);
   });
 
+  // 浏览器不告诉我们一个音色是男是女，只能看名字。大部分系统音色就这么几个，
+  // 覆盖到常见的即可；认不出来的一律当"不确定"，不去乱猜。
+  const VOICE_FEMALE = /(female|woman|\b(samantha|karen|moira|tessa|victoria|fiona|susan|zira|hazel|catherine|linda|heather|eva|aria|jenny|michelle|ana|sonia|libby|natasha|clara|amber|emily|joanna|salli|kimberly|ivy|nicole|serena|allison|ashley|zoe|alice|amelie|anna|carmit|damayanti|ellen|ioana|joana|kanya|kyoko|laura|lekha|luciana|mariska|mei|melina|milena|nora|paulina|sara|satu|sin-ji|tarita|ting-ting|veena|yelda|yuna|zuzana|xiaoxiao|yaoyao|huihui|婷婷|晓晓)\b|女)/i;
+  const VOICE_MALE = /(\bmale\b|\bman\b|\b(alex|daniel|fred|tom|aaron|david|mark|george|guy|ryan|brandon|christopher|eric|matthew|justin|joey|liam|oliver|william|thomas|arthur|gordon|jorge|juan|maged|nicolas|otoya|rishi|xander|yuri|diego|luca|thijs|kangkang|yunxi|yunyang)\b|男)/i;
+  function voiceGender(v) {
+    const n = v?.name || '';
+    if (VOICE_FEMALE.test(n)) return 'female';   // 必须先判女——"female" 里面就含 "male"
+    if (VOICE_MALE.test(n)) return 'male';
+    return null;
+  }
+
+  /// 当前这位老师该用男声还是女声
+  function personaGender() {
+    return personaList.find(p => p.id === currentPersonaId())?.gender || null;
+  }
+
   function getPreferredVoice(lang) {
+    // 用户自己挑过就听用户的
     const name = safeGetItem(voicePrefKey(lang));
-    if (!name) return null;
-    return availableVoices.find(v => v.name === name) || null;
+    if (name) return availableVoices.find(v => v.name === name) || null;
+
+    // 没挑过就跟着老师走：选男老师出男声，女老师出女声。
+    // 原来这里直接 return null，等于用系统默认声音，
+    // 于是选了男老师还是一把女声在说话。
+    const want = personaGender();
+    if (!want) return null;
+    const prefix = (lang || '').split('-')[0].toLowerCase();
+    const sameLang = availableVoices.filter(v => v.lang.toLowerCase().startsWith(prefix) && !isNoveltyVoice(v));
+    const pool = sameLang.length ? sameLang : availableVoices.filter(v => !isNoveltyVoice(v));
+    // 先在完全匹配语言的里面找，找不到再放宽
+    return pool.find(v => voiceGender(v) === want) || null;
   }
 
   $('#btnTutorUpgrade').addEventListener('click', upgradeMembership);
@@ -1900,6 +1932,7 @@
         updatePersonaSelection(box);             // 只改选中态和说明，不重画
         if (isCall) renderCallFace();
         loadPersonaThread();                     // 换到这位老师自己的对话线
+        populateVoiceSelect();                   // 跟随老师的男/女声要重新挑一次
       });
     });
     box.dataset.personaBuilt = String(personaList.length);
@@ -2123,9 +2156,12 @@
       const headers = { 'Content-Type': 'application/json' };
       const token = getAuthToken();
       if (token) headers.Authorization = 'Bearer ' + token;
+      // 带上这位老师的音色。不带的话服务端一律用默认的 hannah（女声），
+      // 选了男老师照样是女声在说话。
+      const p = personaList.find(x => x.id === currentPersonaId());
       const resp = await fetch(API_BASE + '/tts', {
         method: 'POST', headers, credentials: 'include',
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, ...(p?.voice ? { voice: p.voice } : {}) }),
       });
       if (!resp.ok) {
         const j = await resp.json().catch(() => ({}));
