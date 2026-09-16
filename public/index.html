@@ -203,80 +203,9 @@
         <button class="btn btn-primary btn-sm" id="btnTutorUpgrade">立即开通会员</button>
       </div>
       <div id="tutorPanel" hidden>
+        <!-- 大头像和“待机中”已移除。下面这排切换按钮留着：
+             它现在决定的是每条 AI 回复旁边那个小头像（buildAvatarEl 里用的同一个形象）。 -->
         <div class="ai-avatar-wrap">
-          <svg class="ai-avatar idle" id="aiAvatar" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="avatarStroke" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#ffd35c"/>
-                <stop offset="100%" stop-color="#f5a623"/>
-              </linearGradient>
-              <linearGradient id="avatarFace" x1="20%" y1="0%" x2="80%" y2="100%">
-                <stop offset="0%" stop-color="#ffe28a"/>
-                <stop offset="55%" stop-color="#ffc93c"/>
-                <stop offset="100%" stop-color="#f5a11a"/>
-              </linearGradient>
-              <radialGradient id="avatarGlow" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stop-color="#ffc93c" stop-opacity=".32"/>
-                <stop offset="100%" stop-color="#ffc93c" stop-opacity="0"/>
-              </radialGradient>
-              <radialGradient id="avatarBall" cx="35%" cy="30%" r="75%">
-                <stop offset="0%" stop-color="#fff2c4"/>
-                <stop offset="100%" stop-color="#ffc93c"/>
-              </radialGradient>
-            </defs>
-
-            <!-- 柔光背景 -->
-            <circle class="avatar-glow" cx="100" cy="112" r="98" fill="url(#avatarGlow)"/>
-
-            <!-- 装饰闪光 -->
-            <text class="avatar-sparkle avatar-sparkle-1" x="20" y="56" font-size="13">✨</text>
-            <text class="avatar-sparkle avatar-sparkle-2" x="166" y="70" font-size="10">✨</text>
-
-            <!-- 落地柔影 -->
-            <ellipse cx="100" cy="188" rx="52" ry="8" fill="#f5a11a" opacity=".18"/>
-
-            <g class="avatar-head">
-              <!-- 头顶小丸子 -->
-              <path d="M100 46 L100 62" stroke="url(#avatarStroke)" stroke-width="10" stroke-linecap="round"/>
-              <circle cx="100" cy="34" r="17" fill="url(#avatarBall)" stroke="url(#avatarStroke)" stroke-width="2"/>
-              <ellipse cx="94" cy="28" rx="6" ry="4" fill="#ffffff" opacity=".55"/>
-
-              <!-- 小翅膀/挥手 -->
-              <path d="M148 128 Q172 118 168 96 Q182 112 172 132 Q162 144 148 138 Z" fill="url(#avatarFace)" stroke="url(#avatarStroke)" stroke-width="2.5"/>
-              <path d="M52 138 Q34 142 34 158 Q22 148 28 130 Q36 120 48 124 Z" fill="url(#avatarFace)" stroke="url(#avatarStroke)" stroke-width="2.5" opacity=".9"/>
-
-              <!-- 圆润身体（波浪底边） -->
-              <path d="M100 58
-                C142 58 168 88 168 128
-                L168 148
-                C168 148 158 172 146 150
-                C138 166 128 148 118 162
-                C110 174 100 156 90 162
-                C80 168 72 174 64 150
-                C52 172 42 148 42 128
-                C42 88 58 58 100 58 Z"
-                fill="url(#avatarFace)" stroke="url(#avatarStroke)" stroke-width="3"/>
-              <ellipse cx="72" cy="78" rx="24" ry="13" fill="#ffffff" opacity=".4"/>
-
-              <!-- 腮红 -->
-              <ellipse cx="62" cy="118" rx="11" ry="7" fill="#ff8f6b" opacity=".45"/>
-              <ellipse cx="138" cy="118" rx="11" ry="7" fill="#ff8f6b" opacity=".45"/>
-
-              <!-- 眼睛 -->
-              <g class="avatar-eye avatar-eye-l">
-                <ellipse cx="80" cy="104" rx="7" ry="9" fill="#2a2418"/>
-                <circle cx="82.5" cy="99" r="2" fill="#fff"/>
-              </g>
-              <g class="avatar-eye avatar-eye-r">
-                <ellipse cx="120" cy="104" rx="7" ry="9" fill="#2a2418"/>
-                <circle cx="122.5" cy="99" r="2" fill="#fff"/>
-              </g>
-
-              <!-- 嘴巴 -->
-              <rect id="avatarMouth" x="90" y="126" width="20" height="4" rx="2" fill="#2a2418"/>
-            </g>
-          </svg>
-          <div class="ai-avatar-status" id="avatarStatus">待机中</div>
           <div class="avatar-style-picker" id="avatarStylePicker">
             <button type="button" class="avatar-style-btn" data-style="ghost" title="萌怪">🌟</button>
             <button type="button" class="avatar-style-btn" data-style="robot" title="机器人">🤖</button>

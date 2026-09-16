@@ -2406,16 +2406,20 @@
     const cfg = AVATAR_STYLES[key] || AVATAR_STYLES.ghost;
     key = AVATAR_STYLES[key] ? key : 'ghost';
     state.avatarStyle = key;
-    // 视觉切换放在存偏好设置之前：就算 localStorage 写入失败（比如iOS隐私浏览模式），
-    // 头像也必须先换成功，不能让存储失败连累整个切换动作
-    const svg = $('#aiAvatar');
-    if (!svg) return;
-    svg.setAttribute('viewBox', cfg.viewBox);
-    setSvgContent(svg, cfg.markup);
-    svg.style.height = cfg.height + 'px';
-    const head = svg.querySelector('.avatar-head');
-    if (head) head.style.transformOrigin = cfg.transformOrigin;
+    // 页面上那个大头像已经去掉了，这里不能再因为找不到它就 return——
+    // 否则选中态、存偏好、聊天里的小头像全都不会更新，点了像没反应。
+    // 大头像以后要是加回来，下面这段照样能用。
+    const svg = $safe('#aiAvatar');
+    if (svg) {
+      svg.setAttribute('viewBox', cfg.viewBox);
+      setSvgContent(svg, cfg.markup);
+      svg.style.height = cfg.height + 'px';
+      const head = svg.querySelector('.avatar-head');
+      if (head) head.style.transformOrigin = cfg.transformOrigin;
+    }
     $all('.avatar-style-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.style === key));
+    // 已经在屏幕上的 AI 气泡也要跟着换，否则要等下一条回复才看得出切换生效
+    $all('.msg-avatar-ai').forEach(el => { el.innerHTML = miniAvatarSvg(key, 34) || '🌟'; });
     safeSetItem('lb_avatar_style', key);
   }
 
