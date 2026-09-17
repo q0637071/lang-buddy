@@ -255,7 +255,7 @@ app.use(cookieSession);
 // 代码一变地址就变，浏览器没有旧版可用，从根上杜绝这类错配。
 function assetVersion() {
   try {
-    const mt = ['public/js/app.js', 'public/css/style.css']
+    const mt = ['public/js/app.js', 'public/js/i18n.js', 'public/css/style.css']
       .map(f => fs.statSync(path.join(__dirname, f)).mtimeMs);
     return Math.round(Math.max(...mt)).toString(36);
   } catch { return String(Date.now()); }
@@ -267,7 +267,8 @@ app.get(['/', '/index.html'], (req, res, next) => {
       const v = assetVersion();
       indexHtmlCached = fs.readFileSync(path.join(__dirname, 'public/index.html'), 'utf8')
         .replace('href="css/style.css"', `href="css/style.css?v=${v}"`)
-        .replace('src="js/app.js"', `src="js/app.js?v=${v}"`);
+        .replace('src="js/app.js"', `src="js/app.js?v=${v}"`)
+        .replace('src="js/i18n.js"', `src="js/i18n.js?v=${v}"`);
     }
     res.setHeader('Cache-Control', 'no-cache');
     res.type('html').send(indexHtmlCached);

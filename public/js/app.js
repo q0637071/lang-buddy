@@ -5,6 +5,15 @@
   // 标记一直没出现，说明 js 根本没加载（App 里最常见是 web 资源没同步）。
   window.__LB_BOOTED__ = true;
 
+  // i18n.js 万一没加载成功（部署切换的那几秒、CDN 抖动、缓存拿到 404），
+  // 下面到处都在用的 t() 就会是 undefined，整个应用当场崩掉、只剩一个错误屏。
+  // 一个翻译层不该有能力搞垮整个站：拿不到就退化成"原样返回中文"，
+  // 界面还是全中文的，但功能一个都不少。
+  const t = typeof window.t === 'function' ? window.t : function (zh) { return zh; };
+  if (typeof window.t !== 'function') {
+    console.warn('[i18n] i18n.js 未加载，界面回退到中文');
+  }
+
   const state = {
     user: null,
     languages: [],
