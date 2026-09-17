@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LangBuddy 语伴 - AI 1对1语言学习</title>
+<title data-i18n="LangBuddy 语伴 - AI 1对1语言学习">LangBuddy 语伴 - AI 1对1语言学习</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
   <div class="topbar-inner">
     <div class="brand" data-nav="landing">
       <span class="brand-mark">L</span>
-      <span class="brand-name">LangBuddy 语伴</span>
+      <span class="brand-name" data-i18n="LangBuddy 语伴">LangBuddy 语伴</span>
     </div>
 
     <!-- 首页已经有功能星球做总入口，顶栏再铺一排按钮是重复的。
@@ -22,27 +22,33 @@
     <nav class="main-nav" id="mainNav" hidden>
       <button type="button" class="nav-menu-btn" id="navMenuBtn"
               aria-haspopup="true" aria-expanded="false">
-        <span id="navMenuLabel">首页</span>
+        <span id="navMenuLabel" data-i18n="首页">首页</span>
         <span class="nav-caret" aria-hidden="true">▾</span>
       </button>
       <div class="nav-menu" id="navMenu" hidden>
-        <button class="nav-item" data-nav="dashboard">首页</button>
-        <button class="nav-item" data-nav="facetime">与 AI 私教面对面</button>
-        <button class="nav-item" data-nav="tutor">AI 对话</button>
-        <button class="nav-item" data-nav="scenarios">情景地图</button>
-        <button class="nav-item" data-nav="translate">同声传译</button>
-        <button class="nav-item" data-nav="vocab">背单词</button>
-        <button class="nav-item" data-nav="grammar">语法精讲</button>
-        <button class="nav-item" data-nav="colloquial">美式口语</button>
-        <button class="nav-item" data-nav="essay">作文批改</button>
-        <button class="nav-item" data-nav="mistakes">错题本</button>
-        <button class="nav-item" data-nav="admin" id="navAdmin" hidden>管理后台</button>
+        <button class="nav-item" data-nav="dashboard" data-i18n="首页">首页</button>
+        <button class="nav-item" data-nav="facetime" data-i18n="与 AI 私教面对面">与 AI 私教面对面</button>
+        <button class="nav-item" data-nav="tutor" data-i18n="AI 对话">AI 对话</button>
+        <button class="nav-item" data-nav="scenarios" data-i18n="情景地图">情景地图</button>
+        <button class="nav-item" data-nav="translate" data-i18n="同声传译">同声传译</button>
+        <button class="nav-item" data-nav="vocab" data-i18n="背单词">背单词</button>
+        <button class="nav-item" data-nav="grammar" data-i18n="语法精讲">语法精讲</button>
+        <button class="nav-item" data-nav="colloquial" data-i18n="美式口语">美式口语</button>
+        <button class="nav-item" data-nav="essay" data-i18n="作文批改">作文批改</button>
+        <button class="nav-item" data-nav="mistakes" data-i18n="错题本">错题本</button>
+        <button class="nav-item" data-nav="admin" id="navAdmin" hidden data-i18n="管理后台">管理后台</button>
       </div>
     </nav>
 
     <!-- 头像本身就是"我的"入口，不再单独占一个菜单位。data-nav 必须挂在这个
          常驻容器上：里面的内容登录后才重新渲染，挂在子节点上绑不到事件。 -->
-    <div class="auth-area" id="authArea" data-nav="profile" title="我的"></div>
+    <!-- 界面语言切换。默认中文，不按浏览器语言自动判——
+         海外华人、英文系统的中文用户会被误伤。 -->
+    <div class="lang-toggle" id="langToggle" role="group" aria-label="Interface language">
+      <button type="button" class="lang-opt" data-lang="zh" data-i18n="中">中</button>
+      <button type="button" class="lang-opt" data-lang="en">EN</button>
+    </div>
+    <div class="auth-area" id="authArea" data-nav="profile" data-i18n-title="我的" title="我的"></div>
   </div>
 </header>
 
@@ -54,11 +60,11 @@
       <!-- 未登录时的那颗自转线框球。纯装饰，aria-hidden，不进无障碍树 -->
       <canvas class="hero-wire" id="heroWire" aria-hidden="true"></canvas>
       <div class="hero-inner">
-        <h1>跟 AI 私教<br>1对1 练出真实的外语能力</h1>
-        <p class="hero-sub">AI 视频通话 · 打字对话 · 语音练习 · 背单词 · 语法精讲，一站式外语学习平台</p>
+        <h1><span data-i18n="跟 AI 私教">跟 AI 私教</span><br><span data-i18n="1对1 练出真实的外语能力">1对1 练出真实的外语能力</span></h1>
+        <p class="hero-sub" data-i18n="AI 视频通话 · 打字对话 · 语音练习 · 背单词 · 语法精讲，一站式外语学习平台">AI 视频通话 · 打字对话 · 语音练习 · 背单词 · 语法精讲，一站式外语学习平台</p>
         <div class="hero-cta">
-          <button class="btn btn-primary btn-lg" id="btnHeroRegister">免费开始学习</button>
-          <button class="btn btn-outline btn-lg" id="btnHeroLogin">已有账号，登录</button>
+          <button class="btn btn-primary btn-lg" id="btnHeroRegister" data-i18n="免费开始学习">免费开始学习</button>
+          <button class="btn btn-outline btn-lg" id="btnHeroLogin" data-i18n="已有账号，登录">已有账号，登录</button>
         </div>
       </div>
     </section>
@@ -67,50 +73,50 @@
       <div class="feature-card feature-card-highlight">
         <span class="badge-new">NEW</span>
         <div class="feature-icon">📹</div>
-        <h3>AI 视频通话</h3>
-        <p>和 AI 私教面对面视频通话，看得见表情、听得见语气，最接近真人外教的口语练习。</p>
-        <span class="badge-member">会员专享</span>
+        <h3 data-i18n="AI 视频通话">AI 视频通话</h3>
+        <p data-i18n="和 AI 私教面对面视频通话，看得见表情、听得见语气，最接近真人外教的口语练习。">和 AI 私教面对面视频通话，看得见表情、听得见语气，最接近真人外教的口语练习。</p>
+        <span class="badge-member" data-i18n="会员专享">会员专享</span>
       </div>
       <div class="feature-card">
         <div class="feature-icon">💬</div>
-        <h3>AI 1对1 对话</h3>
-        <p>随时随地和 AI 私教打字对话，模拟真实场景，及时纠正你的语法和用词错误。</p>
-        <span class="badge-member">会员专享</span>
+        <h3 data-i18n="AI 1对1 对话">AI 1对1 对话</h3>
+        <p data-i18n="随时随地和 AI 私教打字对话，模拟真实场景，及时纠正你的语法和用词错误。">随时随地和 AI 私教打字对话，模拟真实场景，及时纠正你的语法和用词错误。</p>
+        <span class="badge-member" data-i18n="会员专享">会员专享</span>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🎙️</div>
-        <h3>语音练习</h3>
-        <p>支持语音输入和 AI 语音朗读，练习听力和口语发音，像真人对话一样自然。</p>
+        <h3 data-i18n="语音练习">语音练习</h3>
+        <p data-i18n="支持语音输入和 AI 语音朗读，练习听力和口语发音，像真人对话一样自然。">支持语音输入和 AI 语音朗读，练习听力和口语发音，像真人对话一样自然。</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">📚</div>
-        <h3>科学背单词</h3>
-        <p>内置分级词库，基于间隔重复算法安排复习，让记忆更持久。</p>
+        <h3 data-i18n="科学背单词">科学背单词</h3>
+        <p data-i18n="内置分级词库，基于间隔重复算法安排复习，让记忆更持久。">内置分级词库，基于间隔重复算法安排复习，让记忆更持久。</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">📖</div>
-        <h3>语法精讲</h3>
-        <p>10大核心语法专题讲解+练习，配合 AI 批改，写句子不再心虚。</p>
+        <h3 data-i18n="语法精讲">语法精讲</h3>
+        <p data-i18n="10大核心语法专题讲解+练习，配合 AI 批改，写句子不再心虚。">10大核心语法专题讲解+练习，配合 AI 批改，写句子不再心虚。</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">✍️</div>
-        <h3>AI 作文批改</h3>
-        <p>整篇作文逐句批改，指出语法和用词问题，并讲清为什么要这么改、地道的说法是什么。</p>
+        <h3 data-i18n="AI 作文批改">AI 作文批改</h3>
+        <p data-i18n="整篇作文逐句批改，指出语法和用词问题，并讲清为什么要这么改、地道的说法是什么。">整篇作文逐句批改，指出语法和用词问题，并讲清为什么要这么改、地道的说法是什么。</p>
       </div>
     </section>
 
     <section class="pricing">
-      <h2>开通会员，解锁 AI 1对1 全部功能</h2>
+      <h2 data-i18n="开通会员，解锁 AI 1对1 全部功能">开通会员，解锁 AI 1对1 全部功能</h2>
       <div class="price-card">
-        <div class="price-tag">演示版 · 免费开通</div>
+        <div class="price-tag" data-i18n="演示版 · 免费开通">演示版 · 免费开通</div>
         <ul class="price-list">
-          <li class="price-list-hl">📹 AI 视频通话，面对面练口语</li>
-          <li>✔ AI 1对1 打字/语音对话</li>
-          <li>✔ AI 语法批改</li>
-          <li>✔ 完整背单词与语法课程</li>
-          <li>✔ 学习进度记录</li>
+          <li class="price-list-hl" data-i18n="📹 AI 视频通话，面对面练口语">📹 AI 视频通话，面对面练口语</li>
+          <li data-i18n="✔ AI 1对1 打字/语音对话">✔ AI 1对1 打字/语音对话</li>
+          <li data-i18n="✔ AI 语法批改">✔ AI 语法批改</li>
+          <li data-i18n="✔ 完整背单词与语法课程">✔ 完整背单词与语法课程</li>
+          <li data-i18n="✔ 学习进度记录">✔ 学习进度记录</li>
         </ul>
-        <button class="btn btn-primary btn-lg" id="btnPricingRegister">注册并开通会员</button>
+        <button class="btn btn-primary btn-lg" id="btnPricingRegister" data-i18n="注册并开通会员">注册并开通会员</button>
       </div>
     </section>
   </section>
@@ -118,73 +124,73 @@
   <!-- 首页 Dashboard -->
   <section class="view" id="view-dashboard" hidden>
     <div class="container">
-      <h2 class="page-title">欢迎回来，<span id="dashNickname"></span> 👋</h2>
+      <h2 class="page-title" data-i18n="欢迎回来，">欢迎回来，<span id="dashNickname"></span> 👋</h2>
 
       <!-- 功能星球：所有功能挂在一个可旋转的球面上，转到最前面的那个就是当前选中项。
            节点由 JS 生成（位置要按球面算），这里只留舞台和说明。 -->
       <section class="feat-orbit" id="featOrbit">
         <div class="feat-orbit-stage" id="featOrbitStage"
-             role="application" aria-label="功能星球，左右拖动旋转，回车进入选中的功能" tabindex="0">
+             role="application" data-i18n-aria-label="功能星球，左右拖动旋转，回车进入选中的功能" aria-label="功能星球，左右拖动旋转，回车进入选中的功能" tabindex="0">
           <canvas class="feat-orbit-wire" id="featOrbitWire" aria-hidden="true"></canvas>
           <svg class="feat-orbit-links" id="featOrbitLinks" aria-hidden="true"></svg>
           <div class="feat-orbit-nodes" id="featOrbitNodes"></div>
         </div>
         <div class="feat-orbit-panel">
-          <div class="feat-orbit-name" id="featOrbitName">AI 对话</div>
-          <div class="feat-orbit-desc" id="featOrbitDesc">和 AI 私教练口语</div>
+          <div class="feat-orbit-name" id="featOrbitName" data-i18n="AI 对话">AI 对话</div>
+          <div class="feat-orbit-desc" id="featOrbitDesc" data-i18n="和 AI 私教练口语">和 AI 私教练口语</div>
           <button type="button" class="feat-orbit-enter" id="featOrbitEnter">
-            <span class="foe-label">进 入</span>
+            <span class="foe-label" data-i18n="进 入">进 入</span>
             <span class="foe-arrow" aria-hidden="true">›</span>
           </button>
-          <div class="feat-orbit-hint">拖动旋转 · 点节点直接进入</div>
+          <div class="feat-orbit-hint" data-i18n="拖动旋转 · 点节点直接进入">拖动旋转 · 点节点直接进入</div>
         </div>
       </section>
 
       <div class="dash-grid">
         <div class="dash-card">
-          <div class="dash-card-label">会员状态</div>
+          <div class="dash-card-label" data-i18n="会员状态">会员状态</div>
           <div class="dash-card-value" id="dashMemberStatus">-</div>
-          <button class="btn btn-primary btn-sm" id="btnDashUpgrade" hidden>立即开通会员</button>
+          <button class="btn btn-primary btn-sm" id="btnDashUpgrade" hidden data-i18n="立即开通会员">立即开通会员</button>
         </div>
         <div class="dash-card">
-          <div class="dash-card-label">目标语言</div>
+          <div class="dash-card-label" data-i18n="目标语言">目标语言</div>
           <div class="dash-card-value" id="dashLang">-</div>
         </div>
         <div class="dash-card">
-          <div class="dash-card-label">当前水平</div>
+          <div class="dash-card-label" data-i18n="当前水平">当前水平</div>
           <div class="dash-card-value" id="dashLevel">-</div>
         </div>
         <div class="dash-card">
-          <div class="dash-card-label">待复习单词</div>
+          <div class="dash-card-label" data-i18n="待复习单词">待复习单词</div>
           <div class="dash-card-value" id="dashDueWords">-</div>
         </div>
       </div>
-      <h3 class="section-title">学习数据</h3>
+      <h3 class="section-title" data-i18n="学习数据">学习数据</h3>
       <div class="metrics-grid" id="metricsGrid">
         <div class="metric-card">
           <div class="metric-icon">🔥</div>
           <div class="metric-value" id="metricStreak">-</div>
-          <div class="metric-label">连续学习天数</div>
+          <div class="metric-label" data-i18n="连续学习天数">连续学习天数</div>
         </div>
         <div class="metric-card">
           <div class="metric-icon">✅</div>
           <div class="metric-value" id="metricVocabMastered">-</div>
-          <div class="metric-label">已掌握单词</div>
+          <div class="metric-label" data-i18n="已掌握单词">已掌握单词</div>
         </div>
         <div class="metric-card">
           <div class="metric-icon">📝</div>
           <div class="metric-value" id="metricMistakes">-</div>
-          <div class="metric-label">错题收录</div>
+          <div class="metric-label" data-i18n="错题收录">错题收录</div>
         </div>
         <div class="metric-card">
           <div class="metric-icon">💬</div>
           <div class="metric-value" id="metricChat">-</div>
-          <div class="metric-label">AI对话次数</div>
+          <div class="metric-label" data-i18n="AI对话次数">AI对话次数</div>
         </div>
       </div>
       <div class="vocab-progress-card">
         <div class="vocab-progress-header">
-          <span>单词总体掌握进度</span>
+          <span data-i18n="单词总体掌握进度">单词总体掌握进度</span>
           <span id="vocabProgressText">-</span>
         </div>
         <div class="vocab-progress-bar"><div class="vocab-progress-fill" id="vocabProgressFill"></div></div>
@@ -195,12 +201,12 @@
   <!-- AI 对话 -->
   <section class="view" id="view-tutor" hidden>
     <div class="container container-narrow">
-      <h2 class="page-title">AI 1对1 对话练习</h2>
+      <h2 class="page-title" data-i18n="AI 1对1 对话练习">AI 1对1 对话练习</h2>
       <div class="tts-notice" id="ttsNoticeTutor" hidden></div>
 
       <div id="tutorPaywall" class="paywall paywall-banner" hidden>
-        <p>🎁 非会员每天可免费体验 5 分钟 AI 对话，开通会员畅享无限时长。</p>
-        <button class="btn btn-primary btn-sm" id="btnTutorUpgrade">立即开通会员</button>
+        <p data-i18n="🎁 非会员每天可免费体验 5 分钟 AI 对话，开通会员畅享无限时长。">🎁 非会员每天可免费体验 5 分钟 AI 对话，开通会员畅享无限时长。</p>
+        <button class="btn btn-primary btn-sm" id="btnTutorUpgrade" data-i18n="立即开通会员">立即开通会员</button>
       </div>
       <div id="tutorPanel" hidden>
         <!-- 设置收进一张卡里。原来是四排散装控件（语言、老师、声音、
@@ -209,20 +215,20 @@
           <div class="persona-row" id="personaRowChat"></div>
           <div class="tutor-controls">
             <div class="tc-item">
-              <span class="tc-label">语言</span>
+              <span class="tc-label" data-i18n="语言">语言</span>
               <select id="chatInputLang"></select>
               <span class="tc-arrow" aria-hidden="true">→</span>
               <select id="chatReplyLang"></select>
             </div>
             <div class="tc-item">
-              <span class="tc-label">声音</span>
+              <span class="tc-label" data-i18n="声音">声音</span>
               <select id="voiceSelect"></select>
-              <button type="button" class="tc-icon" id="btnPreviewVoice" title="试听">▶</button>
+              <button type="button" class="tc-icon" id="btnPreviewVoice" data-i18n-title="试听" title="试听">▶</button>
             </div>
-            <label class="tc-switch" title="AI 回复后自动读出来">
+            <label class="tc-switch" data-i18n-title="AI 回复后自动读出来" title="AI 回复后自动读出来">
               <input type="checkbox" id="autoSpeakToggle" checked>
               <span class="tc-track"><span class="tc-dot"></span></span>
-              <span class="tc-switch-text">自动朗读</span>
+              <span class="tc-switch-text" data-i18n="自动朗读">自动朗读</span>
             </label>
           </div>
         </div>
@@ -232,10 +238,10 @@
         <div class="scene-banner" id="sceneBanner" hidden>
           <span class="scene-banner-emoji" id="sceneBannerEmoji">☕️</span>
           <div class="scene-banner-text">
-            <strong id="sceneBannerTitle">情景练习</strong>
+            <strong id="sceneBannerTitle" data-i18n="情景练习">情景练习</strong>
             <span id="sceneBannerGoal"></span>
           </div>
-          <button type="button" class="btn btn-ghost btn-sm" id="btnSceneExit">退出情景</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btnSceneExit" data-i18n="退出情景">退出情景</button>
         </div>
 
         <!-- 对话区：标题栏、消息、输入框合成一块，边界清楚一点 -->
@@ -243,22 +249,22 @@
           <div class="chat-head">
             <div class="chat-head-who" id="chatHeadWho"></div>
             <div class="chat-head-actions">
-              <button type="button" class="chat-head-btn" id="btnVoiceCall">🎧 语音模式</button>
-              <button type="button" class="chat-head-btn chat-head-btn-icon" id="btnClearChat" title="清空对话记录" aria-label="清空对话记录">✕</button>
+              <button type="button" class="chat-head-btn" id="btnVoiceCall" data-i18n="🎧 语音模式">🎧 语音模式</button>
+              <button type="button" class="chat-head-btn chat-head-btn-icon" id="btnClearChat" data-i18n-title="清空对话记录" title="清空对话记录" data-i18n-aria-label="清空对话记录" aria-label="清空对话记录">✕</button>
             </div>
           </div>
 
           <div class="chat-window" id="chatWindow"></div>
 
           <div class="call-status-bar" id="callStatusBar" hidden>
-            <div class="call-status-indicator" id="callStatusIndicator">🎙️ 正在聆听...</div>
-            <button type="button" class="btn btn-danger btn-sm" id="btnEndVoiceCall">结束语音对话</button>
+            <div class="call-status-indicator" id="callStatusIndicator" data-i18n="🎙️ 正在聆听...">🎙️ 正在聆听...</div>
+            <button type="button" class="btn btn-danger btn-sm" id="btnEndVoiceCall" data-i18n="结束语音对话">结束语音对话</button>
           </div>
 
           <form class="chat-input-row" id="chatForm">
-            <button type="button" class="mic-btn" id="micBtn" title="语音输入">🎙️</button>
-            <input type="text" id="chatInput" placeholder="用目标语言打字，或点麦克风说话…" maxlength="500" autocomplete="off">
-            <button type="submit" class="btn btn-primary" id="chatSendBtn">发送</button>
+            <button type="button" class="mic-btn" id="micBtn" data-i18n-title="语音输入" title="语音输入">🎙️</button>
+            <input type="text" id="chatInput" data-i18n-placeholder="用目标语言打字，或点麦克风说话…" placeholder="用目标语言打字，或点麦克风说话…" maxlength="500" autocomplete="off">
+            <button type="submit" class="btn btn-primary" id="chatSendBtn" data-i18n="发送">发送</button>
           </form>
         </div>
         <p class="hint" id="voiceHint"></p>
@@ -270,7 +276,7 @@
        藏得太深，现在单独成一个功能页。 -->
   <section class="view" id="view-facetime" hidden>
     <div class="container container-narrow">
-      <h2 class="page-title">与 AI 私教面对面</h2>
+      <h2 class="page-title" data-i18n="与 AI 私教面对面">与 AI 私教面对面</h2>
 
       <div class="ft-hero">
         <div class="ft-hero-bg" aria-hidden="true"></div>
@@ -278,11 +284,11 @@
           <!-- 当前选中老师的照片。选谁就显示谁，接通后看到的应该是同一张脸。
                没配照片时退回 emoji，由 JS 填充 -->
           <div class="ft-face" id="ftFace"></div>
-          <div class="ft-hero-badge">真人形象 · 实时视频</div>
-          <h3 class="ft-hero-title">看得见表情，听得见语气</h3>
-          <p class="ft-hero-sub" id="ftSub">正在查询可用额度…</p>
+          <div class="ft-hero-badge" data-i18n="真人形象 · 实时视频">真人形象 · 实时视频</div>
+          <h3 class="ft-hero-title" data-i18n="看得见表情，听得见语气">看得见表情，听得见语气</h3>
+          <p class="ft-hero-sub" id="ftSub" data-i18n="正在查询可用额度…">正在查询可用额度…</p>
           <div class="persona-row persona-row-dark" id="personaRowCall"></div>
-          <button type="button" class="btn btn-primary btn-lg" id="btnAvatarCall">开始通话</button>
+          <button type="button" class="btn btn-primary btn-lg" id="btnAvatarCall" data-i18n="开始通话">开始通话</button>
           <p class="ft-hero-note" id="ftNote"></p>
         </div>
       </div>
@@ -291,32 +297,32 @@
         <div class="ft-point">
           <span class="ft-point-icon">🗣️</span>
           <div>
-            <strong>像跟真人上课</strong>
-            <p>AI 私教会看着你说话、点头、追问，比打字更接近真实对话的压力。</p>
+            <strong data-i18n="像跟真人上课">像跟真人上课</strong>
+            <p data-i18n="AI 私教会看着你说话、点头、追问，比打字更接近真实对话的压力。">AI 私教会看着你说话、点头、追问，比打字更接近真实对话的压力。</p>
           </div>
         </div>
         <div class="ft-point">
           <span class="ft-point-icon">🎯</span>
           <div>
-            <strong>按你的水平出题</strong>
-            <p>接通前会把你的测评等级和目标语言带过去，难度自动贴合，不会一上来就听不懂。</p>
+            <strong data-i18n="按你的水平出题">按你的水平出题</strong>
+            <p data-i18n="接通前会把你的测评等级和目标语言带过去，难度自动贴合，不会一上来就听不懂。">接通前会把你的测评等级和目标语言带过去，难度自动贴合，不会一上来就听不懂。</p>
           </div>
         </div>
         <div class="ft-point">
           <span class="ft-point-icon">⏱️</span>
           <div>
-            <strong>到点自动结束</strong>
-            <p>每次通话有固定时长，时间到了会自己挂断，不会多扣你的次数。</p>
+            <strong data-i18n="到点自动结束">到点自动结束</strong>
+            <p data-i18n="每次通话有固定时长，时间到了会自己挂断，不会多扣你的次数。">每次通话有固定时长，时间到了会自己挂断，不会多扣你的次数。</p>
           </div>
         </div>
       </div>
 
       <div class="ft-tips">
-        <strong>开始之前</strong>
+        <strong data-i18n="开始之前">开始之前</strong>
         <ul>
-          <li>浏览器会请求摄像头和麦克风权限，点「允许」才能接通。</li>
-          <li>建议戴耳机，避免 AI 的声音被麦克风收进去形成回声。</li>
-          <li>说错了不用停，直接往下讲，AI 会在回应里顺手帮你改。</li>
+          <li data-i18n="浏览器会请求摄像头和麦克风权限，点「允许」才能接通。">浏览器会请求摄像头和麦克风权限，点「允许」才能接通。</li>
+          <li data-i18n="建议戴耳机，避免 AI 的声音被麦克风收进去形成回声。">建议戴耳机，避免 AI 的声音被麦克风收进去形成回声。</li>
+          <li data-i18n="说错了不用停，直接往下讲，AI 会在回应里顺手帮你改。">说错了不用停，直接往下讲，AI 会在回应里顺手帮你改。</li>
         </ul>
       </div>
     </div>
@@ -327,11 +333,11 @@
        节点位置要按容器宽度算，所以由 JS 生成，这里只留舞台。 -->
   <section class="view" id="view-scenarios" hidden>
     <div class="container container-narrow">
-      <h2 class="page-title">情景地图</h2>
-      <p class="page-sub">像玩游戏闯关一样练英语口语，每一关是一个真实场景。</p>
+      <h2 class="page-title" data-i18n="情景地图">情景地图</h2>
+      <p class="page-sub" data-i18n="像玩游戏闯关一样练英语口语，每一关是一个真实场景。">像玩游戏闯关一样练英语口语，每一关是一个真实场景。</p>
 
       <div class="scene-today" id="sceneToday" hidden>
-        <div class="scene-today-tag">今日场景</div>
+        <div class="scene-today-tag" data-i18n="今日场景">今日场景</div>
         <div class="scene-today-main">
           <span class="scene-today-emoji" id="sceneTodayEmoji">☕️</span>
           <div>
@@ -339,12 +345,12 @@
             <div class="scene-today-brief" id="sceneTodayBrief">-</div>
           </div>
         </div>
-        <button type="button" class="btn btn-primary" id="btnSceneTodayStart">开始今天的场景</button>
+        <button type="button" class="btn btn-primary" id="btnSceneTodayStart" data-i18n="开始今天的场景">开始今天的场景</button>
       </div>
 
       <div class="scene-progress">
         <div class="scene-progress-head">
-          <span>地图进度</span>
+          <span data-i18n="地图进度">地图进度</span>
           <span id="sceneProgressText">-</span>
         </div>
         <div class="scene-progress-bar"><div class="scene-progress-fill" id="sceneProgressFill"></div></div>
@@ -364,7 +370,7 @@
   <!-- 点开某个场景后的说明卡：先讲清这次要演什么、目标是什么，再进对话 -->
   <div class="modal-overlay" id="sceneDetailOverlay" hidden>
     <div class="modal scene-detail">
-      <button type="button" class="modal-close" id="btnSceneDetailClose" aria-label="关闭">×</button>
+      <button type="button" class="modal-close" id="btnSceneDetailClose" data-i18n-aria-label="关闭" aria-label="关闭">×</button>
       <div class="scene-detail-head">
         <span class="scene-detail-emoji" id="sceneDetailEmoji">☕️</span>
         <div>
@@ -375,40 +381,40 @@
       <p class="scene-detail-goal" id="sceneDetailGoal">-</p>
       <div class="scene-detail-phrases" id="sceneDetailPhrases"></div>
       <div class="scene-detail-actions">
-        <button type="button" class="btn btn-primary" id="btnSceneStart">开始对话</button>
+        <button type="button" class="btn btn-primary" id="btnSceneStart" data-i18n="开始对话">开始对话</button>
       </div>
     </div>
   </div>
 
   <section class="view" id="view-vocab" hidden>
     <div class="container container-narrow">
-      <h2 class="page-title">背单词</h2>
+      <h2 class="page-title" data-i18n="背单词">背单词</h2>
       <div class="tts-notice" id="ttsNoticeVocab" hidden></div>
       <div class="vocab-stats" id="vocabStats"></div>
 
       <div class="vocab-mode-toggle" id="vocabModeToggle">
-        <button type="button" class="chip active" data-mode="review">📇 复习卡片</button>
-        <button type="button" class="chip" data-mode="browse">📚 浏览全部单词</button>
+        <button type="button" class="chip active" data-mode="review" data-i18n="📇 复习卡片">📇 复习卡片</button>
+        <button type="button" class="chip" data-mode="browse" data-i18n="📚 浏览全部单词">📚 浏览全部单词</button>
       </div>
 
       <div class="vocab-level-filter" id="vocabLevelFilter">
-        <button class="chip active" data-level="">全部</button>
-        <button class="chip" data-level="cet4">四级</button>
-        <button class="chip" data-level="cet6">六级</button>
-        <button class="chip" data-level="kaoyan">考研</button>
-        <button class="chip" data-level="toefl">托福</button>
+        <button class="chip active" data-level="" data-i18n="全部">全部</button>
+        <button class="chip" data-level="cet4" data-i18n="四级">四级</button>
+        <button class="chip" data-level="cet6" data-i18n="六级">六级</button>
+        <button class="chip" data-level="kaoyan" data-i18n="考研">考研</button>
+        <button class="chip" data-level="toefl" data-i18n="托福">托福</button>
         <button class="chip" data-level="gre">GRE</button>
       </div>
-      <button type="button" class="btn btn-outline btn-sm" id="btnStartQuiz">📝 根据学习情况来次测试</button>
+      <button type="button" class="btn btn-outline btn-sm" id="btnStartQuiz" data-i18n="📝 根据学习情况来次测试">📝 根据学习情况来次测试</button>
 
       <div id="flashcardArea">
         <div class="flashcard" id="flashcard">
           <div class="flashcard-progress" id="flashcardProgress"></div>
           <div class="flashcard-word" id="flashcardWord">-</div>
           <div class="flashcard-pos" id="flashcardPos"></div>
-          <button class="btn btn-icon" id="btnSpeakWord" title="发音">🔊</button>
+          <button class="btn btn-icon" id="btnSpeakWord" data-i18n-title="发音" title="发音">🔊</button>
           <div class="flashcard-root-hint" id="flashcardRootHint" hidden>
-            <span class="root-hint-label">🔑 词根线索</span>
+            <span class="root-hint-label" data-i18n="🔑 词根线索">🔑 词根线索</span>
             <span class="root-hint-text" id="flashcardRootText"></span>
           </div>
           <div class="flashcard-reveal" id="flashcardReveal" hidden>
@@ -418,38 +424,38 @@
             <div class="flashcard-example-zh" id="flashcardExampleZh"></div>
           </div>
           <div class="flashcard-actions" id="flashcardPreActions">
-            <button class="btn btn-outline" id="btnRevealCard">显示释义</button>
-            <button class="btn btn-ghost" id="btnSkipWord">⏭️ 已掌握，跳过</button>
+            <button class="btn btn-outline" id="btnRevealCard" data-i18n="显示释义">显示释义</button>
+            <button class="btn btn-ghost" id="btnSkipWord" data-i18n="⏭️ 已掌握，跳过">⏭️ 已掌握，跳过</button>
           </div>
-          <button class="btn btn-ghost btn-sm btn-orbit-entry" id="btnOpenOrbit">🪐 看词根关联星球</button>
+          <button class="btn btn-ghost btn-sm btn-orbit-entry" id="btnOpenOrbit" data-i18n="🪐 看词根关联星球">🪐 看词根关联星球</button>
         </div>
         <div class="flashcard-actions flashcard-actions-anki" id="flashcardActions" hidden>
           <button class="btn btn-anki btn-anki-again" id="btnAgain">
-            <span class="anki-label">😵 忘记</span><span class="anki-interval" id="intervalAgain"></span>
+            <span class="anki-label" data-i18n="😵 忘记">😵 忘记</span><span class="anki-interval" id="intervalAgain"></span>
           </button>
           <button class="btn btn-anki btn-anki-hard" id="btnHard">
-            <span class="anki-label">😓 困难</span><span class="anki-interval" id="intervalHard"></span>
+            <span class="anki-label" data-i18n="😓 困难">😓 困难</span><span class="anki-interval" id="intervalHard"></span>
           </button>
           <button class="btn btn-anki btn-anki-good" id="btnGood">
-            <span class="anki-label">🙂 记得</span><span class="anki-interval" id="intervalGood"></span>
+            <span class="anki-label" data-i18n="🙂 记得">🙂 记得</span><span class="anki-interval" id="intervalGood"></span>
           </button>
           <button class="btn btn-anki btn-anki-easy" id="btnEasy">
-            <span class="anki-label">😎 简单</span><span class="anki-interval" id="intervalEasy"></span>
+            <span class="anki-label" data-i18n="😎 简单">😎 简单</span><span class="anki-interval" id="intervalEasy"></span>
           </button>
         </div>
       </div>
       <div id="vocabEmpty" class="empty-state" hidden>
-        <p>🎉 今天的复习任务已完成！</p>
+        <p data-i18n="🎉 今天的复习任务已完成！">🎉 今天的复习任务已完成！</p>
       </div>
 
       <div id="vocabBrowseArea" hidden>
         <div class="vocab-browse-toolbar">
-          <input type="text" id="vocabSearchInput" placeholder="🔍 搜索单词或中文释义...">
+          <input type="text" id="vocabSearchInput" data-i18n-placeholder="🔍 搜索单词或中文释义..." placeholder="🔍 搜索单词或中文释义...">
           <select id="vocabStatusFilter">
-            <option value="">全部状态</option>
-            <option value="new">未学</option>
-            <option value="learning">学习中</option>
-            <option value="known">已掌握</option>
+            <option value="" data-i18n="全部状态">全部状态</option>
+            <option value="new" data-i18n="未学">未学</option>
+            <option value="learning" data-i18n="学习中">学习中</option>
+            <option value="known" data-i18n="已掌握">已掌握</option>
           </select>
         </div>
         <div class="vocab-browse-count" id="vocabBrowseCount"></div>
@@ -468,8 +474,8 @@
         <div class="quiz-result-score" id="quizResultScore"></div>
         <p id="quizResultText"></p>
         <div class="quiz-result-actions">
-          <button type="button" class="btn btn-primary" id="btnQuizRetry">再测一次</button>
-          <button type="button" class="btn btn-ghost" id="btnQuizExit">返回背单词</button>
+          <button type="button" class="btn btn-primary" id="btnQuizRetry" data-i18n="再测一次">再测一次</button>
+          <button type="button" class="btn btn-ghost" id="btnQuizExit" data-i18n="返回背单词">返回背单词</button>
         </div>
       </div>
     </div>
@@ -478,43 +484,43 @@
   <!-- 语法 -->
   <section class="view" id="view-grammar" hidden>
     <div class="container container-narrow">
-      <h2 class="page-title">语法学习</h2>
+      <h2 class="page-title" data-i18n="语法学习">语法学习</h2>
       <div id="grammarList" class="grammar-list"></div>
 
       <div id="grammarDetail" class="grammar-detail" hidden>
-        <button class="btn btn-ghost btn-sm" id="btnBackToList">← 返回列表</button>
+        <button class="btn btn-ghost btn-sm" id="btnBackToList" data-i18n="← 返回列表">← 返回列表</button>
         <h3 id="grammarTitle"></h3>
         <p class="grammar-summary" id="grammarSummaryText"></p>
         <div class="grammar-block">
-          <div class="grammar-block-label">结构</div>
+          <div class="grammar-block-label" data-i18n="结构">结构</div>
           <div id="grammarStructure" class="grammar-structure"></div>
         </div>
         <div class="grammar-block">
-          <div class="grammar-block-label">讲解</div>
+          <div class="grammar-block-label" data-i18n="讲解">讲解</div>
           <p id="grammarExplanation"></p>
         </div>
         <div class="grammar-block">
-          <div class="grammar-block-label">例句</div>
+          <div class="grammar-block-label" data-i18n="例句">例句</div>
           <ul id="grammarExamples" class="grammar-examples"></ul>
         </div>
         <div class="grammar-block" id="grammarMistakesBlock" hidden>
-          <div class="grammar-block-label">⚠️ 中国学生常见错误</div>
+          <div class="grammar-block-label" data-i18n="⚠️ 中国学生常见错误">⚠️ 中国学生常见错误</div>
           <div id="grammarMistakes"></div>
         </div>
         <div class="grammar-block">
-          <div class="grammar-block-label">练习</div>
+          <div class="grammar-block-label" data-i18n="练习">练习</div>
           <div id="grammarPractice"></div>
         </div>
 
         <div class="grammar-block">
-          <div class="grammar-block-label">AI 语法批改</div>
+          <div class="grammar-block-label" data-i18n="AI 语法批改">AI 语法批改</div>
           <div id="grammarCheckerPaywall" class="paywall paywall-banner" hidden>
-            <p>🎁 非会员每天可免费体验 3 次 AI 语法批改，开通会员畅享无限次使用。</p>
-            <button class="btn btn-primary btn-sm" id="btnGrammarUpgrade">立即开通会员</button>
+            <p data-i18n="🎁 非会员每天可免费体验 3 次 AI 语法批改，开通会员畅享无限次使用。">🎁 非会员每天可免费体验 3 次 AI 语法批改，开通会员畅享无限次使用。</p>
+            <button class="btn btn-primary btn-sm" id="btnGrammarUpgrade" data-i18n="立即开通会员">立即开通会员</button>
           </div>
           <div id="grammarCheckerPanel" hidden>
-            <textarea id="grammarCheckInput" placeholder="输入一句你写的句子，AI 会帮你检查语法..." maxlength="300"></textarea>
-            <button class="btn btn-primary btn-sm" id="btnGrammarCheck">提交检查</button>
+            <textarea id="grammarCheckInput" data-i18n-placeholder="输入一句你写的句子，AI 会帮你检查语法..." placeholder="输入一句你写的句子，AI 会帮你检查语法..." maxlength="300"></textarea>
+            <button class="btn btn-primary btn-sm" id="btnGrammarCheck" data-i18n="提交检查">提交检查</button>
             <div id="grammarCheckResult" class="grammar-check-result"></div>
           </div>
         </div>
@@ -526,18 +532,18 @@
   <!-- 同声传译 -->
   <section class="view" id="view-translate" hidden>
     <div class="container container-narrow">
-      <h2 class="page-title">同声传译</h2>
-      <p class="page-sub">对方说外语，实时翻译成你指定的语言并读出来</p>
+      <h2 class="page-title" data-i18n="同声传译">同声传译</h2>
+      <p class="page-sub" data-i18n="对方说外语，实时翻译成你指定的语言并读出来">对方说外语，实时翻译成你指定的语言并读出来</p>
       <div class="tts-notice" id="ttsNoticeTranslate" hidden></div>
 
       <div class="tr-langbar">
         <div class="tr-lang">
-          <label>对方说</label>
+          <label data-i18n="对方说">对方说</label>
           <select id="trFromLang"></select>
         </div>
-        <button type="button" class="tr-swap" id="btnTrSwap" title="互换语言">⇄</button>
+        <button type="button" class="tr-swap" id="btnTrSwap" data-i18n-title="互换语言" title="互换语言">⇄</button>
         <div class="tr-lang">
-          <label>翻译成</label>
+          <label data-i18n="翻译成">翻译成</label>
           <select id="trToLang"></select>
         </div>
       </div>
@@ -545,24 +551,24 @@
       <div class="tr-mic-area">
         <button type="button" class="tr-mic" id="btnTrMic">
           <span class="tr-mic-icon">🎙️</span>
-          <span class="tr-mic-label" id="trMicLabel">开始收听</span>
+          <span class="tr-mic-label" id="trMicLabel" data-i18n="开始收听">开始收听</span>
         </button>
-        <p class="tr-status" id="trStatus">点击开始，对方说话时会自动翻译并朗读</p>
-        <button type="button" class="btn btn-ghost btn-sm" id="btnTrFallback" hidden>🎧 一直识别不出来？改用录音翻译</button>
+        <p class="tr-status" id="trStatus" data-i18n="点击开始，对方说话时会自动翻译并朗读">点击开始，对方说话时会自动翻译并朗读</p>
+        <button type="button" class="btn btn-ghost btn-sm" id="btnTrFallback" hidden data-i18n="🎧 一直识别不出来？改用录音翻译">🎧 一直识别不出来？改用录音翻译</button>
         <label class="auto-speak-toggle">
-          <input type="checkbox" id="trAutoSpeak" checked> 🔊 自动朗读译文
+          <input type="checkbox" id="trAutoSpeak" checked> <span data-i18n="🔊 自动朗读译文">🔊 自动朗读译文</span>
         </label>
       </div>
 
       <div class="tr-results" id="trResults"></div>
-      <button type="button" class="btn btn-ghost btn-sm" id="btnTrClear" hidden>清空记录</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="btnTrClear" hidden data-i18n="清空记录">清空记录</button>
     </div>
   </section>
 
   <section class="view" id="view-colloquial" hidden>
     <div class="container container-narrow">
-      <h2 class="page-title">地道美式口语</h2>
-      <p class="hint" style="margin-bottom:16px;">日常最常用的美式口语表达，点击卡片查看例句和使用场景，点击 🔊 听发音。</p>
+      <h2 class="page-title" data-i18n="地道美式口语">地道美式口语</h2>
+      <p class="hint" style="margin-bottom:16px;" data-i18n="日常最常用的美式口语表达，点击卡片查看例句和使用场景，点击 🔊 听发音。">日常最常用的美式口语表达，点击卡片查看例句和使用场景，点击 🔊 听发音。</p>
       <div id="colloquialFilterChips" class="vocab-level-filter"></div>
       <div id="colloquialList" class="colloquial-list"></div>
     </div>
@@ -571,17 +577,17 @@
   <!-- 错题本 -->
   <section class="view" id="view-mistakes" hidden>
     <div class="container container-narrow">
-      <h2 class="page-title">AI 错题本</h2>
+      <h2 class="page-title" data-i18n="AI 错题本">AI 错题本</h2>
 
       <div id="mistakesPaywall" class="paywall paywall-banner" hidden>
-        <p>🎁 非会员每天可免费体验 3 次错题解析，开通会员畅享无限次使用。</p>
-        <button class="btn btn-primary btn-sm" id="btnMistakesUpgrade">立即开通会员</button>
+        <p data-i18n="🎁 非会员每天可免费体验 3 次错题解析，开通会员畅享无限次使用。">🎁 非会员每天可免费体验 3 次错题解析，开通会员畅享无限次使用。</p>
+        <button class="btn btn-primary btn-sm" id="btnMistakesUpgrade" data-i18n="立即开通会员">立即开通会员</button>
       </div>
 
       <div id="mistakesPanel" hidden>
         <div class="mistake-input-tabs">
-          <button type="button" class="mistake-input-tab active" id="tabImageMode" data-mode="image">📷 拍照 / 上传图片</button>
-          <button type="button" class="mistake-input-tab" id="tabTextMode" data-mode="text">⌨️ 打字输入</button>
+          <button type="button" class="mistake-input-tab active" id="tabImageMode" data-mode="image" data-i18n="📷 拍照 / 上传图片">📷 拍照 / 上传图片</button>
+          <button type="button" class="mistake-input-tab" id="tabTextMode" data-mode="text" data-i18n="⌨️ 打字输入">⌨️ 打字输入</button>
         </div>
 
         <div class="mistake-upload-card" id="mistakeImageMode">
@@ -589,27 +595,29 @@
           <div class="mistake-upload-drop" id="mistakeUploadDrop">
             <div id="mistakeUploadEmpty">
               <div class="mistake-upload-icon">📷</div>
-              <p>点击拍照或从相册选择错题图片<br>电脑端可直接 <strong>Ctrl+V</strong> 粘贴截图</p>
-              <button type="button" class="btn btn-outline btn-sm" id="btnPickImage">选择图片</button>
+              <!-- 这句里夹了 <br> 和 <strong>，整句挂一个 data-i18n 只会翻到第一段，
+                   剩下半句还是中文。拆成两个 span 各自标记。 -->
+              <p><span data-i18n="点击拍照或从相册选择错题图片">点击拍照或从相册选择错题图片</span><br><span data-i18n="电脑端可直接 Ctrl+V 粘贴截图">电脑端可直接 Ctrl+V 粘贴截图</span></p>
+              <button type="button" class="btn btn-outline btn-sm" id="btnPickImage" data-i18n="选择图片">选择图片</button>
             </div>
             <div id="mistakeUploadPreviewWrap" hidden>
               <img id="mistakeUploadPreview" class="mistake-upload-preview" alt="错题预览">
             </div>
           </div>
           <div class="mistake-upload-actions" id="mistakeUploadActions" hidden>
-            <input type="text" id="mistakeExamType" placeholder="考试类型（可选，如 CET-4）" maxlength="20">
-            <button type="button" class="btn btn-primary btn-sm" id="btnAnalyzeMistake">🔍 AI 识别解析</button>
-            <button type="button" class="btn btn-ghost btn-sm" id="btnCancelUpload">取消</button>
+            <input type="text" id="mistakeExamType" data-i18n-placeholder="考试类型（可选，如 CET-4）" placeholder="考试类型（可选，如 CET-4）" maxlength="20">
+            <button type="button" class="btn btn-primary btn-sm" id="btnAnalyzeMistake" data-i18n="🔍 AI 识别解析">🔍 AI 识别解析</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="btnCancelUpload" data-i18n="取消">取消</button>
           </div>
           <p class="mistake-upload-status" id="mistakeUploadStatus"></p>
         </div>
 
         <div class="mistake-upload-card" id="mistakeTextMode" hidden>
-          <textarea id="mistakeTextInput" class="mistake-text-input" placeholder="把错题打字输入进来，比如：题目内容 + 选项 + 你选的答案是什么，AI 会帮你整理分析..." maxlength="2000"></textarea>
+          <textarea id="mistakeTextInput" class="mistake-text-input" data-i18n-placeholder="把错题打字输入进来，比如：题目内容 + 选项 + 你选的答案是什么，AI 会帮你整理分析..." placeholder="把错题打字输入进来，比如：题目内容 + 选项 + 你选的答案是什么，AI 会帮你整理分析..." maxlength="2000"></textarea>
           <div class="mistake-upload-actions">
-            <input type="text" id="mistakeTextExamType" placeholder="考试类型（可选，如 CET-4）" maxlength="20">
-            <button type="button" class="btn btn-primary btn-sm" id="btnAnalyzeTextMistake">🔍 AI 解析</button>
-            <button type="button" class="btn btn-ghost btn-sm" id="btnClearTextInput">清空</button>
+            <input type="text" id="mistakeTextExamType" data-i18n-placeholder="考试类型（可选，如 CET-4）" placeholder="考试类型（可选，如 CET-4）" maxlength="20">
+            <button type="button" class="btn btn-primary btn-sm" id="btnAnalyzeTextMistake" data-i18n="🔍 AI 解析">🔍 AI 解析</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="btnClearTextInput" data-i18n="清空">清空</button>
           </div>
           <p class="mistake-upload-status" id="mistakeTextStatus"></p>
         </div>
@@ -617,11 +625,11 @@
         <div id="mistakeResultCard" class="mistake-detail-card" hidden></div>
 
         <div class="mistake-list-header">
-          <h3>我的错题（<span id="mistakeCount">0</span>）</h3>
+          <h3 data-i18n="我的错题（">我的错题（<span id="mistakeCount">0</span>）</h3>
         </div>
         <div class="mistake-filter-chips" id="mistakeFilterChips"></div>
         <div id="mistakeList" class="mistake-list"></div>
-        <div id="mistakeListEmpty" class="empty-state" hidden><p>还没有错题记录，上传第一道错题开始吧！</p></div>
+        <div id="mistakeListEmpty" class="empty-state" hidden><p data-i18n="还没有错题记录，上传第一道错题开始吧！">还没有错题记录，上传第一道错题开始吧！</p></div>
       </div>
     </div>
   </section>
@@ -629,62 +637,62 @@
   <!-- 作文批改 -->
   <section class="view" id="view-essay" hidden>
     <div class="container container-narrow">
-      <h2 class="page-title">AI 作文助手</h2>
+      <h2 class="page-title" data-i18n="AI 作文助手">AI 作文助手</h2>
 
       <div id="essayPaywall" class="paywall paywall-banner" hidden>
-        <p>🎁 非会员每天可免费体验 3 次 AI 作文批改，开通会员畅享无限次使用。</p>
-        <button class="btn btn-primary btn-sm" id="btnEssayUpgrade">立即开通会员</button>
+        <p data-i18n="🎁 非会员每天可免费体验 3 次 AI 作文批改，开通会员畅享无限次使用。">🎁 非会员每天可免费体验 3 次 AI 作文批改，开通会员畅享无限次使用。</p>
+        <button class="btn btn-primary btn-sm" id="btnEssayUpgrade" data-i18n="立即开通会员">立即开通会员</button>
       </div>
 
       <div id="essayPanel" hidden>
         <div class="mistake-input-tabs" id="essayModeTabs">
-          <button class="mistake-input-tab active" data-mode="general">通用批改</button>
-          <button class="mistake-input-tab" data-mode="english">🎯 针对性备考批改</button>
+          <button class="mistake-input-tab active" data-mode="general" data-i18n="通用批改">通用批改</button>
+          <button class="mistake-input-tab" data-mode="english" data-i18n="🎯 针对性备考批改">🎯 针对性备考批改</button>
         </div>
 
         <div class="essay-input-card">
-          <textarea id="essayInput" class="essay-textarea" placeholder="把你写的作文粘贴或输入进来，AI 会逐句逐词批改，给出修改建议和整体点评..." maxlength="3000"></textarea>
+          <textarea id="essayInput" class="essay-textarea" data-i18n-placeholder="把你写的作文粘贴或输入进来，AI 会逐句逐词批改，给出修改建议和整体点评..." placeholder="把你写的作文粘贴或输入进来，AI 会逐句逐词批改，给出修改建议和整体点评..." maxlength="3000"></textarea>
           <div class="essay-input-actions">
-            <input type="text" id="essayExamType" placeholder="考试类型（可选，如 CET-4 / 雅思）" maxlength="20">
+            <input type="text" id="essayExamType" data-i18n-placeholder="考试类型（可选，如 CET-4 / 雅思）" placeholder="考试类型（可选，如 CET-4 / 雅思）" maxlength="20">
             <select id="essayExamTypeSelect" hidden>
-              <option value="CET-4">CET-4 四级</option>
-              <option value="CET-6">CET-6 六级</option>
-              <option value="IELTS">IELTS 雅思</option>
-              <option value="TOEFL">TOEFL 托福</option>
-              <option value="考研英语">考研英语</option>
-              <option value="其他">其他</option>
+              <option value="CET-4" data-i18n="CET-4 四级">CET-4 四级</option>
+              <option value="CET-6" data-i18n="CET-6 六级">CET-6 六级</option>
+              <option value="IELTS" data-i18n="IELTS 雅思">IELTS 雅思</option>
+              <option value="TOEFL" data-i18n="TOEFL 托福">TOEFL 托福</option>
+              <option value="考研英语" data-i18n="考研英语">考研英语</option>
+              <option value="其他" data-i18n="其他">其他</option>
             </select>
             <span class="essay-char-count" id="essayCharCount">0 / 3000</span>
-            <button type="button" class="btn btn-primary btn-sm" id="btnCheckEssay">✍️ AI 批改</button>
+            <button type="button" class="btn btn-primary btn-sm" id="btnCheckEssay" data-i18n="✍️ AI 批改">✍️ AI 批改</button>
           </div>
           <p class="mistake-upload-status" id="essayStatus"></p>
         </div>
 
         <div id="essayResult" class="essay-result" hidden>
           <div class="essay-result-block" id="essayScoreBlock" hidden>
-            <div class="mistake-detail-label">预估分数</div>
+            <div class="mistake-detail-label" data-i18n="预估分数">预估分数</div>
             <p id="essayScore" style="font-size:20px;font-weight:800;color:var(--primary);"></p>
           </div>
           <div class="essay-result-block" id="essayRubricBlock" hidden>
-            <div class="mistake-detail-label">评分细项</div>
-            <p>📋 内容与任务完成度：<span id="essayRubricContent"></span></p>
-            <p>🧩 结构与逻辑：<span id="essayRubricOrganization"></span></p>
-            <p>🔤 语言使用：<span id="essayRubricLanguage"></span></p>
+            <div class="mistake-detail-label" data-i18n="评分细项">评分细项</div>
+            <p data-i18n="📋 内容与任务完成度：">📋 内容与任务完成度：<span id="essayRubricContent"></span></p>
+            <p data-i18n="🧩 结构与逻辑：">🧩 结构与逻辑：<span id="essayRubricOrganization"></span></p>
+            <p data-i18n="🔤 语言使用：">🔤 语言使用：<span id="essayRubricLanguage"></span></p>
           </div>
           <div class="essay-result-block">
-            <div class="mistake-detail-label">整体水平评估</div>
+            <div class="mistake-detail-label" data-i18n="整体水平评估">整体水平评估</div>
             <p id="essayLevel"></p>
           </div>
           <div class="essay-result-block">
-            <div class="mistake-detail-label">总体点评</div>
+            <div class="mistake-detail-label" data-i18n="总体点评">总体点评</div>
             <p id="essayComment"></p>
           </div>
           <div class="essay-result-block">
-            <div class="mistake-detail-label">修改后全文</div>
+            <div class="mistake-detail-label" data-i18n="修改后全文">修改后全文</div>
             <div class="essay-corrected-box" id="essayCorrected"></div>
           </div>
           <div class="essay-result-block">
-            <div class="mistake-detail-label">逐句逐词修改（<span id="essayCorrectionCount">0</span> 处）</div>
+            <div class="mistake-detail-label" data-i18n="逐句逐词修改（">逐句逐词修改（<span id="essayCorrectionCount">0</span> 处）</div>
             <div id="essayCorrections"></div>
           </div>
         </div>
@@ -695,62 +703,62 @@
   <!-- 我的 / 会员 -->
   <section class="view" id="view-profile" hidden>
     <div class="container container-narrow">
-      <h2 class="page-title">我的</h2>
+      <h2 class="page-title" data-i18n="我的">我的</h2>
       <div class="profile-card">
         <div class="profile-avatar-section">
           <div class="profile-avatar-current" id="profileAvatarCurrent"></div>
           <div class="profile-avatar-right">
-            <label>我的头像</label>
+            <label data-i18n="我的头像">我的头像</label>
             <div class="avatar-preset-grid" id="avatarPresetGrid"></div>
             <div class="avatar-actions">
               <input type="file" id="avatarFileInput" accept="image/*" hidden>
-              <button type="button" class="btn btn-outline btn-sm" id="btnUploadAvatar">上传照片</button>
-              <button type="button" class="btn btn-ghost btn-sm" id="btnClearAvatar">恢复默认</button>
+              <button type="button" class="btn btn-outline btn-sm" id="btnUploadAvatar" data-i18n="上传照片">上传照片</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="btnClearAvatar" data-i18n="恢复默认">恢复默认</button>
             </div>
             <p class="form-hint" id="avatarHint"></p>
           </div>
         </div>
         <div class="profile-row">
-          <label>昵称</label>
+          <label data-i18n="昵称">昵称</label>
           <input type="text" id="profileNickname" maxlength="30">
         </div>
         <div class="profile-row">
-          <label>目标语言</label>
+          <label data-i18n="目标语言">目标语言</label>
           <select id="profileLang"></select>
         </div>
         <div class="profile-row">
-          <label>当前水平</label>
+          <label data-i18n="当前水平">当前水平</label>
           <select id="profileLevel">
-            <option value="beginner">初级</option>
-            <option value="intermediate">中级</option>
-            <option value="advanced">高级</option>
+            <option value="beginner" data-i18n="初级">初级</option>
+            <option value="intermediate" data-i18n="中级">中级</option>
+            <option value="advanced" data-i18n="高级">高级</option>
           </select>
         </div>
-        <button class="btn btn-primary" id="btnSaveProfile">保存设置</button>
+        <button class="btn btn-primary" id="btnSaveProfile" data-i18n="保存设置">保存设置</button>
         <div class="profile-member-box" id="profileMemberBox"></div>
 
         <div class="profile-phone-box" id="profilePhoneBox">
-          <div id="profilePhoneVerified" hidden>✅ 已验证手机号 <span id="profilePhoneNumber"></span></div>
+          <div id="profilePhoneVerified" hidden data-i18n="✅ 已验证手机号">✅ 已验证手机号 <span id="profilePhoneNumber"></span></div>
           <div id="profilePhoneUnverified" hidden>
-            <p>🎁 未验证手机号的账号暂不提供每日免费体验额度（AI对话/作文批改/错题本），验证后即可解锁。</p>
+            <p data-i18n="🎁 未验证手机号的账号暂不提供每日免费体验额度（AI对话/作文批改/错题本），验证后即可解锁。">🎁 未验证手机号的账号暂不提供每日免费体验额度（AI对话/作文批改/错题本），验证后即可解锁。</p>
             <div class="form-row">
-              <label>手机号</label>
-              <input type="tel" id="profileInputPhone" maxlength="11" placeholder="请输入11位手机号">
+              <label data-i18n="手机号">手机号</label>
+              <input type="tel" id="profileInputPhone" maxlength="11" data-i18n-placeholder="请输入11位手机号" placeholder="请输入11位手机号">
             </div>
             <div class="form-row">
-              <label>验证码</label>
+              <label data-i18n="验证码">验证码</label>
               <div class="phone-code-row">
-                <input type="text" id="profileInputPhoneCode" maxlength="6" placeholder="6位验证码">
-                <button type="button" class="btn btn-outline btn-sm" id="btnProfileSendCode">获取验证码</button>
+                <input type="text" id="profileInputPhoneCode" maxlength="6" data-i18n-placeholder="6位验证码" placeholder="6位验证码">
+                <button type="button" class="btn btn-outline btn-sm" id="btnProfileSendCode" data-i18n="获取验证码">获取验证码</button>
               </div>
             </div>
             <p class="form-hint" id="profilePhoneHint"></p>
             <p class="form-error" id="profilePhoneError"></p>
-            <button type="button" class="btn btn-primary btn-sm" id="btnProfileBindPhone">验证并绑定</button>
+            <button type="button" class="btn btn-primary btn-sm" id="btnProfileBindPhone" data-i18n="验证并绑定">验证并绑定</button>
           </div>
         </div>
 
-        <button class="btn btn-ghost" id="btnLogout">退出登录</button>
+        <button class="btn btn-ghost" id="btnLogout" data-i18n="退出登录">退出登录</button>
       </div>
     </div>
   </section>
@@ -758,20 +766,20 @@
   <!-- 管理后台 -->
   <section class="view" id="view-admin" hidden>
     <div class="container">
-      <h2 class="page-title">管理后台</h2>
+      <h2 class="page-title" data-i18n="管理后台">管理后台</h2>
       <p class="admin-role-hint" id="adminRoleHint"></p>
       <div class="metrics-grid" id="adminOverview">
-        <div class="metric-card"><div class="metric-icon">👥</div><div class="metric-value" id="adminTotalUsers">-</div><div class="metric-label">注册用户</div></div>
-        <div class="metric-card"><div class="metric-icon">💎</div><div class="metric-value" id="adminTotalMembers">-</div><div class="metric-label">会员数</div></div>
-        <div class="metric-card"><div class="metric-icon">💬</div><div class="metric-value" id="adminTotalChats">-</div><div class="metric-label">累计AI对话</div></div>
-        <div class="metric-card"><div class="metric-icon">📝</div><div class="metric-value" id="adminTotalMistakes">-</div><div class="metric-label">累计错题</div></div>
-        <div class="metric-card"><div class="metric-icon">🆕</div><div class="metric-value" id="adminNewToday">-</div><div class="metric-label">今日新增</div></div>
-        <div class="metric-card"><div class="metric-icon">📈</div><div class="metric-value" id="adminNewWeek">-</div><div class="metric-label">近7天新增</div></div>
+        <div class="metric-card"><div class="metric-icon">👥</div><div class="metric-value" id="adminTotalUsers">-</div><div class="metric-label" data-i18n="注册用户">注册用户</div></div>
+        <div class="metric-card"><div class="metric-icon">💎</div><div class="metric-value" id="adminTotalMembers">-</div><div class="metric-label" data-i18n="会员数">会员数</div></div>
+        <div class="metric-card"><div class="metric-icon">💬</div><div class="metric-value" id="adminTotalChats">-</div><div class="metric-label" data-i18n="累计AI对话">累计AI对话</div></div>
+        <div class="metric-card"><div class="metric-icon">📝</div><div class="metric-value" id="adminTotalMistakes">-</div><div class="metric-label" data-i18n="累计错题">累计错题</div></div>
+        <div class="metric-card"><div class="metric-icon">🆕</div><div class="metric-value" id="adminNewToday">-</div><div class="metric-label" data-i18n="今日新增">今日新增</div></div>
+        <div class="metric-card"><div class="metric-icon">📈</div><div class="metric-value" id="adminNewWeek">-</div><div class="metric-label" data-i18n="近7天新增">近7天新增</div></div>
       </div>
 
       <!-- 视频通话是唯一按分钟计费的功能，用量单独一块，避免混在其他统计里被忽略 -->
       <div id="adminAvatarSection" hidden>
-        <h3 class="section-title">AI 视频通话用量（本月）</h3>
+        <h3 class="section-title" data-i18n="AI 视频通话用量（本月）">AI 视频通话用量（本月）</h3>
         <div class="avatar-usage-card">
           <div class="avatar-usage-bar"><div class="avatar-usage-fill" id="adminAvatarBar"></div></div>
           <div class="avatar-usage-line" id="adminAvatarSummary"></div>
@@ -781,14 +789,14 @@
              不是靠前端隐藏），用来回答"我看到还有别的通话，那是谁" -->
         <div class="admin-table-wrap" id="adminLiveCallsWrap" hidden>
           <table class="admin-table">
-            <thead><tr><th>正在通话</th><th>开始于</th><th>状态</th><th>来源 IP</th><th>房间 id</th></tr></thead>
+            <thead><tr><th data-i18n="正在通话">正在通话</th><th data-i18n="开始于">开始于</th><th data-i18n="状态">状态</th><th data-i18n="来源 IP">来源 IP</th><th data-i18n="房间 id">房间 id</th></tr></thead>
             <tbody id="adminLiveCallsBody"></tbody>
           </table>
         </div>
 
         <div class="admin-table-wrap" id="adminAvatarIpWrap" hidden>
           <table class="admin-table">
-            <thead><tr><th>来源 IP</th><th>本月次数</th><th>本月用量</th></tr></thead>
+            <thead><tr><th data-i18n="来源 IP">来源 IP</th><th data-i18n="本月次数">本月次数</th><th data-i18n="本月用量">本月用量</th></tr></thead>
             <tbody id="adminAvatarIpBody"></tbody>
           </table>
         </div>
@@ -798,24 +806,24 @@
            不是靠前端 hidden 挡——前端挡不住直接调接口的人。 -->
       <div id="adminAuthSection" hidden>
         <div class="admin-users-header">
-          <h3 class="section-title">最近登录</h3>
+          <h3 class="section-title" data-i18n="最近登录">最近登录</h3>
           <select class="admin-auth-filter" id="adminAuthRange">
-            <option value="24">过去 24 小时</option>
-            <option value="72">过去 3 天</option>
-            <option value="168">过去 7 天</option>
-            <option value="720">过去 30 天</option>
-            <option value="all">全部</option>
+            <option value="24" data-i18n="过去 24 小时">过去 24 小时</option>
+            <option value="72" data-i18n="过去 3 天">过去 3 天</option>
+            <option value="168" data-i18n="过去 7 天">过去 7 天</option>
+            <option value="720" data-i18n="过去 30 天">过去 30 天</option>
+            <option value="all" data-i18n="全部">全部</option>
           </select>
           <select class="admin-auth-filter" id="adminAuthFilter">
-            <option value="all">全部动态</option>
-            <option value="login">只看登录</option>
-            <option value="register">只看新注册</option>
-            <option value="logout">只看登出</option>
+            <option value="all" data-i18n="全部动态">全部动态</option>
+            <option value="login" data-i18n="只看登录">只看登录</option>
+            <option value="register" data-i18n="只看新注册">只看新注册</option>
+            <option value="logout" data-i18n="只看登出">只看登出</option>
           </select>
         </div>
         <div class="admin-table-wrap">
           <table class="admin-table">
-            <thead><tr><th>时间</th><th>用户</th><th>动作</th><th>方式</th><th>IP</th></tr></thead>
+            <thead><tr><th data-i18n="时间">时间</th><th data-i18n="用户">用户</th><th data-i18n="动作">动作</th><th data-i18n="方式">方式</th><th>IP</th></tr></thead>
             <tbody id="adminAuthBody"></tbody>
           </table>
         </div>
@@ -823,24 +831,24 @@
       </div>
 
       <div id="adminRegionSection" hidden>
-        <h3 class="section-title">注册地区分布</h3>
+        <h3 class="section-title" data-i18n="注册地区分布">注册地区分布</h3>
         <div class="admin-table-wrap">
           <table class="admin-table" id="adminRegionTable">
-            <thead><tr><th>地区</th><th>用户数</th></tr></thead>
+            <thead><tr><th data-i18n="地区">地区</th><th data-i18n="用户数">用户数</th></tr></thead>
             <tbody id="adminRegionBody"></tbody>
           </table>
         </div>
       </div>
 
       <div class="admin-users-header">
-        <h3 class="section-title">用户列表</h3>
-        <button type="button" class="btn btn-primary btn-sm" id="btnAdminAddUser">➕ 新增用户</button>
+        <h3 class="section-title" data-i18n="用户列表">用户列表</h3>
+        <button type="button" class="btn btn-primary btn-sm" id="btnAdminAddUser" data-i18n="➕ 新增用户">➕ 新增用户</button>
       </div>
       <div class="admin-table-wrap">
         <table class="admin-table" id="adminUsersTable">
           <thead>
             <tr>
-              <th>用户名</th><th>昵称</th><th>会员</th><th>目标语言</th><th>已掌握词</th><th>学习中</th><th>错题数</th><th>AI对话</th><th>连续天数</th><th class="admin-col-ip">注册公网IP</th><th class="admin-col-ip">注册归属地</th><th class="admin-col-ip">运营商</th><th class="admin-col-ip">最近登录</th><th class="admin-col-ip">最近登出</th><th>注册时间</th><th>操作</th>
+              <th data-i18n="用户名">用户名</th><th data-i18n="昵称">昵称</th><th data-i18n="会员">会员</th><th data-i18n="目标语言">目标语言</th><th data-i18n="已掌握词">已掌握词</th><th data-i18n="学习中">学习中</th><th data-i18n="错题数">错题数</th><th data-i18n="AI对话">AI对话</th><th data-i18n="连续天数">连续天数</th><th class="admin-col-ip" data-i18n="注册公网IP">注册公网IP</th><th class="admin-col-ip" data-i18n="注册归属地">注册归属地</th><th class="admin-col-ip" data-i18n="运营商">运营商</th><th class="admin-col-ip" data-i18n="最近登录">最近登录</th><th class="admin-col-ip" data-i18n="最近登出">最近登出</th><th data-i18n="注册时间">注册时间</th><th data-i18n="操作">操作</th>
             </tr>
           </thead>
           <tbody id="adminUsersBody"></tbody>
@@ -857,75 +865,75 @@
     <button class="modal-close" id="modalClose">×</button>
     <div class="auth-header">
       <div class="auth-logo">L</div>
-      <h3 class="auth-title" id="authTitle">欢迎回来</h3>
-      <p class="auth-sub" id="authSub">登录继续你的语言学习之旅</p>
+      <h3 class="auth-title" id="authTitle" data-i18n="欢迎回来">欢迎回来</h3>
+      <p class="auth-sub" id="authSub" data-i18n="登录继续你的语言学习之旅">登录继续你的语言学习之旅</p>
     </div>
     <div class="modal-tabs">
-      <button class="modal-tab active" id="tabLogin" data-mode="login">账号登录</button>
-      <button class="modal-tab" id="tabPhone" data-mode="phone">手机号登录</button>
+      <button class="modal-tab active" id="tabLogin" data-mode="login" data-i18n="账号登录">账号登录</button>
+      <button class="modal-tab" id="tabPhone" data-mode="phone" data-i18n="手机号登录">手机号登录</button>
     </div>
     <form id="authForm">
       <div class="form-row" id="rowNickname" hidden>
-        <label>昵称（可选）</label>
-        <input type="text" id="inputNickname" maxlength="30" placeholder="怎么称呼你">
+        <label data-i18n="昵称（可选）">昵称（可选）</label>
+        <input type="text" id="inputNickname" maxlength="30" data-i18n-placeholder="怎么称呼你" placeholder="怎么称呼你">
       </div>
       <div class="form-row" id="rowRegPhone" hidden>
-        <label>手机号</label>
-        <input type="tel" id="inputRegPhone" maxlength="11" placeholder="请输入11位手机号">
+        <label data-i18n="手机号">手机号</label>
+        <input type="tel" id="inputRegPhone" maxlength="11" data-i18n-placeholder="请输入11位手机号" placeholder="请输入11位手机号">
       </div>
       <div class="form-row" id="rowRegCode" hidden>
-        <label>验证码</label>
+        <label data-i18n="验证码">验证码</label>
         <div class="phone-code-row">
-          <input type="text" id="inputRegCode" maxlength="6" placeholder="6位验证码">
-          <button type="button" class="btn btn-outline btn-sm" id="btnRegSendCode">获取验证码</button>
+          <input type="text" id="inputRegCode" maxlength="6" data-i18n-placeholder="6位验证码" placeholder="6位验证码">
+          <button type="button" class="btn btn-outline btn-sm" id="btnRegSendCode" data-i18n="获取验证码">获取验证码</button>
         </div>
         <p class="form-hint" id="regPhoneCodeHint"></p>
       </div>
       <div class="form-row">
-        <label>用户名</label>
-        <input type="text" id="inputUsername" name="username" autocomplete="username" maxlength="30" required placeholder="3-30位字符">
+        <label data-i18n="用户名">用户名</label>
+        <input type="text" id="inputUsername" name="username" autocomplete="username" maxlength="30" required data-i18n-placeholder="3-30位字符" placeholder="3-30位字符">
       </div>
       <div class="form-row">
-        <label>密码</label>
-        <input type="password" id="inputPassword" name="password" autocomplete="current-password" required placeholder="至少6位">
+        <label data-i18n="密码">密码</label>
+        <input type="password" id="inputPassword" name="password" autocomplete="current-password" required data-i18n-placeholder="至少6位" placeholder="至少6位">
       </div>
       <p class="form-error" id="authError"></p>
-      <button type="submit" class="btn btn-primary btn-block" id="authSubmitBtn">登录</button>
-      <p class="auth-switch" id="authSwitchLine">还没有账号？<a href="javascript:void(0)" id="linkAuthSwitch">立即注册</a></p>
+      <button type="submit" class="btn btn-primary btn-block" id="authSubmitBtn" data-i18n="登录">登录</button>
+      <p class="auth-switch" id="authSwitchLine" data-i18n="还没有账号？">还没有账号？<a href="javascript:void(0)" id="linkAuthSwitch" data-i18n="立即注册">立即注册</a></p>
     </form>
 
     <form id="phoneForm" hidden>
       <div class="form-row">
-        <label>手机号</label>
-        <input type="tel" id="inputPhone" maxlength="11" required placeholder="请输入11位手机号">
+        <label data-i18n="手机号">手机号</label>
+        <input type="tel" id="inputPhone" maxlength="11" required data-i18n-placeholder="请输入11位手机号" placeholder="请输入11位手机号">
       </div>
       <div class="form-row">
-        <label>验证码</label>
+        <label data-i18n="验证码">验证码</label>
         <div class="phone-code-row">
-          <input type="text" id="inputPhoneCode" maxlength="6" required placeholder="6位验证码">
-          <button type="button" class="btn btn-outline btn-sm" id="btnSendCode">获取验证码</button>
+          <input type="text" id="inputPhoneCode" maxlength="6" required data-i18n-placeholder="6位验证码" placeholder="6位验证码">
+          <button type="button" class="btn btn-outline btn-sm" id="btnSendCode" data-i18n="获取验证码">获取验证码</button>
         </div>
       </div>
       <p class="form-hint" id="phoneCodeHint"></p>
       <p class="form-error" id="phoneError"></p>
-      <button type="submit" class="btn btn-primary btn-block" id="phoneSubmitBtn">登录 / 注册</button>
+      <button type="submit" class="btn btn-primary btn-block" id="phoneSubmitBtn" data-i18n="登录 / 注册">登录 / 注册</button>
     </form>
 
     <div class="oauth-block" id="oauthBlock" hidden>
-      <div class="oauth-divider"><span>其他方式登录</span></div>
+      <div class="oauth-divider"><span data-i18n="其他方式登录">其他方式登录</span></div>
       <div class="oauth-buttons">
         <button type="button" class="oauth-btn oauth-wechat" id="btnLoginWechat" hidden>
           <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
             <path fill="currentColor" d="M8.7 3C4.9 3 1.8 5.6 1.8 8.8c0 1.8 1 3.4 2.6 4.5l-.6 2 2.3-1.2c.8.2 1.7.4 2.6.4h.5a5 5 0 0 1-.2-1.4c0-3 2.9-5.4 6.5-5.4h.5C15.4 5.2 12.4 3 8.7 3Zm-2.3 3.3a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8Zm4.6 0a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8Z"/>
             <path fill="currentColor" d="M22.2 13.1c0-2.7-2.6-4.8-5.8-4.8s-5.8 2.1-5.8 4.8 2.6 4.8 5.8 4.8c.7 0 1.4-.1 2-.3l1.9 1-.5-1.7c1.5-.9 2.4-2.2 2.4-3.8Zm-7.7-1.3a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5Zm3.8 0a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5Z"/>
           </svg>
-          <span>微信登录</span>
+          <span data-i18n="微信登录">微信登录</span>
         </button>
         <button type="button" class="oauth-btn oauth-qq" id="btnLoginQQ" hidden>
           <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
             <path fill="currentColor" d="M12 2c-3 0-5.2 2.2-5.2 5.2 0 .7-.1 1.3-.4 1.9-.8 1.6-1.6 3-1.6 4.6 0 .6.3 1 .8 1 .4 0 .7-.3 1-.9.2.7.6 1.3 1.1 1.8-.7.3-1.5.8-1.5 1.5 0 1 1.7 1.9 3.9 1.9 1.1 0 2-.2 2.6-.6.6.4 1.5.6 2.6.6 2.2 0 3.9-.9 3.9-1.9 0-.7-.8-1.2-1.5-1.5.5-.5.9-1.1 1.1-1.8.3.6.6.9 1 .9.5 0 .8-.4.8-1 0-1.6-.8-3-1.6-4.6-.3-.6-.4-1.2-.4-1.9C17.2 4.2 15 2 12 2Zm-2.4 5.6a.85.85 0 1 1 0 1.7.85.85 0 0 1 0-1.7Zm4.8 0a.85.85 0 1 1 0 1.7.85.85 0 0 1 0-1.7Z"/>
           </svg>
-          <span>QQ登录</span>
+          <span data-i18n="QQ登录">QQ登录</span>
         </button>
       </div>
     </div>
@@ -938,27 +946,27 @@
     <button class="modal-close" id="adminAddUserClose">×</button>
     <div class="auth-header">
       <div class="auth-logo">L</div>
-      <h3 class="auth-title">新增用户</h3>
-      <p class="auth-sub">管理员手动创建账号，跳过手机验证</p>
+      <h3 class="auth-title" data-i18n="新增用户">新增用户</h3>
+      <p class="auth-sub" data-i18n="管理员手动创建账号，跳过手机验证">管理员手动创建账号，跳过手机验证</p>
     </div>
     <form id="adminAddUserForm">
       <div class="form-row">
-        <label>用户名</label>
-        <input type="text" id="adminNewUsername" maxlength="30" required placeholder="3-30位字符">
+        <label data-i18n="用户名">用户名</label>
+        <input type="text" id="adminNewUsername" maxlength="30" required data-i18n-placeholder="3-30位字符" placeholder="3-30位字符">
       </div>
       <div class="form-row">
-        <label>密码</label>
-        <input type="text" id="adminNewPassword" required placeholder="至少6位">
+        <label data-i18n="密码">密码</label>
+        <input type="text" id="adminNewPassword" required data-i18n-placeholder="至少6位" placeholder="至少6位">
       </div>
       <div class="form-row">
-        <label>昵称（可选）</label>
-        <input type="text" id="adminNewNickname" maxlength="30" placeholder="不填则默认用用户名">
+        <label data-i18n="昵称（可选）">昵称（可选）</label>
+        <input type="text" id="adminNewNickname" maxlength="30" data-i18n-placeholder="不填则默认用用户名" placeholder="不填则默认用用户名">
       </div>
       <div class="form-row form-row-checkbox">
-        <label><input type="checkbox" id="adminNewIsMember"> 直接开通会员</label>
+        <label><input type="checkbox" id="adminNewIsMember"> <span data-i18n="直接开通会员">直接开通会员</span></label>
       </div>
       <p class="form-error" id="adminAddUserError"></p>
-      <button type="submit" class="btn btn-primary btn-block">创建账号</button>
+      <button type="submit" class="btn btn-primary btn-block" data-i18n="创建账号">创建账号</button>
     </form>
   </div>
 </div>
@@ -967,11 +975,11 @@
 <div class="modal-overlay" id="authLogOverlay" hidden>
   <div class="modal modal-authlog">
     <button class="modal-close" id="authLogClose">×</button>
-    <h3 class="authlog-title" id="authLogTitle">登录记录</h3>
-    <p class="form-hint">只保留最近 50 条。Cookie 到期导致的自动掉线不会产生登出记录，所以登录条数通常多于登出。</p>
+    <h3 class="authlog-title" id="authLogTitle" data-i18n="登录记录">登录记录</h3>
+    <p class="form-hint" data-i18n="只保留最近 50 条。Cookie 到期导致的自动掉线不会产生登出记录，所以登录条数通常多于登出。">只保留最近 50 条。Cookie 到期导致的自动掉线不会产生登出记录，所以登录条数通常多于登出。</p>
     <div class="admin-table-wrap">
       <table class="admin-table">
-        <thead><tr><th>时间</th><th>动作</th><th>方式</th><th>IP</th></tr></thead>
+        <thead><tr><th data-i18n="时间">时间</th><th data-i18n="动作">动作</th><th data-i18n="方式">方式</th><th>IP</th></tr></thead>
         <tbody id="authLogBody"></tbody>
       </table>
     </div>
@@ -984,16 +992,16 @@
     <button class="modal-close" id="adminResetPwClose">×</button>
     <div class="auth-header">
       <div class="auth-logo">L</div>
-      <h3 class="auth-title">重置密码</h3>
+      <h3 class="auth-title" data-i18n="重置密码">重置密码</h3>
       <p class="auth-sub" id="adminResetPwTarget"></p>
     </div>
     <form id="adminResetPwForm">
       <div class="form-row">
-        <label>新密码</label>
-        <input type="text" id="adminResetPwInput" required placeholder="至少6位">
+        <label data-i18n="新密码">新密码</label>
+        <input type="text" id="adminResetPwInput" required data-i18n-placeholder="至少6位" placeholder="至少6位">
       </div>
       <p class="form-error" id="adminResetPwError"></p>
-      <button type="submit" class="btn btn-primary btn-block">确认重置</button>
+      <button type="submit" class="btn btn-primary btn-block" data-i18n="确认重置">确认重置</button>
     </form>
   </div>
 </div>
@@ -1004,16 +1012,16 @@
     <button class="modal-close" id="payClose">×</button>
     <div class="auth-header">
       <div class="auth-logo">L</div>
-      <h3 class="auth-title">开通会员</h3>
-      <p class="auth-sub">解锁 AI 1对1 对话、作文批改、错题解析全部功能</p>
+      <h3 class="auth-title" data-i18n="开通会员">开通会员</h3>
+      <p class="auth-sub" data-i18n="解锁 AI 1对1 对话、作文批改、错题解析全部功能">解锁 AI 1对1 对话、作文批改、错题解析全部功能</p>
     </div>
     <div class="pay-plan-list" id="payPlanList"></div>
     <div class="pay-methods" id="payMethods" hidden>
-      <button type="button" class="pay-method active" data-method="alipay">💙 支付宝</button>
-      <button type="button" class="pay-method" data-method="wxpay">💚 微信支付</button>
+      <button type="button" class="pay-method active" data-method="alipay" data-i18n="💙 支付宝">💙 支付宝</button>
+      <button type="button" class="pay-method" data-method="wxpay" data-i18n="💚 微信支付">💚 微信支付</button>
     </div>
-    <p class="form-hint" id="payDemoHint" hidden>当前为演示版，暂未接入真实支付，可免费开通体验。</p>
-    <button type="button" class="btn btn-primary btn-block" id="paySubmitBtn">去支付</button>
+    <p class="form-hint" id="payDemoHint" hidden data-i18n="当前为演示版，暂未接入真实支付，可免费开通体验。">当前为演示版，暂未接入真实支付，可免费开通体验。</p>
+    <button type="button" class="btn btn-primary btn-block" id="paySubmitBtn" data-i18n="去支付">去支付</button>
   </div>
 </div>
 
@@ -1022,7 +1030,7 @@
   <div class="modal avatar-modal">
     <div class="avatar-modal-head">
       <span class="avatar-quota-hint" id="avatarQuotaHint"></span>
-      <button type="button" class="btn btn-danger btn-sm" id="btnAvatarEnd">结束通话</button>
+      <button type="button" class="btn btn-danger btn-sm" id="btnAvatarEnd" data-i18n="结束通话">结束通话</button>
     </div>
     <!-- 这里原来也叫 avatarStatus，和 AI 对话页那个"待机中"撞了 id，
          $('#avatarStatus') 永远取到前一个，接通提示全写错了地方 -->
@@ -1044,7 +1052,7 @@
       <div class="orbit-core" id="orbitCore"></div>
     </div>
     <div class="orbit-detail" id="orbitDetail">
-      <p class="orbit-hint">👆 拖动球体旋转，点击任意单词查看释义</p>
+      <p class="orbit-hint" data-i18n="👆 拖动球体旋转，点击任意单词查看释义">👆 拖动球体旋转，点击任意单词查看释义</p>
     </div>
   </div>
 </div>
@@ -1095,6 +1103,7 @@
   });
 })();
 </script>
+<script src="js/i18n.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

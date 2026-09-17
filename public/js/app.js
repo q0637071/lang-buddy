@@ -35,6 +35,7 @@
   };
 
   const LEVEL_ZH = { beginner: '初级', intermediate: '中级', advanced: '高级' };
+  const levelName = (lv) => t(LEVEL_ZH[lv] || '初级');
   const VOCAB_LEVEL_ZH = { cet4: '四级', cet6: '六级', kaoyan: '考研', toefl: '托福', gre: 'GRE' };
   const VOCAB_STATUS_ZH = { new: '未学', learning: '学习中', known: '已掌握' };
   const LANG_BCP47 = { zh: 'zh-CN', en: 'en-US', ja: 'ja-JP', ko: 'ko-KR', fr: 'fr-FR', de: 'de-DE', es: 'es-ES' };
@@ -502,10 +503,10 @@
   async function renderDashboard() {
     if (!state.user) return;
     $('#dashNickname').textContent = state.user.nickname;
-    $('#dashMemberStatus').textContent = state.user.isMember ? '✅ 会员' : '未开通';
+    $('#dashMemberStatus').textContent = state.user.isMember ? t('✅ 会员') : t('未开通');
     $('#btnDashUpgrade').hidden = !!state.user.isMember;
     $('#dashLang').textContent = langName(state.user.targetLang);
-    $('#dashLevel').textContent = LEVEL_ZH[state.user.level] || '初级';
+    $('#dashLevel').textContent = levelName(state.user.level);
     try {
       const data = await api('/vocab/review');
       $('#dashDueWords').textContent = data.words.length;
@@ -597,8 +598,10 @@
   }
 
   function langName(code) {
+    // 语言名是服务端下发的中文（中文/英语/日语…），
+    // 界面切英文时这几个词也得跟着换
     const found = state.languages.find(l => l.code === code);
-    return found ? found.name : '英语';
+    return t(found ? found.name : '英语');
   }
 
   async function loadLanguages() {
@@ -608,12 +611,12 @@
     // "目标语言"（我要学的语言）不包含中文
     const learnable = state.languages.filter(l => l.code !== 'zh');
     const sel = $('#profileLang');
-    sel.innerHTML = learnable.map(l => `<option value="${l.code}">${l.name}</option>`).join('');
+    sel.innerHTML = learnable.map(l => `<option value="${l.code}">${t(l.name)}</option>`).join('');
 
     // 对话页的输入/回复语言选择器，包含中文
     const inputSel = $('#chatInputLang');
     const replySel = $('#chatReplyLang');
-    const allOptions = state.languages.map(l => `<option value="${l.code}">${l.name}</option>`).join('');
+    const allOptions = state.languages.map(l => `<option value="${l.code}">${t(l.name)}</option>`).join('');
     inputSel.innerHTML = allOptions;
     replySel.innerHTML = allOptions;
   }
@@ -636,8 +639,8 @@
   async function renderTutor() {
     $('#tutorPaywall').hidden = state.user.isMember;
     renderQuotaHint('tutorPaywall',
-      '🎁 非会员每天可免费体验 5 分钟 AI 对话，开通会员畅享无限时长。',
-      '🎁 当前可试用 1 分钟 AI 对话，在"我的"页面验证手机号即可解锁每天 5 分钟。');
+      t('🎁 非会员每天可免费体验 5 分钟 AI 对话，开通会员畅享无限时长。'),
+      t('🎁 当前可试用 1 分钟 AI 对话，在"我的"页面验证手机号即可解锁每天 5 分钟。'));
     $('#tutorPanel').hidden = false;
     // 必须先把老师列表拿到。下面接对话线要知道"当前是哪位老师"，
     // 不等的话第一次进页面会退回那句没有名字的通用问候，头像也是空的。
@@ -740,7 +743,7 @@
       }
 
       const done = sceneAll.filter(s => s.doneCount > 0).length;
-      $('#sceneProgressText').textContent = `${done} / ${sceneAll.length} 关`;
+      $('#sceneProgressText').textContent = `${done} / ${sceneAll.length} ${t('关')}`;
       $('#sceneProgressFill').style.width =
         sceneAll.length ? `${Math.round(done / sceneAll.length * 100)}%` : '0%';
 
@@ -1993,8 +1996,8 @@
       // 挡成本的是后端那三道闸门，不是这里的显示逻辑。
       if (!s.enabled) {
         btn.disabled = true;
-        btn.textContent = '暂未开放';
-        say('这个功能还没开启，先用「对话」页练也一样有效。');
+        btn.textContent = t('暂未开放');
+        say(t('这个功能还没开启，先用「对话」页练也一样有效。'));
         return;
       }
       // 全站名额用尽是账单硬顶，管理员也一样打不了，要先判断
@@ -2668,10 +2671,10 @@
     const s = state.vocabStats;
     if (!s) return;
     $('#vocabStats').innerHTML = `
-      <span>总词汇 ${s.total}</span>
-      <span>已掌握 ${s.known}</span>
-      <span>学习中 ${s.learning}</span>
-      <span>未学 ${s.new}</span>
+      <span>${t('总词汇')} ${s.total}</span>
+      <span>${t('已掌握')} ${s.known}</span>
+      <span>${t('学习中')} ${s.learning}</span>
+      <span>${t('未学')} ${s.new}</span>
     `;
   }
 
@@ -2694,7 +2697,7 @@
     const w = queue[idx];
     $('#flashcardProgress').textContent = `${idx + 1} / ${queue.length}`;
     $('#flashcardWord').textContent = w.word;
-    $('#flashcardPos').textContent = `${w.pos} · ${VOCAB_LEVEL_ZH[w.level] || w.level || ''}`;
+    $('#flashcardPos').textContent = `${w.pos} · ${t(VOCAB_LEVEL_ZH[w.level] || w.level || '')}`;
     $('#flashcardMeaning').textContent = w.meaning_zh;
     $('#flashcardExampleEn').textContent = w.example_en;
     $('#flashcardExampleZh').textContent = w.example_zh;
@@ -3164,16 +3167,16 @@
   // 自己算的好处是节点和线能共用同一套景深，深浅一致才有立体感。
   const featOrbit = (() => {
     const FEATURES = [
-      { nav: 'tutor',      label: 'AI 对话',  desc: '打字或语音，AI 按你的水平陪练', color: '#0ABAB5' },
-      { nav: 'scenarios',  label: '情景地图', desc: '一天一个场景，走过的自动插旗', color: '#f472b6' },
-      { nav: 'facetime',   label: '面对面',   desc: '和 AI 私教视频通话，看得见表情', color: '#22d3ee' },
-      { nav: 'translate',  label: '同声传译', desc: '说一句，立刻听到另一种语言',   color: '#38bdf8' },
-      { nav: 'vocab',      label: '背单词',   desc: '按遗忘曲线复习，顺带记词根',   color: '#f59e0b', badge: 'vocabDue' },
-      { nav: 'grammar',    label: '语法精讲', desc: '一次讲透一个点，带 AI 批改',   color: '#a78bfa' },
-      { nav: 'colloquial', label: '美式口语', desc: '地道说法，跟读对比发音',       color: '#fb7185' },
-      { nav: 'mistakes',   label: '错题本',   desc: '错过的题自动归拢，反复清零',   color: '#34d399' },
-      { nav: 'essay',      label: '作文批改', desc: '逐句改，讲清为什么这么改',     color: '#60a5fa' },
-      { nav: 'profile',    label: '我的',     desc: '会员、目标语言、学习设置',     color: '#94a3b8' },
+      { nav: 'tutor',      label: t('AI 对话'),  desc: t('打字或语音，AI 按你的水平陪练'), color: '#0ABAB5' },
+      { nav: 'scenarios',  label: t('情景地图'), desc: t('一天一个场景，走过的自动插旗'), color: '#f472b6' },
+      { nav: 'facetime',   label: t('面对面'),   desc: t('和 AI 私教视频通话，看得见表情'), color: '#22d3ee' },
+      { nav: 'translate',  label: t('同声传译'), desc: t('说一句，立刻听到另一种语言'),   color: '#38bdf8' },
+      { nav: 'vocab',      label: t('背单词'),   desc: t('按遗忘曲线复习，顺带记词根'),   color: '#f59e0b', badge: 'vocabDue' },
+      { nav: 'grammar',    label: t('语法精讲'), desc: t('一次讲透一个点，带 AI 批改'),   color: '#a78bfa' },
+      { nav: 'colloquial', label: t('美式口语'), desc: t('地道说法，跟读对比发音'),       color: '#fb7185' },
+      { nav: 'mistakes',   label: t('错题本'),   desc: t('错过的题自动归拢，反复清零'),   color: '#34d399' },
+      { nav: 'essay',      label: t('作文批改'), desc: t('逐句改，讲清为什么这么改'),     color: '#60a5fa' },
+      { nav: 'profile',    label: t('我的'),     desc: t('会员、目标语言、学习设置'),     color: '#94a3b8' },
     ];
 
     // 0.32 不是随便定的：卫星最远绕到 1.24 倍球半径，加上自身尺寸和辉光，
@@ -3656,7 +3659,7 @@
   let trLastAt = 0;
 
   function renderTranslate() {
-    const opts = state.languages.map(l => `<option value="${l.code}">${escapeHtml(l.name)}</option>`).join('');
+    const opts = state.languages.map(l => `<option value="${l.code}">${escapeHtml(t(l.name))}</option>`).join('');
     const from = $('#trFromLang'), to = $('#trToLang');
     if (!from.options.length) {
       from.innerHTML = opts;
@@ -3691,8 +3694,8 @@
     // 两种模式的操作方式不同，按钮文案要如实反映，否则用户不知道该怎么用
     const recMode = useRecordingMode() || !hasNativeASR();
     $('#trMicLabel').textContent = trListening
-      ? (recMode ? '停止并翻译' : '停止收听')
-      : (recMode ? '开始录音' : '开始收听');
+      ? t(recMode ? '停止并翻译' : '停止收听')
+      : t(recMode ? '开始录音' : '开始收听');
   }
 
   $('#trFromLang').addEventListener('change', () => {
@@ -4142,8 +4145,8 @@
       $('#grammarCheckerPaywall').hidden = !!state.user.isMember;
       $('#grammarCheckerPanel').hidden = false;
       renderQuotaHint('grammarCheckerPaywall',
-        '🎁 非会员每天可免费体验 3 次 AI 语法批改，开通会员畅享无限次使用。',
-        '🎁 当前可试用 1 次 AI 语法批改，在"我的"页面验证手机号即可解锁每天 3 次。');
+        t('🎁 非会员每天可免费体验 3 次 AI 语法批改，开通会员畅享无限次使用。'),
+        t('🎁 当前可试用 1 次 AI 语法批改，在"我的"页面验证手机号即可解锁每天 3 次。'));
       $('#grammarCheckInput').value = '';
       $('#grammarCheckResult').classList.remove('show');
       $('#grammarCheckResult').textContent = '';
@@ -4239,8 +4242,8 @@
   async function renderMistakes() {
     $('#mistakesPaywall').hidden = state.user.isMember;
     renderQuotaHint('mistakesPaywall',
-      '🎁 非会员每天可免费体验 3 次错题解析，开通会员畅享无限次使用。',
-      '🎁 当前可试用 1 次错题解析，在"我的"页面验证手机号即可解锁每天 3 次。');
+      t('🎁 非会员每天可免费体验 3 次错题解析，开通会员畅享无限次使用。'),
+      t('🎁 当前可试用 1 次错题解析，在"我的"页面验证手机号即可解锁每天 3 次。'));
     $('#mistakesPanel').hidden = false;
     resetMistakeUpload();
     resetMistakeTextInput();
@@ -4596,8 +4599,8 @@
   function renderEssay() {
     $('#essayPaywall').hidden = state.user.isMember;
     renderQuotaHint('essayPaywall',
-      '🎁 非会员每天可免费体验 3 次 AI 作文批改，开通会员畅享无限次使用。',
-      '🎁 当前可试用 1 次 AI 作文批改，在"我的"页面验证手机号即可解锁每天 3 次。');
+      t('🎁 非会员每天可免费体验 3 次 AI 作文批改，开通会员畅享无限次使用。'),
+      t('🎁 当前可试用 1 次 AI 作文批改，在"我的"页面验证手机号即可解锁每天 3 次。'));
     $('#essayPanel').hidden = false;
     $('#essayResult').hidden = true;
     $('#essayStatus').textContent = '';
@@ -5081,7 +5084,7 @@
         <button class="btn btn-outline btn-sm" id="btnProfileRenew" style="margin-left:10px;">续费</button>`;
       $('#btnProfileRenew').addEventListener('click', upgradeMembership);
     } else {
-      box.innerHTML = `尚未开通会员 <button class="btn btn-primary btn-sm" id="btnProfileUpgrade" style="margin-left:10px;">立即开通</button>`;
+      box.innerHTML = `${t('尚未开通会员')} <button class="btn btn-primary btn-sm" id="btnProfileUpgrade" style="margin-left:10px;">${t('立即开通')}</button>`;
       $('#btnProfileUpgrade').addEventListener('click', upgradeMembership);
     }
 
