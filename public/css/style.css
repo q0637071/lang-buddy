@@ -1313,3 +1313,46 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--p
 @media (max-width: 480px) {
   .lang-opt { padding: 3px 7px; font-size: 11.5px; }
 }
+
+/* ==================== 首页居中 + 用满宽度 ==================== */
+/* 两个问题分开的：
+   1) .container 卡在 1100px，1440 屏两边各留 165px 白边；
+   2) 功能星球用的是 `1fr 232px`，球在左列、面板钉在右边，
+      于是球的中心比页面中心偏左 125px——看起来整页往左歪。 */
+
+/* 首页放宽到接近满屏。顶栏跟着一起放宽，否则 logo 会比内容还往里缩，
+   看着像两块没对齐的东西。其他页面（对话、单词等）保持原来的窄栏，
+   那些是阅读型页面，行太长反而难读。 */
+/* 不设上限，两边只留 .container 自带的 24px 内边距——再窄内容就贴边了。
+   代价是超宽屏（2560+）上那四张卡片会被拉得很宽；真觉得难看就把
+   max-width 改成 1680px 之类的具体值，一行的事。 */
+#view-dashboard .container,
+body:has(#view-dashboard:not([hidden])) .topbar-inner {
+  max-width: none;
+}
+
+/* 球居中：左边补一个和右侧面板等宽的空列，球就落在正中间。
+   （直接把面板塞到球下面也能居中，但那样桌面端会变成很高的一坨，
+     现在这样既居中、面板还留在右边。） */
+/* 721px 是和下面那条 max-width:720px 的移动端规则接上的。
+   写成 761 会在 721–760 之间留一段谁都管不着的区间，球又会偏回左边。 */
+@media (min-width: 721px) {
+  .feat-orbit { grid-template-columns: 232px 1fr 232px; }
+  .feat-orbit-stage { grid-column: 2; }
+  .feat-orbit-panel { grid-column: 3; }
+  /* 底纹的蒙版原来偏左（35%），是配合球在左列的；球移到中间要跟着挪 */
+  .feat-orbit::before {
+    mask-image: radial-gradient(70% 70% at 50% 45%, #000, transparent 75%);
+    -webkit-mask-image: radial-gradient(70% 70% at 50% 45%, #000, transparent 75%);
+  }
+}
+
+/* 顶栏在窄屏上挤爆了：加了「中 / EN」之后，
+   logo + 品牌名 + 菜单 + 语言 + 头像 + 昵称 一行放不下，
+   头像那块会被顶出屏幕右边 14px，整页能横向拖动。
+   窄屏下把头像旁边的昵称收起来——头像本身就是"我的"入口，
+   点它一样能进去，名字在那一栏里是冗余的。 */
+@media (max-width: 460px) {
+  .topbar-inner { gap: 10px; padding: 10px 14px; }
+  .topbar-name { display: none; }
+}
