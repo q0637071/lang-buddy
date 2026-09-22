@@ -63,11 +63,6 @@
     '欢迎回来': 'Welcome back',
     '欢迎回来，': 'Welcome back, ',
     '连续天数': 'Streak',
-    '通话中': 'Live',
-    // 老师头衔（落地页会显示默认那位）
-    '面试官': 'Interviewer', '职场同事': 'Coworker', '耐心的老师': 'Patient teacher',
-    '闲聊的朋友': 'Friend', '旅行达人': 'Traveller', '严格的教练': 'Strict coach',
-    '健谈的邻居': 'Chatty neighbour', '同龄学生': 'Fellow student',
     // 语言名（服务端下发的是中文）
     '中文': 'Chinese', '英语': 'English', '日语': 'Japanese', '韩语': 'Korean',
     '法语': 'French', '德语': 'German', '西班牙语': 'Spanish',
