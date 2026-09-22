@@ -1356,3 +1356,41 @@ body:has(#view-dashboard:not([hidden])) .topbar-inner {
   .topbar-inner { gap: 10px; padding: 10px 14px; }
   .topbar-name { display: none; }
 }
+
+/* ==================== 落地页上的老师头像 ==================== */
+/* 目的是让"和 AI 私教面对面"从一句话变成看得见的东西。
+   做成通话画面的样子（圆角画框 + 呼吸的"通话中"角标），
+   因为产品本来就是这样——不是摆一张装饰用的人像。 */
+.hero-face { margin: 34px auto 0; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.hero-face-frame {
+  position: relative; width: 132px; height: 132px; border-radius: 26px; overflow: hidden;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.18);
+  box-shadow: 0 18px 40px -16px rgba(0,0,0,.65), 0 0 0 6px rgba(10,186,181,.1);
+}
+.hero-face-frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* "通话中"角标。用 currentColor 的小圆点做呼吸，比整块闪烁克制 */
+.hero-face-live {
+  position: absolute; left: 8px; bottom: 8px;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 8px; border-radius: 999px;
+  background: rgba(8,12,24,.62); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  font-size: 10.5px; font-weight: 700; color: #8ef3ee; letter-spacing: .02em;
+}
+.hero-face-live i {
+  width: 6px; height: 6px; border-radius: 50%; background: #29d17c;
+  box-shadow: 0 0 0 0 rgba(41,209,124,.6); animation: heroLive 1.8s ease-out infinite;
+}
+@keyframes heroLive {
+  0% { box-shadow: 0 0 0 0 rgba(41,209,124,.55); }
+  100% { box-shadow: 0 0 0 7px rgba(41,209,124,0); }
+}
+.hero-face figcaption { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.hero-face figcaption strong { font-size: 14px; color: #eef4ff; font-weight: 700; }
+.hero-face figcaption span { font-size: 12px; color: rgba(232,238,251,.6); }
+
+@media (prefers-reduced-motion: reduce) { .hero-face-live i { animation: none; } }
+@media (max-width: 720px) {
+  .hero-face { margin-top: 26px; }
+  .hero-face-frame { width: 108px; height: 108px; border-radius: 22px; }
+}

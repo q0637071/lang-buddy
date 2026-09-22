@@ -230,6 +230,7 @@
     // 两颗球都只在自己那一页转。离开就停掉 rAF，否则会在后台一直跑，白耗电
     featOrbit.setActive(name === 'dashboard');
     heroWire.setActive(name === 'landing');
+    if (name === 'landing') loadHeroFace();
     if (name === 'tutor') { renderTutor(); updateSceneBanner(); }
     if (name === 'scenarios') renderScenarios();
     if (name === 'facetime') { refreshAvatarButton(); renderPersonaRow('personaRowCall', true); }
@@ -247,6 +248,39 @@
     if (name === 'essay') renderEssay();
     if (name === 'profile') renderProfile();
     if (name === 'admin') renderAdmin();
+  }
+
+  // 落地页上那张老师的脸。走公开接口（这个页面就是给没登录的人看的）。
+  // 拿不到图就整块不显示：宁可没有，也不能给潜在客户看一个破图框。
+  // 只拉一次，来回切页不重复请求。
+  let heroFaceLoaded = false;
+  async function loadHeroFace() {
+    if (heroFaceLoaded) return;
+    heroFaceLoaded = true;
+    const box = $safe('#heroFace');
+    if (!box) return;
+    try {
+      const d = await api('/meta/teacher');
+      const tch = d.teacher;
+      if (!tch || !tch.photo) return;           // 没配照片就当这个模块不存在
+      // 等图真的载出来再显示，避免先弹出一个空框再填上去
+      await new Promise((resolve) => {
+        const pre = new Image();
+        pre.onload = () => resolve(true);
+        pre.onerror = () => resolve(false);
+        pre.src = tch.photo;
+        if (pre.complete) resolve(true);
+      }).then((ok) => {
+        if (!ok) return;
+        const img = $safe('#heroFaceImg');
+        if (img) { img.src = tch.photo; img.alt = tch.name || ''; }
+        const n = $safe('#heroFaceName'); if (n) n.textContent = tch.name || '';
+        const ti = $safe('#heroFaceTitle'); if (ti) ti.textContent = t(tch.title || '');
+        box.hidden = false;
+      });
+    } catch {
+      /* 落地页不能因为一张头像拉不到就出问题 */
+    }
   }
 
   // 这里是模块顶层，会在 $safe 那个 const 声明之前就执行——用 $safe 会撞 TDZ，

@@ -2064,6 +2064,30 @@ app.get('/api/personas', requireAuth, async (req, res) => {
   });
 });
 
+// 落地页用的“默认老师”。必须不要登录：那个页面本来就是给没注册的人看的，
+// 而 /api/personas 是 requireAuth 的，在那里调一定 401。
+// 只吹出名字、头衔、照片三个字段——prompt、faceId 这些不能公开。
+// 等图的时间比 /api/personas 短（1.5s vs 2.5s）：落地页是第一印象，
+// 宁可这次没图（前端会把那块藏起来），也不能让人干等。
+app.get('/api/meta/teacher', async (req, res) => {
+  try {
+    const list = readPersonas();
+    const p = list[0];
+    if (!p) return res.json({ teacher: null });
+    startTavusThumbLoad(list);
+    await Promise.race([
+      tavusThumbPromise || Promise.resolve(),
+      new Promise(r => setTimeout(r, 1500)),
+    ]);
+    const photo = personaPhoto(p.id) || tavusThumbCache[personaFace(p).faceId] || null;
+    res.json({ teacher: { name: p.name, title: p.title, photo } });
+  } catch (e) {
+    // 落地页不能因为一张头像拉不到就报错
+    console.error('[landing] 取默认老师失败:', e.message);
+    res.json({ teacher: null });
+  }
+});
+
 // 每日计划要满足两个矛盾的要求：同一天内刷新页面得是同一批（否则像随机器），
 // 换一天要换一批（否则天天练同样的）。用"日期+用户名"做种子的伪随机就够了，
 // 不用落库，也不会因为重启丢失。

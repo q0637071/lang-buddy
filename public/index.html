@@ -66,6 +66,20 @@
           <button class="btn btn-primary btn-lg" id="btnHeroRegister" data-i18n="免费开始学习">免费开始学习</button>
           <button class="btn btn-outline btn-lg" id="btnHeroLogin" data-i18n="已有账号，登录">已有账号，登录</button>
         </div>
+
+        <!-- 潜在客户第一眼看到的东西。"看得见表情、听得见语气"这句话是抽象的，
+             放一张真实的老师脸，它立刻变成看得见的。照片由 /api/meta/teacher
+             下发（不需要登录），拉不到就整块隐藏——绝不留一个破图框。 -->
+        <figure class="hero-face" id="heroFace" hidden>
+          <div class="hero-face-frame">
+            <img id="heroFaceImg" alt="">
+            <span class="hero-face-live"><i></i><span data-i18n="通话中">通话中</span></span>
+          </div>
+          <figcaption>
+            <strong id="heroFaceName"></strong>
+            <span id="heroFaceTitle"></span>
+          </figcaption>
+        </figure>
       </div>
     </section>
 
