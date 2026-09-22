@@ -1375,3 +1375,13 @@ body:has(#view-dashboard:not([hidden])) .topbar-inner {
 /* NEW 角标绝对定位在卡片左上角，画面一铺满就压到它上面了。
    把画面往下推，给角标让位。 */
 .feature-card-highlight .feature-icon-face { margin-top: 26px; }
+
+/* 「会员专享免费试用」比原来的「会员专享」长一倍。窄屏上卡片只有 154px 宽，
+   它和左上角的 NEW 角标会叠在一起（两个都是绝对定位在顶部）。
+   窄屏下让它回到正常文档流、排在描述文字下面——本来就是个标签，
+   放在底部读起来也顺。 */
+@media (max-width: 720px) {
+  .badge-member {
+    position: static; display: inline-block; margin-top: 12px;
+  }
+}

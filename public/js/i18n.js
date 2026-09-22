@@ -36,6 +36,7 @@
     '和 AI 私教面对面视频通话，看得见表情、听得见语气，最接近真人外教的口语练习。':
       'Talk face to face with an AI tutor — you can see expressions and hear tone. The closest thing to a real tutor.',
     '会员专享': 'Members only',
+    '会员专享免费试用': 'Members only · free trial',
     'AI 1对1 对话': 'One-on-one AI chat',
     '随时随地和 AI 私教打字对话，模拟真实场景，及时纠正你的语法和用词错误。':
       'Chat with your AI tutor anytime. Real situations, with grammar and word choice corrected as you go.',
