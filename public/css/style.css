@@ -1357,20 +1357,21 @@ body:has(#view-dashboard:not([hidden])) .topbar-inner {
   .topbar-name { display: none; }
 }
 
-/* 功能卡上的老师照片（替掉 📹 图标）。方形圆角，和卡片的圆角呼应，
-   右下角一个小绿点表示"真人形象、实时视频"——不占地方又说明了产品形态。 */
-.feature-icon-face { position: relative; width: 56px; height: 56px; margin-bottom: 12px; }
-.feature-icon-face img {
-  width: 100%; height: 100%; object-fit: cover; display: block;
-  border-radius: 16px; background: var(--primary-light);
-  box-shadow: 0 6px 16px -6px rgba(10,60,80,.45);
+/* 功能卡上的老师画面（替掉 📹 图标）。
+   保留完整 16:9 画面不裁，所以做成视频缩略图而不是方头像——
+   这个形态本来就更贴「视频通话」。右下角一个绿点表示实时。 */
+.feature-icon-face {
+  position: relative; width: 100%; aspect-ratio: 16 / 9;
+  margin: 0 0 14px; font-size: 0; border-radius: 14px; overflow: hidden;
+  background: var(--primary-light);
+  box-shadow: 0 8px 20px -10px rgba(10,60,80,.5);
 }
+.feature-icon-face img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .feature-icon-face::after {
-  content: ''; position: absolute; right: -2px; bottom: -2px;
-  width: 13px; height: 13px; border-radius: 50%;
-  background: #29d17c; border: 2.5px solid #fff;
+  content: ''; position: absolute; right: 9px; bottom: 9px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: #29d17c; box-shadow: 0 0 0 2.5px rgba(255,255,255,.9);
 }
-/* NEW 角标绝对定位在卡片左上角（top/left 16px）。换成 56px 的照片之后，
-   照片正好压在角标上——emoji 只有一行高时不明显，图片一撑开就盖住了。
-   只在这张高亮卡里把照片往下推，给角标让出位置。 */
-.feature-card-highlight .feature-icon-face { margin-top: 22px; }
+/* NEW 角标绝对定位在卡片左上角，画面一铺满就压到它上面了。
+   把画面往下推，给角标让位。 */
+.feature-card-highlight .feature-icon-face { margin-top: 26px; }
