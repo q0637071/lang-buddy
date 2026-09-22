@@ -230,6 +230,7 @@
     // 两颗球都只在自己那一页转。离开就停掉 rAF，否则会在后台一直跑，白耗电
     featOrbit.setActive(name === 'dashboard');
     heroWire.setActive(name === 'landing');
+    if (name === 'landing') loadHeroFace();
     if (name === 'tutor') { renderTutor(); updateSceneBanner(); }
     if (name === 'scenarios') renderScenarios();
     if (name === 'facetime') { refreshAvatarButton(); renderPersonaRow('personaRowCall', true); }
@@ -247,6 +248,40 @@
     if (name === 'essay') renderEssay();
     if (name === 'profile') renderProfile();
     if (name === 'admin') renderAdmin();
+  }
+
+  // 把「AI 视频通话」那张卡上的 📹 换成老师的脸。
+  // 服务端只在有本地照片时才给 photo（Tavus 的缩略图是 5.5MB 原图，
+  // 不能放在落地页），所以拿不到就什么都不做、图标原样留着。
+  // 等图真的载出来再换，避免先闪一下空白。只拉一次。
+  let heroFaceLoaded = false;
+  async function loadHeroFace() {
+    if (heroFaceLoaded) return;
+    heroFaceLoaded = true;
+    const slot = $safe('#ftCallIcon');
+    if (!slot) return;
+    try {
+      const { teacher } = await api('/meta/teacher');
+      if (!teacher || !teacher.photo) return;
+      const ok = await new Promise((resolve) => {
+        const pre = new Image();
+        pre.onload = () => resolve(true);
+        pre.onerror = () => resolve(false);
+        pre.src = teacher.photo;
+        if (pre.complete) resolve(true);
+      });
+      if (!ok) return;
+      slot.classList.add('feature-icon-face');
+      slot.innerHTML = '';
+      const img = document.createElement('img');
+      img.src = teacher.photo;
+      img.alt = teacher.name || '';
+      img.loading = 'lazy';
+      slot.appendChild(img);
+      slot.title = (teacher.name || '') + (teacher.title ? ' · ' + t(teacher.title) : '');
+    } catch {
+      /* 拉不到就继续用图标，落地页不能因为这个出问题 */
+    }
   }
 
   // 这里是模块顶层，会在 $safe 那个 const 声明之前就执行——用 $safe 会撞 TDZ，

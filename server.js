@@ -2064,6 +2064,25 @@ app.get('/api/personas', requireAuth, async (req, res) => {
   });
 });
 
+// 落地页用的“默认老师”。不要登录——那个页面就是给没注册的人看的，
+// 而 /api/personas 是 requireAuth，在那里调一定 401。
+// 只吹名字、头衔、照片三个字段，prompt / faceId 不能公开。
+//
+// ⭐ 照片只用本地文件，绝不回退到 Tavus 缩略图：
+// 实测 Tavus 那个 thumbnail.jpg 是 5.5MB 的原图（整站才 424KB）。
+// 挂在潜在客户看到的第一个页面上，国内手机流量根本等不起。
+// 没放本地图就返回 null，前端保持原来的图标。
+app.get('/api/meta/teacher', (req, res) => {
+  try {
+    const p = readPersonas()[0];
+    if (!p) return res.json({ teacher: null });
+    res.json({ teacher: { name: p.name, title: p.title, photo: personaPhoto(p.id) || null } });
+  } catch (e) {
+    console.error('[landing] 取默认老师失败:', e.message);
+    res.json({ teacher: null });   // 落地页不能因为一张头像出问题
+  }
+});
+
 // 每日计划要满足两个矛盾的要求：同一天内刷新页面得是同一批（否则像随机器），
 // 换一天要换一批（否则天天练同样的）。用"日期+用户名"做种子的伪随机就够了，
 // 不用落库，也不会因为重启丢失。

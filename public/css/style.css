@@ -1356,3 +1356,21 @@ body:has(#view-dashboard:not([hidden])) .topbar-inner {
   .topbar-inner { gap: 10px; padding: 10px 14px; }
   .topbar-name { display: none; }
 }
+
+/* 功能卡上的老师照片（替掉 📹 图标）。方形圆角，和卡片的圆角呼应，
+   右下角一个小绿点表示"真人形象、实时视频"——不占地方又说明了产品形态。 */
+.feature-icon-face { position: relative; width: 56px; height: 56px; margin-bottom: 12px; }
+.feature-icon-face img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  border-radius: 16px; background: var(--primary-light);
+  box-shadow: 0 6px 16px -6px rgba(10,60,80,.45);
+}
+.feature-icon-face::after {
+  content: ''; position: absolute; right: -2px; bottom: -2px;
+  width: 13px; height: 13px; border-radius: 50%;
+  background: #29d17c; border: 2.5px solid #fff;
+}
+/* NEW 角标绝对定位在卡片左上角（top/left 16px）。换成 56px 的照片之后，
+   照片正好压在角标上——emoji 只有一行高时不明显，图片一撑开就盖住了。
+   只在这张高亮卡里把照片往下推，给角标让出位置。 */
+.feature-card-highlight .feature-icon-face { margin-top: 22px; }

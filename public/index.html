@@ -72,7 +72,9 @@
     <section class="features">
       <div class="feature-card feature-card-highlight">
         <span class="badge-new">NEW</span>
-        <div class="feature-icon">📹</div>
+        <!-- 放了本地老师照片的话，JS 会把这个图标换成那张脸；
+             没放就保持图标。见 loadHeroFace。 -->
+        <div class="feature-icon" id="ftCallIcon">📹</div>
         <h3 data-i18n="AI 视频通话">AI 视频通话</h3>
         <p data-i18n="和 AI 私教面对面视频通话，看得见表情、听得见语气，最接近真人外教的口语练习。">和 AI 私教面对面视频通话，看得见表情、听得见语气，最接近真人外教的口语练习。</p>
         <span class="badge-member" data-i18n="会员专享">会员专享</span>
