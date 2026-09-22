@@ -2981,7 +2981,9 @@
     const o = {
       level: 2, color: '255,255,255', spin: 0.00022, dot: 1.5,
       lineWidth: 1, alpha: 1, radiusRatio: 0.42, tilt: -0.42, driven: false,
-      satellites: false, satAlpha: 0.95, ...opts,
+      satellites: false, satAlpha: 0.95,
+      meteors: false, meteorEvery: 150000,   // 默认五圈一颗（球 30 秒一圈）
+      ...opts,
     };
     const { verts, edges } = icosphere(o.level);
     const ctx = canvas.getContext('2d');
@@ -3005,6 +3007,76 @@
     const px = new Float32Array(verts.length);
     const py = new Float32Array(verts.length);
     const pz = new Float32Array(verts.length);
+
+    // ---- 流星 ----
+    // 故意做成稀客：默认球每转五圈才来一颗，而且带随机抖动，
+    // 避免看出周期。频率一高就从"偷偷惊喜"变成屏保了。
+    // 画在球之前（也就是球的后面），像在更远的地方掠过。
+    let meteor = null;          // 当前这颗，null 表示天上没有
+    let nextMeteorAt = 0;       // 下一颗出现的时刻
+
+    function scheduleMeteor(now, first) {
+      // 第一颗故意来得早：落地页访客常常待不到两分半，
+      // 真按"五圈一次"排，绝大多数人一次都看不到。
+      const base = first ? 5000 + Math.random() * 5000 : o.meteorEvery;
+      nextMeteorAt = now + base * (0.7 + Math.random() * 0.6);
+    }
+
+    function spawnMeteor(now) {
+      const dir = Math.random() < 0.5 ? 1 : -1;          // 往右下 or 往左下
+      const ang = 0.30 + Math.random() * 0.22;           // 下倾 17°~30°，太垂直不像流星
+      const span = Math.hypot(w, h);
+      meteor = {
+        x0: dir > 0 ? -0.18 * w : 1.18 * w,
+        y0: h * (0.04 + Math.random() * 0.42),           // 从上半部划过
+        vx: dir * Math.cos(ang),
+        vy: Math.sin(ang),
+        dist: span * (1.05 + Math.random() * 0.35),
+        life: 850 + Math.random() * 600,
+        tail: span * (0.10 + Math.random() * 0.06),
+        born: now,
+      };
+    }
+
+    function drawMeteor(now) {
+      if (!meteor) return;
+      const t = (now - meteor.born) / meteor.life;
+      if (t >= 1) { meteor = null; return; }
+      // 前 18% 淡入、后 45% 淡出，中间满亮——不这样做的话
+      // 头尾会生硬地凭空出现和消失
+      const fade = t < 0.18 ? t / 0.18 : (t > 0.55 ? (1 - t) / 0.45 : 1);
+      const d = meteor.dist * t;
+      const hx = meteor.x0 + meteor.vx * d;
+      const hy = meteor.y0 + meteor.vy * d;
+      const tx = hx - meteor.vx * meteor.tail;
+      const ty = hy - meteor.vy * meteor.tail;
+      const g = ctx.createLinearGradient(hx, hy, tx, ty);
+      g.addColorStop(0, `rgba(255,255,255,${(0.85 * fade).toFixed(3)})`);
+      g.addColorStop(0.35, `rgba(${o.color},${(0.40 * fade).toFixed(3)})`);
+      g.addColorStop(1, `rgba(${o.color},0)`);
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.lineWidth = 1.6;
+      ctx.strokeStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(tx, ty);
+      ctx.lineTo(hx, hy);
+      ctx.stroke();
+      // 流星头那一点光
+      ctx.fillStyle = `rgba(255,255,255,${(0.9 * fade).toFixed(3)})`;
+      ctx.beginPath();
+      ctx.arc(hx, hy, 1.7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function tickMeteor() {
+      if (!o.meteors || reduce) return;
+      const now = performance.now();
+      if (!nextMeteorAt) scheduleMeteor(now, true);
+      if (!meteor && now >= nextMeteorAt) { spawnMeteor(now); scheduleMeteor(now, false); }
+      drawMeteor(now);
+    }
 
     function resize() {
       const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -3031,6 +3103,7 @@
     /// 两边用同一套参数算投影，节点才是真的贴在网格面上，而不是各转各的。
     function paintWith(yawV, tiltV, R) {
       ctx.clearRect(0, 0, w, h);
+      tickMeteor();          // 先画流星，球再盖在上面——用户要的是"大球后面划过"
       const cx = w / 2, cy = h / 2;
       const F = R * FOCAL_RATIO;                          // 焦距跟着半径走，不同尺寸透视一致
       const cY = Math.cos(yawV), sY = Math.sin(yawV);
@@ -3195,6 +3268,8 @@
             sphere = createWireSphere(cv, {
               level: 2, color: '198,240,255', spin: (Math.PI * 2) / 30000, dot: 1.35,
               alpha: 0.92, radiusRatio: 0.34, lineWidth: 0.9, tilt: -0.3,
+              // 球 30 秒一圈，五圈就是 150 秒一颗
+              meteors: true, meteorEvery: 150000,
             });
           }
           sphere.start();
