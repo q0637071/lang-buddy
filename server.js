@@ -1873,6 +1873,11 @@ app.post('/api/avatar/conversation', requireAuth, rateLimit(6), async (req, res)
         conversation_name: `LangBuddy-${user.username}`,
         conversational_context: context,
         properties: {
+          // 告诉 Tavus 这通电话说什么语言。不传的话语音识别和合成都走默认（英语），
+          // 于是选了学西语/日语的用户，对面那位老师嘴里出来的还是英语。
+          // conversational_context 里那句"请全程使用 XX 交流"是给模型看的提示词，
+          // 管不到 STT/TTS 这一层——两件事。
+          languages: [user.targetLang || 'en'],
           max_call_duration: callSeconds + AVATAR_JOIN_BUFFER,
           participant_left_timeout: 30,  // 人走了30秒就关，别空转烧钱
           participant_absent_timeout: 90, // 创建后90秒没人进来直接关
