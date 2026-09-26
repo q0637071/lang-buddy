@@ -381,11 +381,15 @@
 
   var dict = { zh: {}, en: EN };
 
+  // 站点默认语言由服务端注入（英语站 zh、西语站 en）。
+  // 用户自己选过就听用户的，永远优先于站点默认。
+  var SITE_LANG = (window.__SITE__ && window.__SITE__.uiLang === 'en') ? 'en' : 'zh';
   function readLang() {
     try {
       var v = localStorage.getItem(LANG_KEY);
-      return v === 'en' ? 'en' : 'zh';
-    } catch (e) { return 'zh'; }     // 隐私模式下读不到就当中文
+      if (v === 'en' || v === 'zh') return v;
+    } catch (e) { /* 隐私模式读不到，用站点默认 */ }
+    return SITE_LANG;
   }
   var current = readLang();
 

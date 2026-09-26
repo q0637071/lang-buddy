@@ -81,7 +81,27 @@ const VOCAB_PATH = path.join(DATA_DIR, 'vocab.json');
 const GRAMMAR_PATH = path.join(DATA_DIR, 'grammar.json');
 const COLLOQUIAL_PATH = path.join(DATA_DIR, 'colloquial.json');
 const PLACEMENT_PATH = path.join(DATA_DIR, 'placement-test.json');
-const SCENARIOS_PATH = path.join(DATA_DIR, 'scenarios.json');
+// ---- 站点配置 ----
+// 一套代码跑两个站（英语站 langbuddy.org、西语站 holabuddy.org）。
+// 区别全部由环境变量决定，代码不分叉——bug 修一次两边都好。
+// ⭐ 所有默认值必须等于今天 LangBuddy 的行为：不配任何变量时，
+//   现有站点一点不变。新增配置项时这条不能破。
+const SITE = {
+  // 注意：没显式配就不带 name/title 字段。前端据此判断"要不要接管品牌"——
+  // 填个默认值的话，现有站的品牌也会被接管，连带丢掉 data-i18n，
+  // 切英文时就不会变成 "LangBuddy" 了。
+  ...(process.env.SITE_NAME ? { name: process.env.SITE_NAME } : {}),
+  ...(process.env.SITE_TITLE ? { title: process.env.SITE_TITLE } : {}),
+  uiLang: process.env.SITE_UI_LANG === 'en' ? 'en' : 'zh',   // 界面默认语言
+  targetLang: process.env.SITE_TARGET_LANG || 'en',          // 默认学什么
+  features: {
+    // 写 off 才关。默认都开 = 现状
+    vocab: process.env.FEATURE_VOCAB !== 'off',
+    grammar: process.env.FEATURE_GRAMMAR !== 'off',
+    colloquial: process.env.FEATURE_COLLOQUIAL !== 'off',
+  },
+};
+const SCENARIOS_PATH = path.join(DATA_DIR, process.env.SCENARIOS_FILE || 'scenarios.json');
 const PERSONAS_PATH = path.join(DATA_DIR, 'personas.json');
 const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 
@@ -268,7 +288,12 @@ app.get(['/', '/index.html'], (req, res, next) => {
       indexHtmlCached = fs.readFileSync(path.join(__dirname, 'public/index.html'), 'utf8')
         .replace('href="css/style.css"', `href="css/style.css?v=${v}"`)
         .replace('src="js/app.js"', `src="js/app.js?v=${v}"`)
-        .replace('src="js/i18n.js"', `src="js/i18n.js?v=${v}"`);
+        .replace('src="js/i18n.js"', `src="js/i18n.js?v=${v}"`)
+        // 配置必须在两个脚本之前就存在：i18n 要用它定默认语言，
+        // app.js 要用它决定哪些功能不显示。走接口拉会先闪一下。
+        .replace('<script src="js/i18n.js',
+          `<script>window.__SITE__=${JSON.stringify(SITE)}</script>
+<script src="js/i18n.js`);
     }
     res.setHeader('Cache-Control', 'no-cache');
     res.type('html').send(indexHtmlCached);
@@ -687,7 +712,7 @@ app.post('/api/register', rateLimit(10), async (req, res) => {
     isMember: false,
     memberSince: null,
     level: 'beginner',
-    targetLang: 'en',
+    targetLang: SITE.targetLang,   // 英语站 en、西语站 es
     createdAt: Date.now(),
     vocabProgress: {},
     mistakes: [],
@@ -797,7 +822,7 @@ app.post('/api/auth/phone/verify', rateLimit(15), async (req, res) => {
       isMember: false,
       memberSince: null,
       level: 'beginner',
-      targetLang: 'en',
+      targetLang: SITE.targetLang,   // 同上，管理员建号也走站点默认
       createdAt: Date.now(),
       vocabProgress: {},
       mistakes: [],

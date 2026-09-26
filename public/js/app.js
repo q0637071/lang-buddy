@@ -5,6 +5,45 @@
   // 标记一直没出现，说明 js 根本没加载（App 里最常见是 web 资源没同步）。
   window.__LB_BOOTED__ = true;
 
+  // 一套代码跑两个站，哪些功能开着由服务端注入的 __SITE__ 决定。
+  // 拿不到就当全开——现有站点不配任何东西，行为必须和以前一样。
+  const SITE = window.__SITE__ || {};
+  const FEATURES_ON = Object.assign({ vocab: true, grammar: true, colloquial: true }, SITE.features || {});
+  const featureOn = (name) => FEATURES_ON[name] !== false;
+
+  // 品牌名。没配 SITE_NAME 就不动，维持 HTML 里原来那个（带 data-i18n、能中英切）。
+  // 配了就把 data-i18n 拆掉——否则切语言时会被词典重新写回 "LangBuddy"。
+  if (SITE.name) {
+    document.querySelectorAll('.brand-name').forEach(function (el) {
+      el.removeAttribute('data-i18n');
+      el.textContent = SITE.name;
+    });
+    // <title> 也挂着 data-i18n。不拆的话，app.js 跑完之后的
+    // DOMContentLoaded 会让 i18n 把标题再写回 "LangBuddy — …"。
+    const tt = document.querySelector('title');
+    if (tt) tt.removeAttribute('data-i18n');
+    document.title = SITE.title || (SITE.name + ' — AI Language Practice');
+  }
+
+  // 关掉的功能：菜单项、以及首页上引用它的卡片一起藏。
+  // 只藝菜单不够——首页还挂着"待复习单词""单词掌握进度"这些永远是 0 的格子。
+  // 这段在模块顶层跑：脚本挂在 body 末尾，DOM 已经解析完了。
+  (function hideOffFeatures() {
+    ['vocab', 'grammar', 'colloquial'].forEach(function (f) {
+      if (featureOn(f)) return;
+      document.querySelectorAll('[data-nav="' + f + '"]').forEach(function (el) { el.hidden = true; });
+    });
+    if (!featureOn('vocab')) {
+      ['dashDueWords', 'metricVocabMastered'].forEach(function (id) {
+        const el = document.getElementById(id);
+        const card = el && (el.closest('.dash-card') || el.closest('.metric-card'));
+        if (card) card.hidden = true;
+      });
+      const prog = document.querySelector('.vocab-progress-card');
+      if (prog) prog.hidden = true;
+    }
+  })();
+
   // i18n.js 万一没加载成功（部署切换的那几秒、CDN 抖动、缓存拿到 404），
   // 下面到处都在用的 t() 就会是 undefined，整个应用当场崩掉、只剩一个错误屏。
   // 一个翻译层不该有能力搞垮整个站：拿不到就退化成"原样返回中文"，
@@ -213,6 +252,8 @@
     // 点品牌 logo 对已登录用户就是"回首页"，这也是通行做法。
     if (state.user && name === 'landing') name = 'dashboard';
     if (name === 'admin' && !state.user?.isAdmin) name = 'dashboard';
+    // 这个站关掉的功能，输网址直接进也不行——只藏菜单不算关掉
+    if (!featureOn(name)) name = 'dashboard';
     if (name !== 'tutor' && state.voiceCallActive) stopVoiceCall();
     VIEWS.forEach(v => {
       $('#view-' + v).hidden = v !== name;
@@ -3296,7 +3337,7 @@
       { nav: 'mistakes',   label: t('错题本'),   desc: t('错过的题自动归拢，反复清零'),   color: '#34d399' },
       { nav: 'essay',      label: t('作文批改'), desc: t('逐句改，讲清为什么这么改'),     color: '#60a5fa' },
       { nav: 'profile',    label: t('我的'),     desc: t('会员、目标语言、学习设置'),     color: '#94a3b8' },
-    ];
+    ].filter(f => featureOn(f.nav));   // 这个站关掉的功能不上球
 
     // 0.32 不是随便定的：卫星最远绕到 1.24 倍球半径，加上自身尺寸和辉光，
     // 触及半径约 1.45R。舞台是矩形、球半径按 min(w,h) 算，手机上半宽只有 149px，
