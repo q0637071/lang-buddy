@@ -99,6 +99,9 @@ const SITE = {
     vocab: process.env.FEATURE_VOCAB !== 'off',
     grammar: process.env.FEATURE_GRAMMAR !== 'off',
     colloquial: process.env.FEATURE_COLLOQUIAL !== 'off',
+    // 情景地图依赖一份对应语言的场景库。西语库还没做好之前先关掉——
+    // 开着的话学西语的人点进去看到的是英文开场白，比没有这个功能还糟。
+    scenarios: process.env.FEATURE_SCENARIOS !== 'off',
   },
 };
 const SCENARIOS_PATH = path.join(DATA_DIR, process.env.SCENARIOS_FILE || 'scenarios.json');

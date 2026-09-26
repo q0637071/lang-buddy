@@ -8,7 +8,7 @@
   // 一套代码跑两个站，哪些功能开着由服务端注入的 __SITE__ 决定。
   // 拿不到就当全开——现有站点不配任何东西，行为必须和以前一样。
   const SITE = window.__SITE__ || {};
-  const FEATURES_ON = Object.assign({ vocab: true, grammar: true, colloquial: true }, SITE.features || {});
+  const FEATURES_ON = Object.assign({ vocab: true, grammar: true, colloquial: true, scenarios: true }, SITE.features || {});
   const featureOn = (name) => FEATURES_ON[name] !== false;
 
   // 品牌名。没配 SITE_NAME 就不动，维持 HTML 里原来那个（带 data-i18n、能中英切）。
@@ -29,7 +29,7 @@
   // 只藝菜单不够——首页还挂着"待复习单词""单词掌握进度"这些永远是 0 的格子。
   // 这段在模块顶层跑：脚本挂在 body 末尾，DOM 已经解析完了。
   (function hideOffFeatures() {
-    ['vocab', 'grammar', 'colloquial'].forEach(function (f) {
+    ['vocab', 'grammar', 'colloquial', 'scenarios'].forEach(function (f) {
       if (featureOn(f)) return;
       document.querySelectorAll('[data-nav="' + f + '"]').forEach(function (el) { el.hidden = true; });
     });
