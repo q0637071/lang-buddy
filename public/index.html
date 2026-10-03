@@ -66,6 +66,19 @@
           <button class="btn btn-primary btn-lg" id="btnHeroRegister" data-i18n="免费开始学习">免费开始学习</button>
           <button class="btn btn-outline btn-lg" id="btnHeroLogin" data-i18n="已有账号，登录">已有账号，登录</button>
         </div>
+        <!-- 免费视频测评入口。默认 hidden，只有 /api/placement/video/status 说这个 IP
+             还能测时 JS 才放出来。已经测过的人看到的就是一个普通落地页——
+             让人点下去才被拒绝，比一开始就不显示更难受。 -->
+        <div class="hero-placement" id="heroPlacement" hidden>
+          <button class="placement-entry" id="btnPlacementStart">
+            <span class="placement-entry-icon">🎬</span>
+            <span class="placement-entry-text">
+              <strong data-i18n="60 秒测出你的英语水平">60 秒测出你的英语水平</strong>
+              <small data-i18n="和 AI 老师视频对话，当场出结果 · 不用注册">和 AI 老师视频对话，当场出结果 · 不用注册</small>
+            </span>
+            <span class="placement-entry-go">›</span>
+          </button>
+        </div>
       </div>
     </section>
 
@@ -860,6 +873,65 @@
   </section>
 
 </main>
+
+<!-- 免费视频测评弹窗。四个阶段轮流显示：说明 → 通话 → 分析 → 结果 -->
+<div class="modal-overlay" id="placementOverlay" hidden>
+  <div class="modal modal-placement">
+    <button class="modal-close" id="placementClose">×</button>
+
+    <!-- 阶段一：说明。摄像头权限在这一步要，拿到了才去建 Tavus 房间——
+         房间一建就开始计费，而相当一部分人正是看到浏览器弹授权才走的。 -->
+    <div class="pl-stage" id="plIntro">
+      <div class="pl-icon">🎬</div>
+      <h3 class="pl-title" data-i18n="60 秒口语水平测试">60 秒口语水平测试</h3>
+      <p class="pl-sub" data-i18n="AI 老师会用英语问你几个问题，你尽量开口答。结束后当场给出 CEFR 等级和点评。">AI 老师会用英语问你几个问题，你尽量开口答。结束后当场给出 CEFR 等级和点评。</p>
+      <ul class="pl-points">
+        <li data-i18n="需要摄像头和麦克风权限">需要摄像头和麦克风权限</li>
+        <li data-i18n="全程 60 秒，不录像、不保存视频">全程 60 秒，不录像、不保存视频</li>
+        <li data-i18n="每个网络只能免费测一次">每个网络只能免费测一次</li>
+      </ul>
+      <button class="btn btn-primary btn-block btn-lg" id="btnPlacementGo" data-i18n="开始测试">开始测试</button>
+      <p class="pl-err" id="plIntroErr"></p>
+    </div>
+
+    <!-- 阶段二：通话 -->
+    <div class="pl-stage" id="plCall" hidden>
+      <div class="pl-timer"><span id="plTimer">60</span><small data-i18n="秒">秒</small></div>
+      <div class="pl-frame-wrap">
+        <iframe id="plFrame" class="pl-frame" allow="camera; microphone; autoplay; display-capture" title="AI 口语测试"></iframe>
+      </div>
+      <button class="btn btn-outline btn-block" id="btnPlacementStop" data-i18n="提前结束">提前结束</button>
+    </div>
+
+    <!-- 阶段三：分析中 -->
+    <div class="pl-stage" id="plGrading" hidden>
+      <div class="pl-spinner"></div>
+      <h3 class="pl-title" data-i18n="正在分析你的表达…">正在分析你的表达…</h3>
+      <p class="pl-sub" data-i18n="大概十几秒，别关页面">大概十几秒，别关页面</p>
+    </div>
+
+    <!-- 阶段四：结果 -->
+    <div class="pl-stage" id="plResult" hidden>
+      <div class="pl-badge"><span id="plCefr">B1</span></div>
+      <h3 class="pl-title" id="plLevelName">中级</h3>
+      <p class="pl-sub" id="plSummary"></p>
+      <div class="pl-detail">
+        <div class="pl-detail-row"><span class="pl-detail-k" data-i18n="做得好">做得好</span><span class="pl-detail-v" id="plStrength"></span></div>
+        <div class="pl-detail-row"><span class="pl-detail-k" data-i18n="先练这个">先练这个</span><span class="pl-detail-v" id="plAdvice"></span></div>
+      </div>
+      <p class="pl-note" data-i18n="60 秒只能给一个大致范围，正式等级以注册后的完整测评为准。">60 秒只能给一个大致范围，正式等级以注册后的完整测评为准。</p>
+      <button class="btn btn-primary btn-block btn-lg" id="btnPlacementRegister" data-i18n="注册保存我的等级">注册保存我的等级</button>
+    </div>
+
+    <!-- 没说够话 / 出错 -->
+    <div class="pl-stage" id="plFail" hidden>
+      <div class="pl-icon">🤔</div>
+      <h3 class="pl-title" id="plFailTitle" data-i18n="这次没测出来">这次没测出来</h3>
+      <p class="pl-sub" id="plFailMsg"></p>
+      <button class="btn btn-primary btn-block" id="btnPlacementFailReg" data-i18n="注册后继续练">注册后继续练</button>
+    </div>
+  </div>
+</div>
 
 <!-- 登录/注册弹窗 -->
 <div class="modal-overlay" id="authModalOverlay" hidden>

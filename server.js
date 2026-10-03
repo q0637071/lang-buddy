@@ -75,6 +75,20 @@ const AVATAR_PING_SECONDS = 20;
 const AVATAR_PING_GRACE = 25;
 const avatarEnabled = () => !!(TAVUS_API_KEY && TAVUS_FACE_ID);
 
+// 登录页的免费视频测评：没注册也能测一次，用来把路过的人变成用户。
+// 这是全站唯一一个"不登录也会花钱"的接口，所以闸门比别处更密：
+//   1) 每 IP 每月 1 次（匿名没有账号可认，IP 是唯一能拿到的身份）
+//   2) 全站月度硬顶照常生效（和会员通话共用 AVATAR_GLOBAL_MONTHLY_MINUTES）
+//   3) 前端必须先拿到摄像头权限才允许建房——Tavus 从建房那刻就开始计费，
+//      而很多人是看到浏览器弹授权才跑的，先建房等于白付这笔钱
+const PLACEMENT_VIDEO_ENABLED = process.env.PLACEMENT_VIDEO !== 'off';
+const PLACEMENT_VIDEO_SECONDS = Number(process.env.PLACEMENT_VIDEO_SECONDS || 60);
+const PLACEMENT_VIDEO_PER_IP = Number(process.env.PLACEMENT_VIDEO_PER_IP || 1);
+// 访客记录留多久。只是为了让人测完能看到结果、注册时能把等级带过去，
+// 不是长期数据，留太久纯粹是攒垃圾。
+const GUEST_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const placementVideoEnabled = () => PLACEMENT_VIDEO_ENABLED && avatarEnabled();
+
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_PATH = path.join(DATA_DIR, 'db.json');
 const VOCAB_PATH = path.join(DATA_DIR, 'vocab.json');
@@ -725,6 +739,18 @@ app.post('/api/register', rateLimit(10), async (req, res) => {
     registrationRegion: '查询中...',
     phoneVerified: true,
   };
+  // 登录页测过视频测评的人，把等级带进新账号——他已经花了一分钟证明自己的水平，
+  // 不该一注册就被打回"初级"，更不该让他再测一遍。
+  const guest = guestOf(req, db);
+  if (guest && guest.result && guest.result.enough) {
+    const u = db.users[username];
+    u.level = guest.result.level;
+    u.placementHistory = [{
+      at: Date.now(), level: guest.result.level, cefr: guest.result.cefr, source: 'video',
+    }];
+    u.placementDoneAt = Date.now();
+  }
+
   recordAuthEvent(db.users[username], 'login', 'register', req);
   saveDB(db);
   req.session.userId = username;
@@ -1659,14 +1685,24 @@ function avatarGlobalUsage(db) {
 function countActiveAvatarCalls(db, settleStale = true) {
   const now = Date.now();
   let n = 0;
+  const alive = (a) => a.lastSeenAt
+    ? now - a.lastSeenAt < 60000   // 还在发心跳（心跳间隔20秒，留3倍余量）
+    : now - a.startedAt < 90000;   // 刚创建还没进去，对齐 participant_absent_timeout
+
   for (const u of Object.values(db.users || {})) {
     const a = u.avatarUsage && u.avatarUsage.active;
     if (!a) continue;
-    const alive = a.lastSeenAt
-      ? now - a.lastSeenAt < 60000   // 还在发心跳（心跳间隔20秒，留3倍余量）
-      : now - a.startedAt < 90000;   // 刚创建还没进去，对齐 participant_absent_timeout
-    if (alive) { n++; continue; }
+    if (alive(a)) { n++; continue; }
     if (settleStale) settleAvatarSession(db, u); // 僵尸会话结算掉，释放并发位
+  }
+  // 访客测评占的是同一个 Tavus 并发池，不算进来的话这道闸门就是漏的：
+  // 几个访客同时测就能把名额顶穿，然后会员那边撞上 Tavus 自己的报错。
+  // 僵尸访客会话也必须在这里结算——访客关掉页面就再也不会回来触发结算，
+  // 不收口的话他那一分钟永远记不进全站账单，闸门就守不住真实支出。
+  for (const g of Object.values(db.guests || {})) {
+    if (!g || !g.active) continue;
+    if (alive(g.active)) { n++; continue; }
+    if (settleStale) settleGuestSession(db, g);
   }
   return n;
 }
@@ -1738,13 +1774,19 @@ function avatarQuota(db, user, ip) {
 // 下次进来时补记，按最后一次心跳推算，避免一场没关的会话吃掉整月额度。
 // exact=true 表示用户主动点了结束，挂断时刻是确定的，不需要宽限；
 // exact=false 是异常退出（关页面/断网），只能按最后一次心跳推算。
-function settleAvatarSession(db, user, exact = false) {
-  const u = user.avatarUsage;
-  if (!u || !u.active) return;
+// 一场会话该记多少秒。会员通话和访客测评都用这一个算法——两边各写一份的话，
+// 迟早有一边改了另一边没改，而这里算错就是直接算错钱。
+// 返回 null 表示这场不该计费。
+function avatarChargeOf(active, exact) {
+  if (!active) return null;
 
-  // 一次心跳都没有 = 人根本没进到通话里（点开就退、接通失败、权限没给）。
-  // 这种情况不能计费——没用就不该扣。
-  if (!u.active.lastSeenAt) { u.active = null; return; }
+  // 一次心跳都没有 = 人没真正进到通话里（点开就退、接通失败、权限没给）。
+  // 这种情况不扣用户额度——没用就不该扣。
+  // 但全站账单必须记：房间已经建出来了，Tavus 就是按建房收钱的，每场最低 30 秒。
+  // 这两件事以前是一起跳过的，于是"建了房但没撑到第一次心跳"的通话
+  // 在全站账单里完全不存在——而这道闸门守的恰恰是真实支出。
+  // 匿名测评把这个洞放大了：跑单的人本来就是最多的那批。
+  if (!active.lastSeenAt) return { userCharge: 0, billCharge: 30 };
 
   const grace = exact ? 0 : AVATAR_PING_GRACE;
 
@@ -1753,24 +1795,36 @@ function settleAvatarSession(db, user, exact = false) {
   //   把连接和授权摄像头那十几二十秒也扣在用户头上，他实际只说了四十秒却被扣满一分钟。
   //   全站账单 —— 从创建房间算，因为 Tavus 就是这么收我们钱的。
   //   这道闸门守的是真实支出，不能按对用户友好的口径记，否则会悄悄冲穿套餐。
-  const base = u.active.joinedAt || u.active.startedAt;
-  const userRaw = Math.round((u.active.lastSeenAt - base) / 1000) + grace;
-  const cap = u.active.maxSeconds || AVATAR_MAX_CALL_SECONDS;
+  const base = active.joinedAt || active.startedAt;
+  const userRaw = Math.round((active.lastSeenAt - base) / 1000) + grace;
+  const cap = active.maxSeconds || AVATAR_MAX_CALL_SECONDS;
   const userElapsed = Math.min(Math.max(userRaw, 0), cap);
   const userCharge = Math.max(userElapsed, 30); // Tavus 每场最低计 30 秒
 
-  const billRaw = Math.round((u.active.lastSeenAt - u.active.startedAt) / 1000) + grace;
+  const billRaw = Math.round((active.lastSeenAt - active.startedAt) / 1000) + grace;
   const billCharge = Math.max(Math.min(Math.max(billRaw, 0), cap + AVATAR_JOIN_BUFFER), 30);
+
+  return { userCharge, billCharge };
+}
+
+function settleAvatarSession(db, user, exact = false) {
+  const u = user.avatarUsage;
+  if (!u || !u.active) return;
+
+  const charge = avatarChargeOf(u.active, exact);
+  if (!charge) { u.active = null; return; }
+  const { userCharge, billCharge } = charge;
 
   // 落到发起这通电话时记录的 IP 上（中途换网也算在起始 IP，避免切网重置额度）。
   // 被单独设过额度的用户记在他自己名下——理由见 avatarOwnUsage 上面那段。
-  if (!avatarUnlimited(user)) {
+  // userCharge 为 0 表示一次心跳都没有、人没真进去，次数和秒数都不记——
+  // 这个判断要留着：avatarChargeOf 现在对这种情况照样返回全站账单（房间确实建了），
+  // 不挡一道的话，点开就退会被算成用掉一次试用。
+  if (!avatarUnlimited(user) && userCharge > 0) {
     const rec = avatarLimitsFor(user).custom
       ? avatarOwnUsage(user)
       : avatarIpUsage(db, u.active.ip);
     rec.seconds += userCharge;
-    // 次数和秒数一起记：走到这里说明有过心跳、人真的进去了。
-    // 点开就退 / 接通失败在上面已经 return 了，不算一次——"没用就不该扣"
     rec.calls += 1;
   }
   avatarGlobalUsage(db).seconds += billCharge; // 全站总量不分身份，管理员的也算
@@ -1948,6 +2002,365 @@ app.post('/api/avatar/end', requireAuth, async (req, res) => {
     catch (e) { console.error('结束数字人会话失败:', e.message); }
   }
   res.json({ ok: true, ...avatarQuota(db, user, getClientIp(req)) });
+});
+
+// ==================== 登录页免费视频测评 ====================
+// 路过的人不用注册，花一分钟和 AI 老师面对面说几句，当场给一个 CEFR 等级和点评，
+// 再引导他注册把等级存下来。等级存下来之后，场景/单词/对话难度都按这个等级给。
+//
+// 这是全站唯一一个未登录也会产生 Tavus 账单的入口，所以成本防线写在最前面：
+//   · 每 IP 每月 1 次（PLACEMENT_VIDEO_PER_IP）——用过的 IP 连入口都不渲染
+//   · 全站月度硬顶（和会员通话共用一个池子）
+//   · 并发上限（访客的在途通话也要算进去，见 countActiveAvatarCalls）
+//   · 前端拿到摄像头权限之后才允许建房，详见 /start 里的说明
+
+const GUEST_COOKIE = 'guest';
+function makeGuestToken(id) { return `${id}.${signValue(id)}`; }
+// 和 verifyAuthToken 同一套签名：访客 id 必须是我们签发的，
+// 否则任何人都能伪造一个 id 来读别人的测评结果
+function verifyGuestToken(token) {
+  if (!token) return null;
+  const sepIdx = token.lastIndexOf('.');
+  if (sepIdx <= 0) return null;
+  const id = token.slice(0, sepIdx);
+  return token.slice(sepIdx + 1) === signValue(id) ? id : null;
+}
+
+// 顺手清掉过期访客。访客记录只为"测完能看到结果 + 注册时带走等级"而存在，
+// 不清的话 db.json 会被一次性访客慢慢撑大。
+function pruneGuests(db) {
+  if (!db.guests) { db.guests = {}; return; }
+  const cutoff = Date.now() - GUEST_TTL_MS;
+  for (const [id, g] of Object.entries(db.guests)) {
+    if (!g || (g.createdAt || 0) < cutoff) delete db.guests[id];
+  }
+}
+
+function guestOf(req, db) {
+  const id = verifyGuestToken(parseCookies(req.headers.cookie)[GUEST_COOKIE]);
+  return id && db.guests ? db.guests[id] || null : null;
+}
+
+// 测评次数单独记一本账，不和会员通话的 avatarIpUsage 混。
+// 两件事限的是两回事：这本账限"这个 IP 还能不能免费测"，那本限"这个 IP 还能打几通"。
+// 混在一起的话，改其中一个的规则会莫名其妙影响另一个。
+function placementIpUsage(db, ip) {
+  if (!db.placementIpUsage) db.placementIpUsage = {};
+  const key = ip || 'unknown';
+  const thisMonth = monthKey(new Date());
+  let rec = db.placementIpUsage[key];
+  if (!rec || rec.month !== thisMonth) {
+    rec = db.placementIpUsage[key] = { month: thisMonth, calls: 0 };
+  }
+  if (typeof rec.calls !== 'number') rec.calls = 0;
+  return rec;
+}
+
+// 访客版结算。计费算法和会员完全一致（avatarChargeOf），区别只有两点：
+// 用量记在 placementIpUsage 而不是账号上；全站账单照记，因为 Tavus 照样收钱。
+// 注意这里不记次数——次数在 /start 建房成功那一刻就记掉了。
+// 放到结算记是个陷阱：访客建完房直接关页面就永远不会走到结算，IP 计数还是 0，
+// 他刷新一下就能再测一次，而每一次都是真金白银的账单。
+function settleGuestSession(db, guest, exact = false) {
+  if (!guest || !guest.active) return;
+  const charge = avatarChargeOf(guest.active, exact);
+  if (!charge) { guest.active = null; return; }
+  avatarGlobalUsage(db).seconds += charge.billCharge;
+  guest.usedSeconds = charge.userCharge;
+  guest.active = null;
+}
+
+// 这个 IP 现在能不能测。前端拿这个决定登录页上要不要渲染那张测评卡——
+// 不能让人点下去才被拒，那比一开始就不显示更让人不舒服。
+function placementVideoAvailability(db, ip) {
+  if (!placementVideoEnabled()) return { available: false, reason: 'disabled' };
+  if (avatarGlobalQuota(db).remaining <= 0) return { available: false, reason: 'global' };
+  if (placementIpUsage(db, ip).calls >= PLACEMENT_VIDEO_PER_IP) {
+    return { available: false, reason: 'used' };
+  }
+  return { available: true, reason: null };
+}
+
+app.get('/api/placement/video/status', (req, res) => {
+  const db = loadDB();
+  const ip = getClientIp(req);
+  const guest = guestOf(req, db);
+  const a = placementVideoAvailability(db, ip);
+  res.json({
+    ...a,
+    seconds: PLACEMENT_VIDEO_SECONDS,
+    // 测过的人刷新页面还能看回自己的结果，不然他一刷新就什么都没了
+    result: guest && guest.result ? guest.result : null,
+  });
+});
+
+app.post('/api/placement/video/start', rateLimit(6), async (req, res) => {
+  if (!placementVideoEnabled()) return res.status(503).json({ error: '免费测评暂未开启' });
+  const db = loadDB();
+  const ip = getClientIp(req);
+  pruneGuests(db);
+
+  // 已登录的人不该走这条免费通道：他有自己的额度，而且结果要落到账号上。
+  if (req.session.userId && db.users[req.session.userId]) {
+    return res.status(400).json({ error: '你已经登录了，请到「面对面」页练习' });
+  }
+
+  const a = placementVideoAvailability(db, ip);
+  if (!a.available) {
+    saveDB(db);
+    const msg = a.reason === 'global'
+      ? '本月免费测评名额已满，下月1日恢复'
+      : '这个网络今天已经测过一次了，注册后可以继续练';
+    return res.status(403).json({ error: msg, reason: a.reason });
+  }
+
+  // 访客的在途通话也占 Tavus 的并发位，所以这道闸门必须算上他们
+  if (countActiveAvatarCalls(db) >= AVATAR_MAX_CONCURRENT) {
+    saveDB(db);
+    return res.status(503).json({ error: '当前测评的人有点多，请过一两分钟再试' });
+  }
+
+  // 一人一条记录。重复点 start 不重开房间——否则连点两下就是两份账单。
+  let id = verifyGuestToken(parseCookies(req.headers.cookie)[GUEST_COOKIE]);
+  if (!id || !db.guests[id]) {
+    id = crypto.randomBytes(16).toString('hex');
+    db.guests[id] = { id, createdAt: Date.now(), ip, active: null, result: null };
+  }
+  const guest = db.guests[id];
+  if (guest.active) {
+    saveDB(db);
+    return res.status(409).json({ error: '测评正在进行中' });
+  }
+
+  const g = avatarGlobalQuota(db);
+  const callSeconds = Math.min(PLACEMENT_VIDEO_SECONDS, g.remaining);
+  const persona = readPersonas()[0];
+  const face = personaFace(persona);
+  const langName = LANG_NAME[SITE.targetLang] || '英语';
+
+  // 考官人设和平时的陪练不一样：时间只有一分钟，必须尽快把人的真实水平逼出来，
+  // 所以是"由易到难连续追问"，而不是陪着聊天。
+  const context = `You are a friendly ${langName} speaking examiner running a 60-second placement test.
+Your goal is to find out the student's real speaking level as fast as possible.
+Start with one easy warm-up question (name, where they're from).
+Then escalate: ask about their daily routine, then ask them to explain an opinion or describe a past experience.
+Keep every question short (under 15 words). Never lecture. Never correct them — just keep them talking.
+If they struggle, drop back to easier questions. If they answer fluently, push harder immediately.
+Speak only ${langName}. The test ends automatically after 60 seconds.`;
+
+  try {
+    const data = await tavusFetch('/conversations', {
+      method: 'POST',
+      body: JSON.stringify({
+        face_id: face.faceId,
+        ...(face.palId ? { pal_id: face.palId } : {}),
+        conversation_name: `LangBuddy-placement-${id.slice(0, 8)}`,
+        conversational_context: context,
+        properties: {
+          languages: [SITE.targetLang || 'en'],
+          max_call_duration: callSeconds + AVATAR_JOIN_BUFFER,
+          participant_left_timeout: 15,   // 访客跑掉得比会员更快关，他们更容易点开就走
+          participant_absent_timeout: 60,
+          enable_recording: false,
+          enable_closed_captions: true,
+        },
+      }),
+    });
+    guest.active = {
+      conversationId: data.conversation_id,
+      startedAt: Date.now(),
+      joinedAt: null,
+      lastSeenAt: null,
+      maxSeconds: callSeconds,
+      ip,
+    };
+    guest.conversationId = data.conversation_id;
+    // 房间建成 = 账单已经开始走，这一刻就把这个 IP 的免费名额消掉。
+    // 等通话结束再记的话，关页面跑掉的人等于没用过，可以无限刷。
+    placementIpUsage(db, ip).calls += 1;
+    saveDB(db);
+    res.cookie(GUEST_COOKIE, makeGuestToken(id), {
+      httpOnly: true, sameSite: 'lax', maxAge: GUEST_TTL_MS,
+      secure: process.env.NODE_ENV === 'production',
+    });
+    res.json({
+      conversationUrl: data.conversation_url,
+      maxSeconds: callSeconds,
+      pingSeconds: AVATAR_PING_SECONDS,
+    });
+  } catch (e) {
+    console.error('创建测评会话失败:', e.message);
+    res.status(502).json({ error: '测评暂时不可用，请稍后再试' });
+  }
+});
+
+app.post('/api/placement/video/ping', (req, res) => {
+  const db = loadDB();
+  const guest = guestOf(req, db);
+  const active = guest && guest.active;
+  if (!active) return res.json({ ok: false });
+  const now = Date.now();
+  if (!active.joinedAt) active.joinedAt = now;
+  active.lastSeenAt = now;
+  const used = Math.round((now - active.joinedAt) / 1000);
+  const cap = active.maxSeconds || PLACEMENT_VIDEO_SECONDS;
+  saveDB(db);
+  res.json({
+    ok: true,
+    elapsedSeconds: used,
+    remainingSeconds: Math.max(0, cap - used),
+    pingSeconds: AVATAR_PING_SECONDS,
+  });
+});
+
+app.post('/api/placement/video/end', async (req, res) => {
+  const db = loadDB();
+  const guest = guestOf(req, db);
+  if (!guest) return res.json({ ok: false });
+  const active = guest.active;
+  if (active && active.lastSeenAt) active.lastSeenAt = Date.now();
+  // 先落账再去关远端：Tavus 这步失败也不能漏记用量
+  settleGuestSession(db, guest, true);
+  saveDB(db);
+  if (active && avatarEnabled()) {
+    try { await tavusFetch(`/conversations/${active.conversationId}/end`, { method: 'POST' }); }
+    catch (e) { console.error('结束测评会话失败:', e.message); }
+  }
+  res.json({ ok: true });
+});
+
+// ==================== 测评打分 ====================
+
+// 从 Tavus 的 verbose 事件里把逐轮对话捞出来。
+// 字段名在不同版本里变过（transcript / messages，role / speaker），所以都认一遍，
+// 认不出来就返回空数组让上层说"没取到"，而不是硬凑一个等级出来。
+function extractTranscript(conv) {
+  const events = Array.isArray(conv?.events) ? conv.events : [];
+  for (const ev of events) {
+    const type = ev?.event_type || ev?.type;
+    if (type && !String(type).includes('transcription')) continue;
+    const raw = ev?.properties?.transcript || ev?.properties?.messages
+      || ev?.transcript || ev?.messages;
+    if (Array.isArray(raw) && raw.length) {
+      return raw.map(m => ({
+        role: m.role || m.speaker || '',
+        content: String(m.content || m.text || '').trim(),
+      })).filter(m => m.content);
+    }
+  }
+  return [];
+}
+
+// 一分钟里学生实际说的话。system/assistant 的内容不能进打分材料——
+// 否则 AI 老师那几句流利的英语会被当成学生说的，谁来测都是 C1。
+function studentTurns(transcript) {
+  return transcript
+    .filter(m => /user|student|participant|human/i.test(m.role))
+    .map(m => m.content);
+}
+
+const PLACEMENT_MIN_WORDS = 12;
+
+async function gradeTranscript(said) {
+  const words = said.join(' ').split(/\s+/).filter(Boolean).length;
+  // 说得太少就直接说测不出来。硬给一个"初级"是错的：没开口和水平低是两回事，
+  // 而且被误判成初级的人很可能就直接关掉页面了。
+  if (words < PLACEMENT_MIN_WORDS) {
+    return { enough: false, words };
+  }
+  const raw = await callChatAPI({
+    messages: [
+      {
+        role: 'system',
+        content: `You are a CEFR speaking examiner. You will see only the STUDENT's turns from a 60-second placement conversation.
+Judge their speaking level from vocabulary range, grammatical control, fluency and complexity.
+Be realistic: a 60-second sample supports a rough band, not a precise score. When in doubt, pick the lower band.
+Reply with JSON only, no other text:
+{"cefr":"A1|A2|B1|B2|C1","level":"beginner|intermediate|advanced","summaryZh":"一句话中文总评，20字以内","strengthZh":"做得好的一点，25字以内","adviceZh":"最该先练的一点，25字以内"}
+Mapping: A1/A2 -> beginner, B1/B2 -> intermediate, C1 -> advanced.`,
+      },
+      { role: 'user', content: said.map((s, i) => `${i + 1}. ${s}`).join('\n') },
+    ],
+    // 别按"输出只有100来个token"去估这个值：主力模型 gpt-oss-120b 是推理模型，
+    // 它的思考过程也从 max_tokens 里扣。给 300 的话 JSON 还没写完就被截断，
+    // Groq 的 json 模式直接报 Failed to generate JSON——看起来像提示词错了，其实是预算不够。
+    maxTokens: 1500,
+    temperature: 0.2,
+    jsonMode: true,
+  });
+
+  let parsed = null;
+  try { parsed = JSON.parse(raw); } catch { /* 往下用容错方式再试一次 */ }
+  // 退一步：有的供应商不认 json 模式，会回带 ```json 围栏或前后带话的文本。
+  // 把第一个花括号块抠出来再试，免得换个模型就整条功能挂掉。
+  if (!parsed) {
+    const m = String(raw).match(/\{[\s\S]*\}/);
+    if (m) { try { parsed = JSON.parse(m[0]); } catch { /* 真解析不了就往下报错 */ } }
+  }
+  const CEFR = ['A1', 'A2', 'B1', 'B2', 'C1'];
+  const LEVELS = ['beginner', 'intermediate', 'advanced'];
+  if (!parsed || !CEFR.includes(parsed.cefr) || !LEVELS.includes(parsed.level)) {
+    throw new Error('打分结果格式不对');
+  }
+  return {
+    enough: true,
+    words,
+    cefr: parsed.cefr,
+    level: parsed.level,
+    summaryZh: String(parsed.summaryZh || '').slice(0, 60),
+    strengthZh: String(parsed.strengthZh || '').slice(0, 80),
+    adviceZh: String(parsed.adviceZh || '').slice(0, 80),
+  };
+}
+
+// 结果是拉回来的，不是等 Tavus 回调推过来的。
+// 用回调要在公网开一个谁都能 POST 的入口，伪造一份转写就能骗出任意等级；
+// 主动拉则不存在这个问题，而且本地开发也能跑通。
+app.get('/api/placement/video/result', rateLimit(30), async (req, res) => {
+  const db = loadDB();
+  const guest = guestOf(req, db);
+  if (!guest) return res.status(404).json({ error: '没有找到测评记录' });
+  if (guest.result) return res.json({ status: 'done', result: guest.result });
+  if (!guest.conversationId) return res.status(404).json({ error: '没有找到测评记录' });
+  if (guest.grading) return res.json({ status: 'pending' });
+
+  let conv = null;
+  try {
+    conv = await tavusFetch(`/conversations/${guest.conversationId}?verbose=true`);
+  } catch (e) {
+    console.error('拉取测评转写失败:', e.message);
+    return res.json({ status: 'pending' });
+  }
+
+  const said = studentTurns(extractTranscript(conv));
+  if (!said.length) {
+    // 通话结束了却一句都没有 = 人没开口，再等也不会有，直接给结论
+    if (conv?.status === 'ended') {
+      guest.result = { enough: false, words: 0 };
+      saveDB(db);
+      return res.json({ status: 'done', result: guest.result });
+    }
+    return res.json({ status: 'pending' });
+  }
+
+  // 打分要调 LLM，有几秒钟。标记一下，免得前端轮询时并发打好几次分
+  guest.grading = true;
+  saveDB(db);
+  try {
+    const result = await gradeTranscript(said);
+    const fresh = loadDB();
+    const g2 = (fresh.guests || {})[guest.id] || guest;
+    g2.result = result;
+    g2.grading = false;
+    saveDB(fresh);
+    res.json({ status: 'done', result });
+  } catch (e) {
+    console.error('测评打分失败:', e.message);
+    const fresh = loadDB();
+    const g2 = (fresh.guests || {})[guest.id];
+    if (g2) { g2.grading = false; saveDB(fresh); }
+    res.status(502).json({ error: '分析失败，请稍后再看' });
+  }
 });
 
 // ==================== 情景对话 ====================

@@ -32,6 +32,42 @@
       'Video calls, chat, speaking practice, vocabulary and grammar — everything in one place.',
     '免费开始学习': 'Start learning free',
     '已有账号，登录': 'I have an account',
+
+    // —— 登录页免费视频测评 ——
+    '60 秒测出你的英语水平': 'Find your English level in 60 seconds',
+    '和 AI 老师视频对话，当场出结果 · 不用注册': 'Video chat with an AI tutor, graded on the spot · No sign-up',
+    '查看我的测评结果': 'See my result',
+    '注册后可以把等级存进账号': 'Sign up to save your level',
+    '60 秒口语水平测试': '60-second speaking test',
+    'AI 老师会用英语问你几个问题，你尽量开口答。结束后当场给出 CEFR 等级和点评。':
+      'An AI tutor will ask you a few questions in English. Just answer out loud. You get a CEFR level and feedback right away.',
+    '需要摄像头和麦克风权限': 'Camera and microphone access required',
+    '全程 60 秒，不录像、不保存视频': '60 seconds total — nothing is recorded or stored',
+    '每个网络只能免费测一次': 'One free test per network',
+    '开始测试': 'Start test',
+    '秒': 's',
+    '提前结束': 'End early',
+    '正在分析你的表达…': 'Analyzing how you spoke…',
+    '大概十几秒，别关页面': 'About fifteen seconds — please stay on this page',
+    '做得好': 'Strength',
+    '先练这个': 'Work on',
+    '60 秒只能给一个大致范围，正式等级以注册后的完整测评为准。':
+      'A 60-second sample only gives a rough band. Sign up for the full placement test to confirm it.',
+    '注册保存我的等级': 'Sign up to save my level',
+    '这次没测出来': "Couldn't grade this one",
+    '注册后继续练': 'Sign up and keep practicing',
+    '初级': 'Beginner',
+    '中级': 'Intermediate',
+    '高级': 'Advanced',
+    '需要摄像头和麦克风权限才能测。在地址栏左边允许之后再试一次。':
+      'The test needs camera and microphone access. Allow it from the left of the address bar, then try again.',
+    '没找到可用的摄像头或麦克风。': 'No working camera or microphone found.',
+    '这一分钟里你说得太少，没法判断水平。注册之后可以随时再练。':
+      "You didn't say enough in that minute to judge a level. Sign up and you can practice any time.",
+    '分析超时了。注册一个账号，等级可以用完整测评重新测。':
+      'The analysis timed out. Sign up and you can take the full placement test instead.',
+    '没取到之前的结果。': "Couldn't load your earlier result.",
+    '测评暂时不可用，请稍后再试': 'The test is temporarily unavailable. Please try again later.',
     'AI 视频通话': 'AI Video Call',
     '和 AI 私教面对面视频通话，看得见表情、听得见语气，最接近真人外教的口语练习。':
       'Talk face to face with an AI tutor — you can see expressions and hear tone. The closest thing to a real tutor.',
@@ -220,6 +256,7 @@
 
     // —— 语法 ——
     '语法学习': 'Grammar',
+    'AI 语法批改': 'AI grammar check',
     '← 返回列表': '← Back to list',
     '结构': 'Structure',
     '讲解': 'Explanation',

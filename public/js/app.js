@@ -271,7 +271,7 @@
     // 两颗球都只在自己那一页转。离开就停掉 rAF，否则会在后台一直跑，白耗电
     featOrbit.setActive(name === 'dashboard');
     heroWire.setActive(name === 'landing');
-    if (name === 'landing') loadHeroFace();
+    if (name === 'landing') { loadHeroFace(); refreshPlacementEntry(); }
     if (name === 'tutor') { renderTutor(); updateSceneBanner(); }
     if (name === 'scenarios') renderScenarios();
     if (name === 'facetime') { refreshAvatarButton(); renderPersonaRow('personaRowCall', true); }
@@ -478,6 +478,197 @@
   document.body.addEventListener('click', (e) => {
     if (e.target.id === 'btnShowLogin') openAuthModal('login');
     if (e.target.id === 'btnShowRegister') openAuthModal('register');
+  });
+
+  // ==================== 登录页免费视频测评 ====================
+  // 没注册的人花 60 秒和 AI 老师说几句，当场拿到 CEFR 等级，再引导注册把等级存下来。
+  // 成本上有两条硬规矩，改这段的时候别破坏：
+  //   1) 先拿到摄像头权限才允许调 /start。Tavus 从建房那一刻就计费，
+  //      而很多人正是看到浏览器弹授权才关掉的——顺序反了就是白付钱。
+  //   2) 入口是服务端说了算的。这个 IP 测过了就不渲染，不能让人点了才被拒。
+  const PL_STAGES = ['plIntro', 'plCall', 'plGrading', 'plResult', 'plFail'];
+  const plState = { tick: null, ping: null, poll: null, left: 0, active: false };
+
+  function plShow(stage) {
+    PL_STAGES.forEach((id) => {
+      const el = $('#' + id);
+      if (el) el.hidden = (id !== stage);
+    });
+  }
+
+  function plStopTimers() {
+    [plState.tick, plState.ping, plState.poll].forEach((h) => h && clearInterval(h));
+    plState.tick = plState.ping = plState.poll = null;
+  }
+
+  // 关弹窗时必须把在途通话也结束掉：直接关窗而不通知服务端的话，
+  // 那一分钟要等僵尸会话被别人的请求顺带结算，期间一直占着并发位
+  function plCloseModal() {
+    plStopTimers();
+    const frame = $('#plFrame');
+    if (frame) frame.src = 'about:blank';
+    if (plState.active) {
+      plState.active = false;
+      api('/placement/video/end', { method: 'POST' }).catch(() => {});
+    }
+    $('#placementOverlay').hidden = true;
+  }
+
+  async function plEnd() {
+    if (!plState.active) return;
+    plStopTimers();
+    plState.active = false;
+    const frame = $('#plFrame');
+    if (frame) frame.src = 'about:blank';
+    plShow('plGrading');
+    try { await api('/placement/video/end', { method: 'POST' }); } catch { /* 结算在服务端兜底 */ }
+    plPollResult();
+  }
+
+  // 转写要等 Tavus 那边整理好，不是挂断就有。轮询而不是死等，
+  // 并且给一个明确的放弃时间——转圈转到天荒地老比直说"没出来"更糟。
+  function plPollResult() {
+    let tries = 0;
+    plState.poll = setInterval(async () => {
+      tries++;
+      if (tries > 20) {   // 20 × 3 秒 = 1 分钟
+        clearInterval(plState.poll); plState.poll = null;
+        plFail(t('分析超时了。注册一个账号，等级可以用完整测评重新测。'));
+        return;
+      }
+      try {
+        const r = await api('/placement/video/result');
+        if (r.status === 'done') {
+          clearInterval(plState.poll); plState.poll = null;
+          plRenderResult(r.result);
+        }
+      } catch { /* 还没好，继续轮询 */ }
+    }, 3000);
+  }
+
+  const PL_LEVEL_ZH = { beginner: '初级', intermediate: '中级', advanced: '高级' };
+
+  function plRenderResult(result) {
+    if (!result || !result.enough) {
+      plFail(t('这一分钟里你说得太少，没法判断水平。注册之后可以随时再练。'));
+      return;
+    }
+    $('#plCefr').textContent = result.cefr || '';
+    $('#plLevelName').textContent = t(PL_LEVEL_ZH[result.level] || '初级');
+    $('#plSummary').textContent = result.summaryZh || '';
+    $('#plStrength').textContent = result.strengthZh || '';
+    $('#plAdvice').textContent = result.adviceZh || '';
+    plShow('plResult');
+  }
+
+  function plFail(msg) {
+    $('#plFailMsg').textContent = msg;
+    plShow('plFail');
+  }
+
+  async function plStart() {
+    const errEl = $('#plIntroErr');
+    errEl.textContent = '';
+    const btn = $('#btnPlacementGo');
+    btn.disabled = true;
+
+    // —— 第一步：权限。失败就到此为止，一分钱不花，名额也不消耗 ——
+    let stream = null;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    } catch (e) {
+      btn.disabled = false;
+      errEl.textContent = (e && e.name === 'NotAllowedError')
+        ? t('需要摄像头和麦克风权限才能测。在地址栏左边允许之后再试一次。')
+        : t('没找到可用的摄像头或麦克风。');
+      return;
+    }
+    // 让出设备，交给 Tavus 的 iframe 去开——两边同时占着摄像头，有些机器会直接黑屏
+    stream.getTracks().forEach((tr) => tr.stop());
+
+    // —— 第二步：这时才建房 ——
+    try {
+      const r = await api('/placement/video/start', { method: 'POST' });
+      plState.active = true;
+      plState.left = r.maxSeconds || 60;
+      $('#plTimer').textContent = plState.left;
+      $('#plFrame').src = r.conversationUrl;
+      plShow('plCall');
+
+      plState.tick = setInterval(() => {
+        plState.left = Math.max(0, plState.left - 1);
+        $('#plTimer').textContent = plState.left;
+        if (plState.left <= 0) plEnd();
+      }, 1000);
+
+      // 心跳顺带把服务端算的剩余秒数带回来，本地倒计时以它为准——
+      // 本地从"点了开始"就倒数的话，用户还在加载通话界面就已经少了十几秒
+      plState.ping = setInterval(async () => {
+        try {
+          const p = await api('/placement/video/ping', { method: 'POST' });
+          if (p && p.ok && typeof p.remainingSeconds === 'number') plState.left = p.remainingSeconds;
+        } catch { /* 丢一次心跳不致命，服务端按最后一次算 */ }
+      }, (r.pingSeconds || 20) * 1000);
+    } catch (e) {
+      btn.disabled = false;
+      errEl.textContent = (e && e.message) || t('测评暂时不可用，请稍后再试');
+    }
+  }
+
+  // 入口显不显示由服务端决定。登录过的人不显示——他有自己的额度，走「面对面」页。
+  async function refreshPlacementEntry() {
+    const box = $('#heroPlacement');
+    if (!box) return;
+    if (state.user) { box.hidden = true; return; }
+    try {
+      const s = await api('/placement/video/status');
+      // 测过并且有结果的人，入口保留但直接打开结果——刷新一下就什么都没了很让人恼火
+      if (s.result) {
+        box.hidden = false;
+        box.dataset.mode = 'result';
+        $('#btnPlacementStart').querySelector('strong').textContent = t('查看我的测评结果');
+        $('#btnPlacementStart').querySelector('small').textContent = t('注册后可以把等级存进账号');
+        return;
+      }
+      box.dataset.mode = 'test';
+      box.hidden = !s.available;
+    } catch {
+      box.hidden = true;   // 查不到就当没有，不要在落地页上摆一个点了会报错的按钮
+    }
+  }
+
+  $('#btnPlacementStart').addEventListener('click', async () => {
+    $('#placementOverlay').hidden = false;
+    if ($('#heroPlacement').dataset.mode === 'result') {
+      plShow('plGrading');
+      try {
+        const s = await api('/placement/video/status');
+        plRenderResult(s.result);
+      } catch { plFail(t('没取到之前的结果。')); }
+      return;
+    }
+    $('#btnPlacementGo').disabled = false;
+    $('#plIntroErr').textContent = '';
+    plShow('plIntro');
+  });
+  $('#btnPlacementGo').addEventListener('click', plStart);
+  $('#btnPlacementStop').addEventListener('click', plEnd);
+  $('#placementClose').addEventListener('click', plCloseModal);
+  $('#placementOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'placementOverlay') plCloseModal();
+  });
+  ['#btnPlacementRegister', '#btnPlacementFailReg'].forEach((sel) => {
+    $(sel).addEventListener('click', () => {
+      $('#placementOverlay').hidden = true;
+      openAuthModal('register');
+    });
+  });
+  // 通话中直接关标签页：浏览器不保证能等 fetch 发完，sendBeacon 是专门干这个的。
+  // 不发的话这通电话要等僵尸结算，期间一直占着 Tavus 的并发位。
+  window.addEventListener('pagehide', () => {
+    if (plState.active && navigator.sendBeacon) {
+      navigator.sendBeacon(API_BASE + '/placement/video/end');
+    }
   });
 
   $('#authForm').addEventListener('submit', async (e) => {
