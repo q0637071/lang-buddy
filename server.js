@@ -84,6 +84,31 @@ const avatarEnabled = () => !!(TAVUS_API_KEY && TAVUS_FACE_ID);
 const PLACEMENT_VIDEO_ENABLED = process.env.PLACEMENT_VIDEO !== 'off';
 const PLACEMENT_VIDEO_SECONDS = Number(process.env.PLACEMENT_VIDEO_SECONDS || 60);
 const PLACEMENT_VIDEO_PER_IP = Number(process.env.PLACEMENT_VIDEO_PER_IP || 1);
+// 给指定 IP 开更高的次数上限，目前就是站长自测用的。
+// 没有这个的话，每改一版都得把全站的 PLACEMENT_VIDEO_PER_IP 调高再调回来——
+// 忘记调回去就是把免费通道对全网敞开，直接变成账单。
+// 写法：`IP=次数`，逗号分隔，次数可省略（省略按 10 次）。
+//   PLACEMENT_VIDEO_IP_LIMITS=203.0.113.5=10,::1
+// 分隔符用 = 不用 :，因为 IPv6 地址本身全是冒号，`::1:10` 没法切。
+const PLACEMENT_VIDEO_EXCEPTION_CALLS = 10;
+const PLACEMENT_VIDEO_IP_LIMITS = (() => {
+  const out = new Map();
+  for (const part of String(process.env.PLACEMENT_VIDEO_IP_LIMITS || '').split(',')) {
+    const item = part.trim();
+    if (!item) continue;
+    const eq = item.lastIndexOf('=');
+    const rawIp = eq === -1 ? item : item.slice(0, eq).trim();
+    const n = eq === -1 ? NaN : Number(item.slice(eq + 1).trim());
+    if (!rawIp) continue;
+    // 这里要和 getClientIp 走同一套归一化，否则配了 ::ffff:1.2.3.4 永远对不上
+    out.set(normalizeIp(rawIp), Number.isFinite(n) && n > 0 ? n : PLACEMENT_VIDEO_EXCEPTION_CALLS);
+  }
+  return out;
+})();
+// 这个 IP 每月能免费测几次：配了例外就按例外，否则全站默认
+function placementLimitFor(ip) {
+  return PLACEMENT_VIDEO_IP_LIMITS.get(normalizeIp(ip)) ?? PLACEMENT_VIDEO_PER_IP;
+}
 // 访客记录留多久。只是为了让人测完能看到结果、注册时能把等级带过去，
 // 不是长期数据，留太久纯粹是攒垃圾。
 const GUEST_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -1274,6 +1299,18 @@ app.get('/api/health', (req, res) => {
       avatarMaxCallSeconds: AVATAR_MAX_CALL_SECONDS,
       avatarMaxConcurrent: AVATAR_MAX_CONCURRENT,
     } : {}),
+    // 登录页免费测评。yourIp 是给站长配 PLACEMENT_VIDEO_IP_LIMITS 用的：
+    // 要开例外总得先知道自己出口 IP 是多少，而家宽的 IP 会变，隔段时间得重看一次。
+    // placementYourLimit 直接告诉他配的那条到底生效没有——
+    // 配了不生效（写错地址、Cloudflare 回源 IP 不是他以为的那个）是最容易踩的坑。
+    placementVideo: placementVideoEnabled(),
+    ...(placementVideoEnabled() ? {
+      placementSeconds: PLACEMENT_VIDEO_SECONDS,
+      placementPerIpCalls: PLACEMENT_VIDEO_PER_IP,
+      placementIpExceptions: Object.fromEntries(PLACEMENT_VIDEO_IP_LIMITS),
+      yourIp: getClientIp(req),
+      placementYourLimit: placementLimitFor(getClientIp(req)),
+    } : {}),
   });
 });
 
@@ -2074,11 +2111,13 @@ function settleGuestSession(db, guest, exact = false) {
 // 不能让人点下去才被拒，那比一开始就不显示更让人不舒服。
 function placementVideoAvailability(db, ip) {
   if (!placementVideoEnabled()) return { available: false, reason: 'disabled' };
+  // 全站硬顶在例外 IP 上也照样生效：那道闸门守的是账单，不是防滥用，
+  // 给自己开后门把套餐冲穿一样要付钱
   if (avatarGlobalQuota(db).remaining <= 0) return { available: false, reason: 'global' };
-  if (placementIpUsage(db, ip).calls >= PLACEMENT_VIDEO_PER_IP) {
-    return { available: false, reason: 'used' };
-  }
-  return { available: true, reason: null };
+  const limit = placementLimitFor(ip);
+  const used = placementIpUsage(db, ip).calls;
+  if (used >= limit) return { available: false, reason: 'used', used, limit };
+  return { available: true, reason: null, used, limit };
 }
 
 app.get('/api/placement/video/status', (req, res) => {
