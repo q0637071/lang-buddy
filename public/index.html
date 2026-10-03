@@ -894,11 +894,22 @@
       <p class="pl-err" id="plIntroErr"></p>
     </div>
 
-    <!-- 阶段二：通话 -->
+    <!-- 阶段二：通话。弹窗这时套上 is-call 变宽（手机上整屏）——
+         要看清老师的表情，这正是这个功能的卖点，小窗等于白做。
+
+         用 Daily 的 call object 自己渲染老师的视频流，而不是嵌 Tavus 的内置界面。
+         内置界面会先出一个「填名字 + 加入」的等候页，Tavus 建会话时没有任何参数
+         能关掉它（那是 Daily 的房间级设置，不归我们管）。自己渲染就根本没有那层 UI：
+         允许摄像头之后直接就是老师的脸。
+         Daily 脚本加载不出来时退回嵌 iframe——有等候页也好过一个黑屏。 -->
     <div class="pl-stage" id="plCall" hidden>
-      <div class="pl-timer"><span id="plTimer">60</span><small data-i18n="秒">秒</small></div>
-      <div class="pl-frame-wrap">
-        <iframe id="plFrame" class="pl-frame" allow="camera; microphone; autoplay; display-capture" title="AI 口语测试"></iframe>
+      <div class="pl-frame-wrap" id="plFrameWrap">
+        <video id="plVideo" class="pl-video" autoplay playsinline></video>
+        <audio id="plAudio" autoplay></audio>
+        <video id="plSelf" class="pl-self" autoplay playsinline muted></video>
+        <iframe id="plFrame" class="pl-frame" allow="camera; microphone; autoplay; display-capture" title="AI 口语测试" hidden></iframe>
+        <div class="pl-timer-float"><span id="plTimer">60</span><small data-i18n="秒">秒</small></div>
+        <div class="pl-connecting" id="plConnecting" data-i18n="正在接通老师…">正在接通老师…</div>
       </div>
       <button class="btn btn-outline btn-block" id="btnPlacementStop" data-i18n="提前结束">提前结束</button>
     </div>

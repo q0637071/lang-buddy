@@ -487,7 +487,7 @@
   //      而很多人正是看到浏览器弹授权才关掉的——顺序反了就是白付钱。
   //   2) 入口是服务端说了算的。这个 IP 测过了就不渲染，不能让人点了才被拒。
   const PL_STAGES = ['plIntro', 'plCall', 'plGrading', 'plResult', 'plFail'];
-  const plState = { tick: null, ping: null, poll: null, left: 0, active: false };
+  const plState = { tick: null, ping: null, poll: null, left: 0, active: false, call: null };
 
   function plShow(stage) {
     PL_STAGES.forEach((id) => {
@@ -501,25 +501,86 @@
     plState.tick = plState.ping = plState.poll = null;
   }
 
+  // Daily 的 SDK（Tavus 底层就是 Daily）。按需加载 270KB——
+  // 落地页上绝大多数人不会点测评，不该让他们白下载。
+  // 必须是 dist/daily.js 这个 UMD 包：同目录下的 daily-esm.js 当普通 script 加载
+  // 不会挂全局变量，于是永远判定成"加载失败"，自渲染白写。
+  // 全局名是 Daily，不是 DailyIframe（旧版本叫后者，所以两个都认一下）。
+  const DAILY_SRC = 'https://unpkg.com/@daily-co/daily-js@0.93.0/dist/daily.js';
+  const dailySdk = () => window.Daily || window.DailyIframe || null;
+  let dailyLoading = null;
+  function loadDaily() {
+    if (dailySdk()) return Promise.resolve(true);
+    if (dailyLoading) return dailyLoading;
+    dailyLoading = new Promise((done) => {
+      const s = document.createElement('script');
+      s.src = DAILY_SRC;
+      s.crossOrigin = 'anonymous';
+      s.onload = () => done(!!dailySdk());
+      s.onerror = () => done(false);
+      document.head.appendChild(s);
+      // CDN 抽风时不能让用户干等：到点就按"加载失败"处理，退回 iframe
+      setTimeout(() => done(!!dailySdk()), 8000);
+    });
+    return dailyLoading;
+  }
+
+  // 把某个参会者的音视频轨挂到我们自己的 <video>/<audio> 上。
+  // 轨道是分别到达的（video 和 audio 不同时就绪），所以这个函数会被调好几次，
+  // 每次只补上新到的那条，已经挂好的不要重挂——重挂会让画面闪一下。
+  function plAttach(p) {
+    if (!p) return;
+    const vEl = p.local ? $('#plSelf') : $('#plVideo');
+    const vt = p.tracks && p.tracks.video && p.tracks.video.persistentTrack;
+    if (vt) {
+      const cur = vEl.srcObject && vEl.srcObject.getVideoTracks()[0];
+      if (cur !== vt) vEl.srcObject = new MediaStream([vt]);
+      if (!p.local) $('#plConnecting').hidden = true;
+    }
+    if (p.local) return;   // 自己的声音不能播，否则是回声
+    const at = p.tracks && p.tracks.audio && p.tracks.audio.persistentTrack;
+    if (at) {
+      const aEl = $('#plAudio');
+      const cur = aEl.srcObject && aEl.srcObject.getAudioTracks()[0];
+      if (cur !== at) { aEl.srcObject = new MediaStream([at]); aEl.play().catch(() => {}); }
+    }
+  }
+
+  async function plTeardownCall() {
+    const frame = $('#plFrame');
+    if (frame) { frame.src = 'about:blank'; frame.hidden = true; }
+    ['#plVideo', '#plSelf', '#plAudio'].forEach((sel) => {
+      const el = $(sel);
+      if (el) el.srcObject = null;
+    });
+    if (plState.call) {
+      const c = plState.call;
+      plState.call = null;
+      // 同一时刻只能存在一个 call object，下一次测评建新的之前必须销毁掉
+      try { await c.leave(); } catch { /* 已经断了就算了 */ }
+      try { await c.destroy(); } catch { /* 同上 */ }
+    }
+  }
+
   // 关弹窗时必须把在途通话也结束掉：直接关窗而不通知服务端的话，
   // 那一分钟要等僵尸会话被别人的请求顺带结算，期间一直占着并发位
   function plCloseModal() {
     plStopTimers();
-    const frame = $('#plFrame');
-    if (frame) frame.src = 'about:blank';
+    plTeardownCall();
     if (plState.active) {
       plState.active = false;
       api('/placement/video/end', { method: 'POST' }).catch(() => {});
     }
     $('#placementOverlay').hidden = true;
+    $('.modal-placement').classList.remove('is-call');
   }
 
   async function plEnd() {
     if (!plState.active) return;
     plStopTimers();
     plState.active = false;
-    const frame = $('#plFrame');
-    if (frame) frame.src = 'about:blank';
+    plTeardownCall();
+    $('.modal-placement').classList.remove('is-call');
     plShow('plGrading');
     try { await api('/placement/video/end', { method: 'POST' }); } catch { /* 结算在服务端兜底 */ }
     plPollResult();
@@ -583,8 +644,11 @@
         : t('没找到可用的摄像头或麦克风。');
       return;
     }
-    // 让出设备，交给 Tavus 的 iframe 去开——两边同时占着摄像头，有些机器会直接黑屏
+    // 让出设备，接下来由 Daily 自己去开——两边同时占着摄像头，有些机器会直接黑屏
     stream.getTracks().forEach((tr) => tr.stop());
+
+    // 权限已经到手，趁建房之前把 SDK 拉下来，这段等待正好被利用上
+    const dailyReady = await loadDaily();
 
     // —— 第二步：这时才建房 ——
     try {
@@ -592,8 +656,40 @@
       plState.active = true;
       plState.left = r.maxSeconds || 60;
       $('#plTimer').textContent = plState.left;
-      $('#plFrame').src = r.conversationUrl;
+      $('#plConnecting').hidden = false;
+      // 通话阶段把弹窗放大，手机上整屏
+      $('.modal-placement').classList.add('is-call');
       plShow('plCall');
+
+      if (dailyReady) {
+        // call object = 完全没有 Daily 的界面，老师的画面由我们自己渲染。
+        // 这是去掉「填名字 + 加入」等候页的唯一办法：那层 UI 属于 Daily 的
+        // 内置界面，Tavus 建会话时没有任何参数能关掉它。
+        try {
+          const call = dailySdk().createCallObject({ subscribeToTracksAutomatically: true });
+          plState.call = call;
+          const onP = (ev) => plAttach(ev && ev.participant);
+          call.on('participant-joined', onP);
+          call.on('participant-updated', onP);
+          call.on('track-started', onP);
+          await call.join({ url: r.conversationUrl, userName: '学员', startVideoOff: false, startAudioOff: false });
+          // 加入时已经在房里的人不会再触发 participant-joined，要主动补挂一次
+          Object.values(call.participants() || {}).forEach(plAttach);
+        } catch (err) {
+          // 自渲染这条路没走通就退回嵌 iframe：有等候页也好过一个黑屏
+          console.warn('Daily 自渲染失败，退回 iframe：', err && err.message);
+          await plTeardownCall();
+          const f = $('#plFrame');
+          f.hidden = false;
+          f.src = r.conversationUrl;
+          $('#plConnecting').hidden = true;
+        }
+      } else {
+        const f = $('#plFrame');
+        f.hidden = false;
+        f.src = r.conversationUrl;
+        $('#plConnecting').hidden = true;
+      }
 
       plState.tick = setInterval(() => {
         plState.left = Math.max(0, plState.left - 1);

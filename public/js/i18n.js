@@ -46,6 +46,7 @@
     '每个网络只能免费测一次': 'One free test per network',
     '开始测试': 'Start test',
     '秒': 's',
+    '正在接通老师…': 'Connecting you to your tutor…',
     '提前结束': 'End early',
     '正在分析你的表达…': 'Analyzing how you spoke…',
     '大概十几秒，别关页面': 'About fifteen seconds — please stay on this page',

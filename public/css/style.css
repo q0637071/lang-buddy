@@ -181,7 +181,9 @@ p { line-height: 1.6; color: var(--text-muted); }
 .placement-entry-go { font-size: 22px; color: var(--primary); flex-shrink: 0; line-height: 1; }
 
 /* 测评弹窗。比登录窗宽——里面要塞一个视频通话的 iframe */
-.modal-placement { width: 420px; max-width: calc(100vw - 32px); text-align: center; }
+/* 写成 .modal.modal-placement 是为了不依赖文件顺序：.modal 的 width:360px 定义在
+   这一段后面（第 700 多行），单类选择器同权重时后者赢，只写 .modal-placement 会被盖掉。 */
+.modal.modal-placement { width: 420px; max-width: calc(100vw - 32px); text-align: center; }
 .pl-icon { font-size: 40px; margin-bottom: 8px; }
 .pl-title { font-size: 19px; margin-bottom: 8px; }
 .pl-sub { font-size: 13.5px; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px; }
@@ -190,11 +192,37 @@ p { line-height: 1.6; color: var(--text-muted); }
 .pl-points li::before { content: "·"; position: absolute; left: 6px; color: var(--primary); font-weight: 700; font-size: 18px; }
 .pl-err { font-size: 13px; color: var(--danger); margin-top: 12px; line-height: 1.6; }
 
-.pl-timer { font-size: 34px; font-weight: 700; color: var(--primary); margin-bottom: 12px; line-height: 1; }
-.pl-timer small { font-size: 14px; font-weight: 400; color: var(--text-muted); margin-left: 4px; }
-/* 16:9 的占位框，iframe 加载前不会把弹窗高度抖一下 */
-.pl-frame-wrap { aspect-ratio: 16 / 9; width: 100%; border-radius: 12px; overflow: hidden; background: #0d1420; margin-bottom: 14px; }
+/* 通话中把弹窗放大。这个功能卖的就是"看得见表情"，
+   挤在 420px 的窗里等于白做。 */
+.modal-placement.is-call { width: min(880px, 94vw); padding: 18px; }
+
+/* 16:9 的占位框，视频加载前不会把弹窗高度抖一下 */
+.pl-frame-wrap { position: relative; aspect-ratio: 16 / 9; width: 100%; border-radius: 12px; overflow: hidden; background: #0d1420; margin-bottom: 14px; }
 .pl-frame { width: 100%; height: 100%; border: 0; display: block; }
+/* 老师的画面。object-fit: cover 填满整框——letterbox 的黑边会让本来就不大的脸更小 */
+.pl-video { width: 100%; height: 100%; object-fit: cover; display: block; background: #0d1420; }
+/* 自己的小窗。放右下角，给的是"我在镜头里"的确认，不需要大 */
+.pl-self {
+  position: absolute; right: 12px; bottom: 12px;
+  width: 22%; max-width: 140px; aspect-ratio: 4 / 3;
+  object-fit: cover; border-radius: 8px;
+  border: 1.5px solid rgba(255,255,255,.5);
+  box-shadow: 0 6px 18px rgba(0,0,0,.4);
+  background: #1b2433;
+  transform: scaleX(-1);   /* 镜像，照镜子的习惯 */
+}
+.pl-timer-float {
+  position: absolute; left: 12px; top: 12px;
+  background: rgba(13,20,32,.72); color: #fff;
+  padding: 5px 12px; border-radius: 999px;
+  font-size: 17px; font-weight: 700; line-height: 1.2;
+  backdrop-filter: blur(6px);
+}
+.pl-timer-float small { font-size: 11px; font-weight: 400; opacity: .75; margin-left: 3px; }
+.pl-connecting {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,.8); font-size: 14px; background: #0d1420;
+}
 
 .pl-spinner { width: 34px; height: 34px; margin: 10px auto 18px; border: 3px solid var(--primary-light); border-top-color: var(--primary); border-radius: 50%; animation: plSpin .8s linear infinite; }
 @keyframes plSpin { to { transform: rotate(360deg); } }
@@ -212,6 +240,21 @@ p { line-height: 1.6; color: var(--text-muted); }
   .placement-entry { padding: 10px 16px 10px 14px; gap: 10px; }
   .placement-entry-text strong { font-size: 13.5px; }
   .placement-entry-text small { font-size: 11px; }
+}
+
+/* 手机上通话直接整屏：竖屏里 16:9 的框只有巴掌大，老师的脸根本看不清。
+   视频撑满剩余高度，只给底部的"提前结束"留位置。 */
+@media (max-width: 640px) {
+  .modal-placement.is-call {
+    width: 100vw; max-width: none; height: 100dvh;
+    border-radius: 0; padding: 12px;
+    display: flex; flex-direction: column;
+    padding-top: calc(12px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+  .modal-placement.is-call .pl-stage { flex: 1; display: flex; flex-direction: column; }
+  .modal-placement.is-call .pl-frame-wrap { flex: 1; aspect-ratio: auto; min-height: 0; }
+  .modal-placement.is-call .modal-close { top: calc(10px + env(safe-area-inset-top, 0px)); }
 }
 
 /* 6 张卡：排 3 列正好两整行。排 4 列会剩下 4+2 的半截尾巴 */
