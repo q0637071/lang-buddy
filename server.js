@@ -84,6 +84,11 @@ const avatarEnabled = () => !!(TAVUS_API_KEY && TAVUS_FACE_ID);
 const PLACEMENT_VIDEO_ENABLED = process.env.PLACEMENT_VIDEO !== 'off';
 const PLACEMENT_VIDEO_SECONDS = Number(process.env.PLACEMENT_VIDEO_SECONDS || 60);
 const PLACEMENT_VIDEO_PER_IP = Number(process.env.PLACEMENT_VIDEO_PER_IP || 1);
+// 测评考官单独用哪张脸 / 哪个 PAL。不配就跟老师列表的第一位。
+// 和"选老师"分开，是因为这是两件事：想给测评换张脸，不该被迫去改八位老师的排序。
+// faceId 以 r 开头、palId 以 p 开头，都在 Tavus 后台能看到。
+const PLACEMENT_FACE_ID = process.env.PLACEMENT_FACE_ID || '';
+const PLACEMENT_PAL_ID = process.env.PLACEMENT_PAL_ID || '';
 // 给指定 IP 开更高的次数上限，目前就是站长自测用的。
 // 没有这个的话，每改一版都得把全站的 PLACEMENT_VIDEO_PER_IP 调高再调回来——
 // 忘记调回去就是把免费通道对全网敞开，直接变成账单。
@@ -1337,6 +1342,9 @@ app.get('/api/health', (req, res) => {
       // 单看那个字段像是"没配出来"，所以用 -1 明确表示"无限制"
       placementYourLimit: placementLimitFor(getClientIp(req)) === Infinity
         ? -1 : placementLimitFor(getClientIp(req)),
+      // 考官当前用的是哪张脸。配错了 Tavus 只会在接通那一刻报错，
+      // 平时完全看不出来，所以这里直接把生效值报出来
+      placementFace: PLACEMENT_FACE_ID || ('（跟老师列表第一位）' + (readPersonas()[0]?.name || '')),
       // 调试窗口开着的话必须让它显眼：这是唯一一处"每 IP 限制当前不生效"的原因，
       // 不报出来的话，哪天发现谁都能无限测，会先去怀疑别的地方
       placementDebugOpen: placementVideoOpen(),
@@ -2230,8 +2238,12 @@ app.post('/api/placement/video/start', rateLimit(6), async (req, res) => {
 
   const g = avatarGlobalQuota(db);
   const callSeconds = Math.min(PLACEMENT_VIDEO_SECONDS, g.remaining);
-  const persona = readPersonas()[0];
-  const face = personaFace(persona);
+  // 考官用谁的脸。默认跟老师列表的第一位（Olivia），
+  // 配了 PLACEMENT_FACE_ID 就用指定的那张——测评和"选老师"是两件事：
+  // 想给测评换一张脸，不该被迫去调整八位老师的排序。
+  const face = PLACEMENT_FACE_ID
+    ? { faceId: PLACEMENT_FACE_ID, palId: PLACEMENT_PAL_ID || TAVUS_PAL_ID }
+    : personaFace(readPersonas()[0]);
 
   const askName = PLACEMENT_ASK_NAME;
   const answerName = PLACEMENT_ANSWER_NAME;
