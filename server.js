@@ -2221,6 +2221,12 @@ app.post('/api/placement/video/start', rateLimit(6), async (req, res) => {
     saveDB(db);
     return res.status(409).json({ error: '测评正在进行中' });
   }
+  // 重测一定要先把上一次的结果清掉。不清的话 /result 开头那句
+  // `if (guest.result) return ...` 会立刻把旧结果原样回给他——
+  // 新测的那一分钟白测了，而且他看到的是个一模一样的分数，根本察觉不到。
+  guest.result = null;
+  guest.grading = false;
+  guest.conversationId = null;
 
   const g = avatarGlobalQuota(db);
   const callSeconds = Math.min(PLACEMENT_VIDEO_SECONDS, g.remaining);

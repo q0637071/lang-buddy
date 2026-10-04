@@ -38,6 +38,7 @@
     '和 AI 老师视频对话，当场出结果 · 不用注册': 'Video chat with an AI tutor, graded on the spot · No sign-up',
     '查看我的测评结果': 'See my result',
     '注册后可以把等级存进账号': 'Sign up to save your level',
+    '也可以再测一次': 'Or take the test again',
     '60 秒口语水平测试': '60-second speaking test',
     'AI 老师会用英语问你几个问题，你尽量开口答。结束后当场给出 CEFR 等级和点评。':
       'An AI tutor will ask you a few questions in English. Just answer out loud. You get a CEFR level and feedback right away.',

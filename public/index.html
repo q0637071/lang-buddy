@@ -932,6 +932,8 @@
       </div>
       <p class="pl-note" data-i18n="60 秒只能给一个大致范围，正式等级以注册后的完整测评为准。">60 秒只能给一个大致范围，正式等级以注册后的完整测评为准。</p>
       <button class="btn btn-primary btn-block btn-lg" id="btnPlacementRegister" data-i18n="注册保存我的等级">注册保存我的等级</button>
+      <!-- 只在服务端说这个 IP 还能测时才显示，否则点下去只会撞一个 403 -->
+      <button class="btn btn-outline btn-block pl-retry" id="btnPlacementRetry" data-i18n="再测一次" hidden>再测一次</button>
     </div>
 
     <!-- 没说够话 / 出错 -->
@@ -939,7 +941,9 @@
       <div class="pl-icon">🤔</div>
       <h3 class="pl-title" id="plFailTitle" data-i18n="这次没测出来">这次没测出来</h3>
       <p class="pl-sub" id="plFailMsg"></p>
-      <button class="btn btn-primary btn-block" id="btnPlacementFailReg" data-i18n="注册后继续练">注册后继续练</button>
+      <!-- 没测出来的人最想做的就是再试一次，这个要排在注册前面 -->
+      <button class="btn btn-primary btn-block pl-retry" id="btnPlacementFailRetry" data-i18n="再测一次" hidden>再测一次</button>
+      <button class="btn btn-outline btn-block" id="btnPlacementFailReg" data-i18n="注册后继续练">注册后继续练</button>
     </div>
   </div>
 </div>

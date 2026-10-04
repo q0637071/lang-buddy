@@ -609,7 +609,19 @@
 
   const PL_LEVEL_ZH = { beginner: '初级', intermediate: '中级', advanced: '高级' };
 
+  // 「再测一次」只在服务端说这个 IP 还能测时才露出来，否则点下去只会撞一个 403。
+  // 每次要显示结果前都重新问一遍：额度可能在这期间被别的地方用掉了。
+  async function plSyncRetry() {
+    let can = false;
+    try { can = !!(await api('/placement/video/status')).available; } catch { /* 问不到就当不能 */ }
+    ['#btnPlacementRetry', '#btnPlacementFailRetry'].forEach((sel) => {
+      const el = $(sel);
+      if (el) el.hidden = !can;
+    });
+  }
+
   function plRenderResult(result) {
+    plSyncRetry();
     if (!result || !result.enough) {
       // 两种测不出来要分开说。老师改成用中文提问之后，"答了很多但都是中文"
       // 会变成常见情况，这时还提示"你说得太少"等于冤枉人——他一直在说。
@@ -727,7 +739,11 @@
         box.hidden = false;
         box.dataset.mode = 'result';
         $('#btnPlacementStart').querySelector('strong').textContent = t('查看我的测评结果');
-        $('#btnPlacementStart').querySelector('small').textContent = t('注册后可以把等级存进账号');
+        // 还能测的话要在入口就说出来。只写"查看结果"的人会以为测过就没了，
+        // 根本不会点进去找——而"再测一次"的按钮恰恰在里面
+        $('#btnPlacementStart').querySelector('small').textContent = s.available
+          ? t('也可以再测一次')
+          : t('注册后可以把等级存进账号');
         return;
       }
       box.dataset.mode = 'test';
@@ -752,6 +768,15 @@
     plShow('plIntro');
   });
   $('#btnPlacementGo').addEventListener('click', plStart);
+  // 回到说明页而不是直接开测：摄像头权限、"每个网络只能免费测一次"这些
+  // 该说的还是要再说一遍，而且直接开测会让人措手不及
+  ['#btnPlacementRetry', '#btnPlacementFailRetry'].forEach((sel) => {
+    $(sel).addEventListener('click', () => {
+      $('#btnPlacementGo').disabled = false;
+      $('#plIntroErr').textContent = '';
+      plShow('plIntro');
+    });
+  });
   $('#btnPlacementStop').addEventListener('click', plEnd);
   $('#placementClose').addEventListener('click', plCloseModal);
   $('#placementOverlay').addEventListener('click', (e) => {
