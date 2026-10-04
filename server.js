@@ -105,8 +105,28 @@ const PLACEMENT_VIDEO_IP_LIMITS = (() => {
   }
   return out;
 })();
-// 这个 IP 每月能免费测几次：配了例外就按例外，否则全站默认
+// 调试窗口：到期之前不限每 IP 次数，谁都能反复测。
+// 站长在调视频测评，每改一版都要能连着测几次，每次都去 Render 改环境变量太折腾。
+//
+// 做成"到期自动恢复"而不是一个开关，是因为这类临时放开最大的风险就是
+// 没人记得关回去——放着不管，哪天流量上来了就是一笔账单。写死日期则不需要谁记得。
+// 要提前结束：把下面这行的日期改成过去，或者配 PLACEMENT_VIDEO_OPEN_UNTIL=（空）。
+// 要延长：改日期，或配 PLACEMENT_VIDEO_OPEN_UNTIL=2026-10-20。
+//
+// ⚠️ 放开的只是"每个 IP 能测几次"。全站月度硬顶
+// （AVATAR_GLOBAL_MONTHLY_MINUTES）照常生效，账单上限没有被动过——
+// 窗口期内最坏的情况是额度被人提前刷光、别人暂时测不了，不会多花钱。
+const PLACEMENT_VIDEO_OPEN_UNTIL = (() => {
+  const raw = process.env.PLACEMENT_VIDEO_OPEN_UNTIL;
+  if (raw !== undefined) return raw.trim() ? Date.parse(raw) : NaN;  // 显式配空 = 立即关闭
+  return Date.parse('2026-10-10T00:00:00Z');
+})();
+const placementVideoOpen = () =>
+  Number.isFinite(PLACEMENT_VIDEO_OPEN_UNTIL) && Date.now() < PLACEMENT_VIDEO_OPEN_UNTIL;
+
+// 这个 IP 每月能免费测几次：调试窗口期内不限，其次看 IP 例外，最后才是全站默认
 function placementLimitFor(ip) {
+  if (placementVideoOpen()) return Infinity;
   return PLACEMENT_VIDEO_IP_LIMITS.get(normalizeIp(ip)) ?? PLACEMENT_VIDEO_PER_IP;
 }
 // 访客记录留多久。只是为了让人测完能看到结果、注册时能把等级带过去，
@@ -1283,6 +1303,10 @@ app.get('/api/health', (req, res) => {
   if (!mongoCollection) {
     warnings.push('未连接 MongoDB，正在用本地文件存数据：Render 容器磁盘是临时的，重新部署会丢失全部用户数据。');
   }
+  if (placementVideoOpen()) {
+    const until = new Date(PLACEMENT_VIDEO_OPEN_UNTIL).toISOString().slice(0, 10);
+    warnings.push(`免费测评的每 IP 次数限制当前是关闭的（调试窗口开到 ${until}），任何人都能无限次免费测。到期会自动恢复成每 IP ${PLACEMENT_VIDEO_PER_IP} 次。全站月度硬顶不受影响，账单上限还在。`);
+  }
 
   // Tavus 官方不提供消费上限（超出套餐后 never paused, never throttled），
   // 这几个数字是唯一的账单防线，必须能随时确认配对了没有。
@@ -1309,7 +1333,16 @@ app.get('/api/health', (req, res) => {
       placementPerIpCalls: PLACEMENT_VIDEO_PER_IP,
       placementIpExceptions: Object.fromEntries(PLACEMENT_VIDEO_IP_LIMITS),
       yourIp: getClientIp(req),
-      placementYourLimit: placementLimitFor(getClientIp(req)),
+      // 不限次数时 placementYourLimit 会是 Infinity，JSON 里会变成 null——
+      // 单看那个字段像是"没配出来"，所以用 -1 明确表示"无限制"
+      placementYourLimit: placementLimitFor(getClientIp(req)) === Infinity
+        ? -1 : placementLimitFor(getClientIp(req)),
+      // 调试窗口开着的话必须让它显眼：这是唯一一处"每 IP 限制当前不生效"的原因，
+      // 不报出来的话，哪天发现谁都能无限测，会先去怀疑别的地方
+      placementDebugOpen: placementVideoOpen(),
+      ...(placementVideoOpen()
+        ? { placementDebugUntil: new Date(PLACEMENT_VIDEO_OPEN_UNTIL).toISOString() }
+        : {}),
     } : {}),
   });
 });
@@ -4057,6 +4090,12 @@ initDB().then(() => app.listen(PORT, () => {
   }
   if (!SMS_PROVIDER) console.warn('⚠️  SMS_PROVIDER 未配置：验证码会直接返回给前端，手机验证形同虚设');
   if (!mongoCollection) console.warn('⚠️  未连接 MongoDB：数据存在临时磁盘上，重新部署会全部丢失');
+  // 每次启动都喊一遍。这个开关放着不管就是"谁都能无限免费测"，
+  // 而它恰恰是最容易被忘掉的那种设置——没有提醒的话，下次想起来可能已经是看账单的时候
+  if (placementVideoOpen()) {
+    const until = new Date(PLACEMENT_VIDEO_OPEN_UNTIL).toISOString().slice(0, 10);
+    console.warn(`🟡 免费测评的每 IP 限制当前关闭（调试窗口到 ${until}）：任何人都能无限次免费测。${until} 后自动恢复。`);
+  }
   console.log('');
 })).catch(err => {
   console.error('❌ 启动失败，数据库连接出错:', err.message);
