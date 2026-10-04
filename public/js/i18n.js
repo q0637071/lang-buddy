@@ -65,6 +65,8 @@
     '没找到可用的摄像头或麦克风。': 'No working camera or microphone found.',
     '这一分钟里你说得太少，没法判断水平。注册之后可以随时再练。':
       "You didn't say enough in that minute to judge a level. Sign up and you can practice any time.",
+    '这一分钟你基本都在说中文。测的是英语口语，下次尽量用英语答，哪怕只是短句。':
+      'You answered mostly in your own language. This test measures your spoken English — next time try to answer in English, even in short sentences.',
     '分析超时了。注册一个账号，等级可以用完整测评重新测。':
       'The analysis timed out. Sign up and you can take the full placement test instead.',
     '没取到之前的结果。': "Couldn't load your earlier result.",

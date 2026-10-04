@@ -611,7 +611,11 @@
 
   function plRenderResult(result) {
     if (!result || !result.enough) {
-      plFail(t('这一分钟里你说得太少，没法判断水平。注册之后可以随时再练。'));
+      // 两种测不出来要分开说。老师改成用中文提问之后，"答了很多但都是中文"
+      // 会变成常见情况，这时还提示"你说得太少"等于冤枉人——他一直在说。
+      plFail(result && result.reason === 'wrong_language'
+        ? t('这一分钟你基本都在说中文。测的是英语口语，下次尽量用英语答，哪怕只是短句。')
+        : t('这一分钟里你说得太少，没法判断水平。注册之后可以随时再练。'));
       return;
     }
     $('#plCefr').textContent = result.cefr || '';

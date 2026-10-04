@@ -2051,6 +2051,24 @@ app.post('/api/avatar/end', requireAuth, async (req, res) => {
 //   · 并发上限（访客的在途通话也要算进去，见 countActiveAvatarCalls）
 //   · 前端拿到摄像头权限之后才允许建房，详见 /start 里的说明
 
+// 考官用学员的母语提问，学员用目标语言回答。
+// 全英文提问会把零基础的人挡在门外：他连题目都听不懂，整整一分钟说不出一句话，
+// 结果只能是"测不出来"——而这正是最需要被留住的那批人。
+// 母语提问是真实分级考试的通行做法：指令用 L1，表现用 L2。
+// 英语站 ask=中文 answer=英语；西语站 ask=英语 answer=西语，自动跟着站点配置走。
+// 建会话和打分两处都要用，所以提到这里，免得两边各写一份然后改歪。
+const PLACEMENT_ASK_LANG = SITE.uiLang || 'zh';
+const PLACEMENT_ANSWER_LANG = SITE.targetLang || 'en';
+// 给模型看的提示词是英文的，语言名也要用英文。
+// 用 LANG_NAME（中文名）的话，西语站会生成 "Ask every question in 英语"——
+// 一段英文指令里塞个中文词，模型更容易跑偏。
+const LANG_NAME_EN = {
+  zh: 'Chinese', en: 'English', ja: 'Japanese', ko: 'Korean',
+  fr: 'French', de: 'German', es: 'Spanish',
+};
+const PLACEMENT_ASK_NAME = LANG_NAME_EN[PLACEMENT_ASK_LANG] || 'Chinese';
+const PLACEMENT_ANSWER_NAME = LANG_NAME_EN[PLACEMENT_ANSWER_LANG] || 'English';
+
 const GUEST_COOKIE = 'guest';
 function makeGuestToken(id) { return `${id}.${signValue(id)}`; }
 // 和 verifyAuthToken 同一套签名：访客 id 必须是我们签发的，
@@ -2175,17 +2193,31 @@ app.post('/api/placement/video/start', rateLimit(6), async (req, res) => {
   const callSeconds = Math.min(PLACEMENT_VIDEO_SECONDS, g.remaining);
   const persona = readPersonas()[0];
   const face = personaFace(persona);
-  const langName = LANG_NAME[SITE.targetLang] || '英语';
+
+  const askName = PLACEMENT_ASK_NAME;
+  const answerName = PLACEMENT_ANSWER_NAME;
+  // 第一个元素是开场语言（Tavus 的规则），所以提问语言必须排在前面。
+  // 两个都要带上：只带提问语言的话，学员用目标语言回答时语音识别认不出来，
+  // 转写就是一堆乱码，等于没法打分。
+  const callLanguages = [...new Set([PLACEMENT_ASK_LANG, PLACEMENT_ANSWER_LANG])];
 
   // 考官人设和平时的陪练不一样：时间只有一分钟，必须尽快把人的真实水平逼出来，
   // 所以是"由易到难连续追问"，而不是陪着聊天。
-  const context = `You are a friendly ${langName} speaking examiner running a 60-second placement test.
-Your goal is to find out the student's real speaking level as fast as possible.
-Start with one easy warm-up question (name, where they're from).
-Then escalate: ask about their daily routine, then ask them to explain an opinion or describe a past experience.
-Keep every question short (under 15 words). Never lecture. Never correct them — just keep them talking.
-If they struggle, drop back to easier questions. If they answer fluently, push harder immediately.
-Speak only ${langName}. The test ends automatically after 60 seconds.`;
+  const context = `You are a friendly speaking examiner running a 60-second placement test.
+The student's native language is ${askName}. You are testing their ${answerName}.
+
+CRITICAL: Ask every question in ${askName}. Never ask a question in ${answerName}.
+The student must ANSWER in ${answerName}. Your very first sentence must tell them this,
+in ${askName}, in one short line.
+
+Your goal is to find out their real ${answerName} speaking level as fast as possible.
+Start with one easy warm-up question (their name, where they live).
+Then escalate: their daily routine, then an opinion or a past experience.
+Keep every question short (under 20 words). Never lecture. Never correct them — just keep them talking.
+If they struggle, drop back to an easier question. If they answer fluently, push harder immediately.
+If they answer in ${askName} instead of ${answerName}, say one short line in ${askName}
+asking them to try it in ${answerName}, then move on — do not nag.
+The test ends automatically after 60 seconds.`;
 
   try {
     const data = await tavusFetch('/conversations', {
@@ -2196,7 +2228,7 @@ Speak only ${langName}. The test ends automatically after 60 seconds.`;
         conversation_name: `LangBuddy-placement-${id.slice(0, 8)}`,
         conversational_context: context,
         properties: {
-          languages: [SITE.targetLang || 'en'],
+          languages: callLanguages,
           max_call_duration: callSeconds + AVATAR_JOIN_BUFFER,
           participant_left_timeout: 15,   // 访客跑掉得比会员更快关，他们更容易点开就走
           participant_absent_timeout: 60,
@@ -2300,22 +2332,39 @@ function studentTurns(transcript) {
 
 const PLACEMENT_MIN_WORDS = 12;
 
+// 说了多少。中日文不用空格分词，按空格切会把一整句算成 1 个"词"——
+// 考官改成用中文提问之后，"说了一大段中文"就会被误判成"说得太少"，
+// 提示还会告诉人家"你没怎么开口"，而他明明一直在说。
+// CJK 字符单独计数，让这个量度对两种书写系统都成立。
+function speechVolume(text) {
+  const CJK = /[㐀-䶿一-鿿぀-ヿ가-힯]/g;
+  const cjk = (text.match(CJK) || []).length;
+  const latin = text.replace(CJK, ' ').split(/\s+/).filter(Boolean).length;
+  return { cjk, latin, total: cjk + latin };
+}
+
 async function gradeTranscript(said) {
-  const words = said.join(' ').split(/\s+/).filter(Boolean).length;
+  const vol = speechVolume(said.join(' '));
+  const words = vol.total;
   // 说得太少就直接说测不出来。硬给一个"初级"是错的：没开口和水平低是两回事，
   // 而且被误判成初级的人很可能就直接关掉页面了。
   if (words < PLACEMENT_MIN_WORDS) {
-    return { enough: false, words };
+    return { enough: false, reason: 'too_short', words };
   }
   const raw = await callChatAPI({
     messages: [
       {
         role: 'system',
         content: `You are a CEFR speaking examiner. You will see only the STUDENT's turns from a 60-second placement conversation.
-Judge their speaking level from vocabulary range, grammatical control, fluency and complexity.
+The examiner asked the questions in ${PLACEMENT_ASK_NAME}; the student was told to answer in ${PLACEMENT_ANSWER_NAME}.
+Judge only their ${PLACEMENT_ANSWER_NAME}. Ignore anything they said in ${PLACEMENT_ASK_NAME} — it is not evidence of ${PLACEMENT_ANSWER_NAME} ability.
+Judge from vocabulary range, grammatical control, fluency and complexity.
 Be realistic: a 60-second sample supports a rough band, not a precise score. When in doubt, pick the lower band.
+
+Set "usedTarget" to false if they produced almost no ${PLACEMENT_ANSWER_NAME} at all (they answered in ${PLACEMENT_ASK_NAME},
+or managed only an isolated word or two). In that case the other fields are ignored, so leave them as "".
 Reply with JSON only, no other text:
-{"cefr":"A1|A2|B1|B2|C1","level":"beginner|intermediate|advanced","summaryZh":"一句话中文总评，20字以内","strengthZh":"做得好的一点，25字以内","adviceZh":"最该先练的一点，25字以内"}
+{"usedTarget":true,"cefr":"A1|A2|B1|B2|C1","level":"beginner|intermediate|advanced","summaryZh":"一句话中文总评，20字以内","strengthZh":"做得好的一点，25字以内","adviceZh":"最该先练的一点，25字以内"}
 Mapping: A1/A2 -> beginner, B1/B2 -> intermediate, C1 -> advanced.`,
       },
       { role: 'user', content: said.map((s, i) => `${i + 1}. ${s}`).join('\n') },
@@ -2335,6 +2384,11 @@ Mapping: A1/A2 -> beginner, B1/B2 -> intermediate, C1 -> advanced.`,
   if (!parsed) {
     const m = String(raw).match(/\{[\s\S]*\}/);
     if (m) { try { parsed = JSON.parse(m[0]); } catch { /* 真解析不了就往下报错 */ } }
+  }
+  // 全程没说目标语言：如实说测不出来，不要拿他的中文去凑一个等级。
+  // 判成 A1 是错的——那是在说"你英语很差"，而他可能只是没听懂规则。
+  if (parsed && parsed.usedTarget === false) {
+    return { enough: false, reason: 'wrong_language', words };
   }
   const CEFR = ['A1', 'A2', 'B1', 'B2', 'C1'];
   const LEVELS = ['beginner', 'intermediate', 'advanced'];
