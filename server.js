@@ -84,10 +84,15 @@ const avatarEnabled = () => !!(TAVUS_API_KEY && TAVUS_FACE_ID);
 const PLACEMENT_VIDEO_ENABLED = process.env.PLACEMENT_VIDEO !== 'off';
 const PLACEMENT_VIDEO_SECONDS = Number(process.env.PLACEMENT_VIDEO_SECONDS || 60);
 const PLACEMENT_VIDEO_PER_IP = Number(process.env.PLACEMENT_VIDEO_PER_IP || 1);
-// 测评考官单独用哪张脸 / 哪个 PAL。不配就跟老师列表的第一位。
-// 和"选老师"分开，是因为这是两件事：想给测评换张脸，不该被迫去改八位老师的排序。
-// faceId 以 r 开头、palId 以 p 开头，都在 Tavus 后台能看到。
-const PLACEMENT_FACE_ID = process.env.PLACEMENT_FACE_ID || '';
+// 测评考官单独用哪张脸 / 哪个 PAL。
+// 和"选老师"分开，是因为这是两件事：想给测评换张脸，不该被迫去改八位老师的排序
+// （那会连带把 AI 对话页默认选中的老师也改掉）。
+// 默认是 Luna（用户指定）。八位老师都共用全站那一个 TAVUS_PAL_ID，
+// 所以这里只换脸不换 PAL，音色和别处完全一致。
+// 环境变量可以覆盖；清空成 '' 则退回"跟老师列表第一位"。
+const PLACEMENT_FACE_ID = process.env.PLACEMENT_FACE_ID !== undefined
+  ? process.env.PLACEMENT_FACE_ID
+  : 'r983d5889432';
 const PLACEMENT_PAL_ID = process.env.PLACEMENT_PAL_ID || '';
 // 给指定 IP 开更高的次数上限，目前就是站长自测用的。
 // 没有这个的话，每改一版都得把全站的 PLACEMENT_VIDEO_PER_IP 调高再调回来——
