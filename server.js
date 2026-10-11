@@ -394,7 +394,11 @@ function rateLimit(max = 20) {
     // 桶要按"IP + 接口"分。只按 IP 的话所有接口共用一个计数，各路由写的不同上限
     // 就全失效了——最严的那个说了算。表现是：一分钟内正常聊几句（聊天上限15，合法），
     // 再点视频通话（上限6）直接 429，用户完全摸不着头脑。
-    const key = (req.ip || req.connection.remoteAddress) + '|' + req.path;
+    // 必须用 getClientIp 而不是 req.ip。线上链路是 用户 → Cloudflare → Render → 应用，
+    // trust proxy 只设了 1，req.ip 拿到的是 Cloudflare 边缘节点的 IP——
+    // 于是同一地区的用户全挤在一个桶里，"每分钟 10 次"变成了"全地区每分钟 10 次"。
+    // 表现是：用户只点了一次获取验证码，却收到"请求太频繁"，然后就注册不下去了。
+    const key = getClientIp(req) + '|' + req.path;
     const now = Date.now();
     const timestamps = (rateLimitMap.get(key) || []).filter(t => now - t < 60000);
     if (timestamps.length >= max) {
@@ -835,7 +839,33 @@ app.post('/api/login', rateLimit(20), async (req, res) => {
 // 接入真实服务商后，只需要把 sendSms() 里的实现换成对应 SDK 调用即可，其余逻辑不用改。
 
 const SMS_PROVIDER = process.env.SMS_PROVIDER || '';
-const phoneCodeStore = new Map(); // phone -> { code, expiresAt, lastSentAt }
+// 验证码存数据库，不存进程内存。
+// 原来是 new Map()，于是每次重新部署、Render 免费套餐休眠后唤醒、或者进程因为任何原因
+// 重启，所有待验证的码都会一起蒸发——用户刚收到码、正在填表，一次部署就让他看到
+// "验证码错误"，而他什么都没做错，重试几次还是一样（因为旧码永远对不上了）。
+// 低流量的站反而更容易中招：Render 免费套餐一闲下来就休眠。
+// 保持 get/set/delete 三个方法的签名不变，11 处调用一行都不用改。
+const phoneCodeStore = {
+  get(phone) {
+    return (loadDB().phoneCodes || {})[phone];
+  },
+  set(phone, rec) {
+    const db = loadDB();
+    if (!db.phoneCodes) db.phoneCodes = {};
+    db.phoneCodes[phone] = rec;
+    // 顺手清过期的，否则这张表只增不减。留一小时余量，不卡着到期时间删，
+    // 免得"刚过期"和"没发过"被混成同一种情况、错误提示就说不准了。
+    const cutoff = Date.now() - 60 * 60 * 1000;
+    for (const [k, v] of Object.entries(db.phoneCodes)) {
+      if (!v || (v.expiresAt || 0) < cutoff) delete db.phoneCodes[k];
+    }
+    saveDB(db);
+  },
+  delete(phone) {
+    const db = loadDB();
+    if (db.phoneCodes && db.phoneCodes[phone]) { delete db.phoneCodes[phone]; saveDB(db); }
+  },
+};
 
 function isValidPhone(phone) {
   return typeof phone === 'string' && /^1[3-9]\d{9}$/.test(phone);
