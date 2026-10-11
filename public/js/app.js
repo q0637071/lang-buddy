@@ -503,10 +503,15 @@
 
   // Daily 的 SDK（Tavus 底层就是 Daily）。按需加载 270KB——
   // 落地页上绝大多数人不会点测评，不该让他们白下载。
-  // 必须是 dist/daily.js 这个 UMD 包：同目录下的 daily-esm.js 当普通 script 加载
-  // 不会挂全局变量，于是永远判定成"加载失败"，自渲染白写。
+  //
+  // 自己托管，不走 unpkg：这个站面向中国大陆，unpkg 经常连不上。
+  // 连不上的后果不是"少个功能"，而是退回嵌 iframe、又冒出那个
+  // 「填名字 + 加入」的等候页，而且每个人还要先白等 8 秒超时。
+  // 换版本的话：重新下 dist/daily.js 这个 UMD 包放到同目录，改下面的文件名。
+  // 必须是 dist/daily.js，同目录的 daily-esm.js 当普通 script 加载不会挂全局变量，
+  // 于是永远判定成"加载失败"，自渲染白写。
   // 全局名是 Daily，不是 DailyIframe（旧版本叫后者，所以两个都认一下）。
-  const DAILY_SRC = 'https://unpkg.com/@daily-co/daily-js@0.93.0/dist/daily.js';
+  const DAILY_SRC = 'js/vendor/daily-0.93.0.js';
   const dailySdk = () => window.Daily || window.DailyIframe || null;
   let dailyLoading = null;
   function loadDaily() {
@@ -515,7 +520,6 @@
     dailyLoading = new Promise((done) => {
       const s = document.createElement('script');
       s.src = DAILY_SRC;
-      s.crossOrigin = 'anonymous';
       s.onload = () => done(!!dailySdk());
       s.onerror = () => done(false);
       document.head.appendChild(s);
