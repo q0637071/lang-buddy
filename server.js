@@ -83,7 +83,7 @@ const avatarEnabled = () => !!(TAVUS_API_KEY && TAVUS_FACE_ID);
 //      而很多人是看到浏览器弹授权才跑的，先建房等于白付这笔钱
 const PLACEMENT_VIDEO_ENABLED = process.env.PLACEMENT_VIDEO !== 'off';
 const PLACEMENT_VIDEO_SECONDS = Number(process.env.PLACEMENT_VIDEO_SECONDS || 60);
-const PLACEMENT_VIDEO_PER_IP = Number(process.env.PLACEMENT_VIDEO_PER_IP || 1);
+const PLACEMENT_VIDEO_PER_IP = Number(process.env.PLACEMENT_VIDEO_PER_IP || 2);
 // 测评考官单独用哪张脸 / 哪个 PAL。
 // 和"选老师"分开，是因为这是两件事：想给测评换张脸，不该被迫去改八位老师的排序
 // （那会连带把 AI 对话页默认选中的老师也改掉）。
@@ -129,7 +129,9 @@ const PLACEMENT_VIDEO_IP_LIMITS = (() => {
 const PLACEMENT_VIDEO_OPEN_UNTIL = (() => {
   const raw = process.env.PLACEMENT_VIDEO_OPEN_UNTIL;
   if (raw !== undefined) return raw.trim() ? Date.parse(raw) : NaN;  // 显式配空 = 立即关闭
-  return Date.parse('2026-10-10T00:00:00Z');
+  // 调试期已结束，每 IP 限制恢复生效。还要再放开就配
+  // PLACEMENT_VIDEO_OPEN_UNTIL=2026-10-20（或把下面这行换成将来的日期）。
+  return NaN;
 })();
 const placementVideoOpen = () =>
   Number.isFinite(PLACEMENT_VIDEO_OPEN_UNTIL) && Date.now() < PLACEMENT_VIDEO_OPEN_UNTIL;
@@ -2211,9 +2213,12 @@ app.post('/api/placement/video/start', rateLimit(6), async (req, res) => {
   const a = placementVideoAvailability(db, ip);
   if (!a.available) {
     saveDB(db);
+    // 次数和周期都按实际配置说。原来写死"今天已经测过一次了"是错的：
+    // 额度按月重置（monthKey），不是按天；次数也可配。
+    // 说错了用户会第二天再来一次，然后发现还是不行。
     const msg = a.reason === 'global'
       ? '本月免费测评名额已满，下月1日恢复'
-      : '这个网络今天已经测过一次了，注册后可以继续练';
+      : `这个网络本月的 ${a.limit} 次免费测评已经用完了，下月1日恢复。注册后可以继续练`;
     return res.status(403).json({ error: msg, reason: a.reason });
   }
 

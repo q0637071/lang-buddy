@@ -888,7 +888,9 @@
       <ul class="pl-points">
         <li data-i18n="需要摄像头和麦克风权限">需要摄像头和麦克风权限</li>
         <li data-i18n="全程 60 秒，不录像、不保存视频">全程 60 秒，不录像、不保存视频</li>
-        <li data-i18n="每个网络只能免费测一次">每个网络只能免费测一次</li>
+        <!-- 次数由服务端下发（见 refreshPlacementEntry）：写死的话改了配置这里就对不上，
+             而用户正是照着这句去判断自己还能不能再测 -->
+        <li id="plQuotaLine">每个网络每月可以免费测 2 次</li>
       </ul>
       <button class="btn btn-primary btn-block btn-lg" id="btnPlacementGo" data-i18n="开始测试">开始测试</button>
       <p class="pl-err" id="plIntroErr"></p>

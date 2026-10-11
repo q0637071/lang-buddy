@@ -613,7 +613,11 @@
   // 每次要显示结果前都重新问一遍：额度可能在这期间被别的地方用掉了。
   async function plSyncRetry() {
     let can = false;
-    try { can = !!(await api('/placement/video/status')).available; } catch { /* 问不到就当不能 */ }
+    try {
+      const s = await api('/placement/video/status');
+      can = !!s.available;
+      plSetQuotaLine(s.limit);   // 顺手把说明页那句也刷新了，再测一次时就是最新的
+    } catch { /* 问不到就当不能 */ }
     ['#btnPlacementRetry', '#btnPlacementFailRetry'].forEach((sel) => {
       const el = $(sel);
       if (el) el.hidden = !can;
@@ -727,6 +731,14 @@
     }
   }
 
+  // 说明页里那句"每个网络每月可以免费测 N 次"。N 必须跟服务端走：
+  // 写死的话改了配置就对不上，而用户正是照着这句判断自己还能不能再测。
+  function plSetQuotaLine(limit) {
+    const el = $('#plQuotaLine');
+    if (!el || !Number.isFinite(limit)) return;
+    el.textContent = t('每个网络每月可以免费测 {n} 次').replace('{n}', limit);
+  }
+
   // 入口显不显示由服务端决定。登录过的人不显示——他有自己的额度，走「面对面」页。
   async function refreshPlacementEntry() {
     const box = $('#heroPlacement');
@@ -734,6 +746,7 @@
     if (state.user) { box.hidden = true; return; }
     try {
       const s = await api('/placement/video/status');
+      plSetQuotaLine(s.limit);
       // 测过并且有结果的人，入口保留但直接打开结果——刷新一下就什么都没了很让人恼火
       if (s.result) {
         box.hidden = false;

@@ -44,7 +44,7 @@
       'An AI tutor will ask you a few questions in English. Just answer out loud. You get a CEFR level and feedback right away.',
     '需要摄像头和麦克风权限': 'Camera and microphone access required',
     '全程 60 秒，不录像、不保存视频': '60 seconds total — nothing is recorded or stored',
-    '每个网络只能免费测一次': 'One free test per network',
+    '每个网络每月可以免费测 {n} 次': '{n} free tests per network each month',
     '开始测试': 'Start test',
     '秒': 's',
     '正在接通老师…': 'Connecting you to your tutor…',
