@@ -30,6 +30,9 @@
     '1对1 练出真实的外语能力': 'One-on-one practice that builds real fluency',
     'AI 视频通话 · 打字对话 · 语音练习 · 背单词 · 语法精讲，一站式外语学习平台':
       'Video calls, chat, speaking practice, vocabulary and grammar — everything in one place.',
+    // 背单词关掉时换用这句（见 app.js 的 hideOffFeatures）
+    'AI 视频通话 · 打字对话 · 语音练习 · 语法精讲，一站式外语学习平台':
+      'Video calls, chat, speaking practice and grammar — everything in one place.',
     '免费开始学习': 'Start learning free',
     '已有账号，登录': 'I have an account',
 
@@ -261,6 +264,11 @@
     // —— 语法 ——
     '语法学习': 'Grammar',
     'AI 语法批改': 'AI grammar check',
+    // 这三条是在 app.js 里用 t() 拼出来的，不在 HTML 的 data-i18n 里，
+    // 所以只扫 HTML 的检查看不到它们，英文模式下一直在露中文
+    '未开通': 'Inactive',
+    '立即开通': 'Upgrade now',
+    '关': 'levels',          // 情景地图的"12 / 200 关"，量词，不是"关闭"
     '← 返回列表': '← Back to list',
     '结构': 'Structure',
     '讲解': 'Explanation',

@@ -8,7 +8,11 @@
   // 一套代码跑两个站，哪些功能开着由服务端注入的 __SITE__ 决定。
   // 拿不到就当全开——现有站点不配任何东西，行为必须和以前一样。
   const SITE = window.__SITE__ || {};
-  const FEATURES_ON = Object.assign({ vocab: true, grammar: true, colloquial: true, scenarios: true }, SITE.features || {});
+  // 这里的默认值只在服务端没下发 features 时才用得上（本地直接开 html 之类）。
+  // 正常情况下一律以服务端为准，别在这里改开关——改了线上也不生效。
+  const FEATURES_ON = Object.assign(
+    { vocab: true, grammar: true, colloquial: true, scenarios: true, mistakes: true },
+    SITE.features || {});
   const featureOn = (name) => FEATURES_ON[name] !== false;
 
   // 品牌名。没配 SITE_NAME 就不动，维持 HTML 里原来那个（带 data-i18n、能中英切）。
@@ -29,18 +33,27 @@
   // 只藝菜单不够——首页还挂着"待复习单词""单词掌握进度"这些永远是 0 的格子。
   // 这段在模块顶层跑：脚本挂在 body 末尾，DOM 已经解析完了。
   (function hideOffFeatures() {
-    ['vocab', 'grammar', 'colloquial', 'scenarios'].forEach(function (f) {
+    // 两类标记都要扫：
+    //   data-nav   —— 顶栏菜单项（本来就有，点了会跳转）
+    //   data-feature —— 纯展示的东西：落地页的介绍卡、会员权益里的那一条、
+    //                   首页那几个永远是 0 的统计格子
+    // 只藏菜单是不够的：功能关了，首页还摆着"待复习单词 0""错题收录 0"，
+    // 用户会以为是坏了而不是没开。
+    ['vocab', 'grammar', 'colloquial', 'scenarios', 'mistakes'].forEach(function (f) {
       if (featureOn(f)) return;
-      document.querySelectorAll('[data-nav="' + f + '"]').forEach(function (el) { el.hidden = true; });
+      document.querySelectorAll('[data-nav="' + f + '"], [data-feature="' + f + '"]')
+        .forEach(function (el) { el.hidden = true; });
     });
     if (!featureOn('vocab')) {
-      ['dashDueWords', 'metricVocabMastered'].forEach(function (id) {
-        const el = document.getElementById(id);
-        const card = el && (el.closest('.dash-card') || el.closest('.metric-card'));
-        if (card) card.hidden = true;
-      });
       const prog = document.querySelector('.vocab-progress-card');
       if (prog) prog.hidden = true;
+      // 首屏那句副标题把功能逐个列了一遍，里面点名了"背单词"。
+      // 整句藏掉首屏就缺一行，所以换成不提它的版本。
+      // 必须连 data-i18n 一起换掉：app.js 跑完之后 i18n 还会在 DOMContentLoaded
+      // 再刷一遍，只改 textContent 的话会被原样写回去。
+      const sub = document.querySelector('.hero-sub[data-i18n]');
+      const alt = 'AI 视频通话 · 打字对话 · 语音练习 · 语法精讲，一站式外语学习平台';
+      if (sub) { sub.setAttribute('data-i18n', alt); sub.textContent = alt; }
     }
   })();
 

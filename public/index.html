@@ -103,7 +103,10 @@
         <h3 data-i18n="语音练习">语音练习</h3>
         <p data-i18n="支持语音输入和 AI 语音朗读，练习听力和口语发音，像真人对话一样自然。">支持语音输入和 AI 语音朗读，练习听力和口语发音，像真人对话一样自然。</p>
       </div>
-      <div class="feature-card">
+      <!-- data-feature 是给功能开关用的隐藏标记。不能用 data-nav：
+           那个属性上挂着"点一下跳到对应页面"的监听，加上去会让这张
+           本来只是介绍的卡片变成可点的。 -->
+      <div class="feature-card" data-feature="vocab">
         <div class="feature-icon">📚</div>
         <h3 data-i18n="科学背单词">科学背单词</h3>
         <p data-i18n="内置分级词库，基于间隔重复算法安排复习，让记忆更持久。">内置分级词库，基于间隔重复算法安排复习，让记忆更持久。</p>
@@ -128,7 +131,7 @@
           <li class="price-list-hl" data-i18n="📹 AI 视频通话，面对面练口语">📹 AI 视频通话，面对面练口语</li>
           <li data-i18n="✔ AI 1对1 打字/语音对话">✔ AI 1对1 打字/语音对话</li>
           <li data-i18n="✔ AI 语法批改">✔ AI 语法批改</li>
-          <li data-i18n="✔ 完整背单词与语法课程">✔ 完整背单词与语法课程</li>
+          <li data-feature="vocab" data-i18n="✔ 完整背单词与语法课程">✔ 完整背单词与语法课程</li>
           <li data-i18n="✔ 学习进度记录">✔ 学习进度记录</li>
         </ul>
         <button class="btn btn-primary btn-lg" id="btnPricingRegister" data-i18n="注册并开通会员">注册并开通会员</button>
@@ -175,7 +178,7 @@
           <div class="dash-card-label" data-i18n="当前水平">当前水平</div>
           <div class="dash-card-value" id="dashLevel">-</div>
         </div>
-        <div class="dash-card">
+        <div class="dash-card" data-feature="vocab">
           <div class="dash-card-label" data-i18n="待复习单词">待复习单词</div>
           <div class="dash-card-value" id="dashDueWords">-</div>
         </div>
@@ -187,12 +190,12 @@
           <div class="metric-value" id="metricStreak">-</div>
           <div class="metric-label" data-i18n="连续学习天数">连续学习天数</div>
         </div>
-        <div class="metric-card">
+        <div class="metric-card" data-feature="vocab">
           <div class="metric-icon">✅</div>
           <div class="metric-value" id="metricVocabMastered">-</div>
           <div class="metric-label" data-i18n="已掌握单词">已掌握单词</div>
         </div>
-        <div class="metric-card">
+        <div class="metric-card" data-feature="mistakes">
           <div class="metric-icon">📝</div>
           <div class="metric-value" id="metricMistakes">-</div>
           <div class="metric-label" data-i18n="错题收录">错题收录</div>

@@ -157,6 +157,9 @@ const PLACEMENT_PATH = path.join(DATA_DIR, 'placement-test.json');
 // 区别全部由环境变量决定，代码不分叉——bug 修一次两边都好。
 // ⭐ 所有默认值必须等于今天 LangBuddy 的行为：不配任何变量时，
 //   现有站点一点不变。新增配置项时这条不能破。
+// 功能开关统一走这里。不配时用 dflt，配了就以配置为准。
+const featureFlag = (name, dflt) => (process.env[name] || dflt) !== 'off';
+
 const SITE = {
   // 注意：没显式配就不带 name/title 字段。前端据此判断"要不要接管品牌"——
   // 填个默认值的话，现有站的品牌也会被接管，连带丢掉 data-i18n，
@@ -165,14 +168,19 @@ const SITE = {
   ...(process.env.SITE_TITLE ? { title: process.env.SITE_TITLE } : {}),
   uiLang: process.env.SITE_UI_LANG === 'en' ? 'en' : 'zh',   // 界面默认语言
   targetLang: process.env.SITE_TARGET_LANG || 'en',          // 默认学什么
+  // 功能开关。统一是"写 off 关、写 on 开"，差别只在不配时的默认值，
+  // 所以放开/关掉任何一个都是同一句话：FEATURE_XXX=on / =off。
   features: {
-    // 写 off 才关。默认都开 = 现状
-    vocab: process.env.FEATURE_VOCAB !== 'off',
-    grammar: process.env.FEATURE_GRAMMAR !== 'off',
-    colloquial: process.env.FEATURE_COLLOQUIAL !== 'off',
+    // 背单词和错题本：用户 2026-10-25 要求暂时隐藏，所以默认关。
+    // 要放回来配 FEATURE_VOCAB=on / FEATURE_MISTAKES=on，或者把这里的 'off' 改成 'on'。
+    // 只是藏起来，数据和接口都没动——放回来时用户的进度还在。
+    vocab: featureFlag('FEATURE_VOCAB', 'off'),
+    mistakes: featureFlag('FEATURE_MISTAKES', 'off'),
+    grammar: featureFlag('FEATURE_GRAMMAR', 'on'),
+    colloquial: featureFlag('FEATURE_COLLOQUIAL', 'on'),
     // 情景地图依赖一份对应语言的场景库。西语库还没做好之前先关掉——
     // 开着的话学西语的人点进去看到的是英文开场白，比没有这个功能还糟。
-    scenarios: process.env.FEATURE_SCENARIOS !== 'off',
+    scenarios: featureFlag('FEATURE_SCENARIOS', 'on'),
   },
 };
 const SCENARIOS_PATH = path.join(DATA_DIR, process.env.SCENARIOS_FILE || 'scenarios.json');
